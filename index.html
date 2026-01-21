@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Science Conference - Paper Review System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg-primary: #faf9f7;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --accent: #2c5282;
+            --accent-light: #ebf4ff;
+            --success: #276749;
+            --success-bg: #f0fff4;
+            --danger: #c53030;
+            --danger-bg: #fff5f5;
+            --border: #e2e2e2;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        .badge-success {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Setup Screen */
+        .setup-screen {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .setup-screen .card {
+            text-align: center;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e3a5f;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e5038;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #9c2626;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+        }
+
+        /* File Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-primary);
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .upload-text strong {
+            color: var(--accent);
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        td {
+            font-size: 0.9rem;
+        }
+
+        tr:hover {
+            background: var(--bg-primary);
+        }
+
+        /* Status badges */
+        .status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-accept {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .status-reject {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        .status-has-file {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        /* Link box */
+        .link-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            margin: 8px 0;
+        }
+
+        /* Paper review card */
+        .paper-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .paper-card.reviewed {
+            opacity: 0.6;
+        }
+
+        .paper-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .paper-id {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .paper-abstract {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .review-actions button {
+            flex: 1;
+            padding: 14px;
+            font-size: 1rem;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        /* Hidden sections */
+        .hidden {
+            display: none;
+        }
+
+        /* Actions row */
+        .actions-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        /* Reviewer info header */
+        .reviewer-header {
+            background: var(--accent-light);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .reviewer-header h2 {
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: var(--text-primary);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: var(--accent);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .download-btn:hover {
+            background: #1e3a5f;
+        }
+
+        /* Template info box */
+        .template-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .template-box code {
+            display: block;
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+
+        /* File indicator */
+        .file-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        /* Inline upload */
+        .inline-upload {
+            display: inline-block;
+        }
+
+        .inline-upload input[type="file"] {
+            display: none;
+        }
+
+        /* Collapsible section */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        .collapsible-header:hover {
+            color: var(--accent);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .collapsible-content.open {
+            max-height: 500px;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Connection status */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .connection-status.connected {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .connection-status.disconnected {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        /* Instructions */
+        .instructions {
+            background: #fffbeb;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .instructions h3 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #78350f;
+        }
+
+        .instructions li {
+            margin-bottom: 4px;
+        }
+
+        .instructions code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connection-status">Connecting...</div>
+    
+    <div class="container">
+        <header>
+            <h1>Strategy Science Conference</h1>
+            <p class="subtitle">Paper Review Management System</p>
+            <span class="badge" id="mode-badge">Loading...</span>
+        </header>
+
+        <!-- Setup Screen (shown if Firebase not configured) -->
+        <div id="setup-screen" class="setup-screen hidden">
+            <div class="card">
+                <h2>🔧 Firebase Setup Required</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                    To use this system as a shared website, you need to connect it to Firebase (free).
+                </p>
+                
+                <div class="instructions">
+                    <h3>Quick Setup (5 minutes):</h3>
+                    <ol>
+                        <li>Go to <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+                        <li>Click "Create a project" (or use existing)</li>
+                        <li>Go to "Build" → "Realtime Database" → "Create Database"</li>
+                        <li>Choose "Start in test mode" for now</li>
+                        <li>Go to Project Settings (⚙️) → scroll to "Your apps" → click web icon (&lt;/&gt;)</li>
+                        <li>Register app, then copy the config values below:</li>
+                    </ol>
+                </div>
+
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="text" id="setup-apiKey" placeholder="AIzaSy...">
+                </div>
+                <div class="form-group">
+                    <label>Auth Domain</label>
+                    <input type="text" id="setup-authDomain" placeholder="your-project.firebaseapp.com">
+                </div>
+                <div class="form-group">
+                    <label>Database URL</label>
+                    <input type="text" id="setup-databaseURL" placeholder="https://your-project-default-rtdb.firebaseio.com">
+                </div>
+                <div class="form-group">
+                    <label>Project ID</label>
+                    <input type="text" id="setup-projectId" placeholder="your-project-id">
+                </div>
+                
+                <div class="form-group">
+                    <label>Admin Password (create one for yourself)</label>
+                    <input type="password" id="setup-adminPassword" placeholder="Choose a password for admin access">
+                </div>
+
+                <button class="btn-primary" onclick="saveFirebaseConfig()" style="width: 100%;">
+                    Save & Connect
+                </button>
+
+                <p style="margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+                    Configuration is saved in your browser. You'll need to set this up once per device.
+                </p>
+            </div>
+        </div>
+
+        <!-- Admin Login -->
+        <div id="admin-login" class="setup-screen hidden">
+            <div class="card">
+                <h2>🔐 Admin Login</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                    Enter the admin password to access the management panel.
+                </p>
+                <div class="form-group">
+                    <label>Admin Password</label>
+                    <input type="password" id="login-password" placeholder="Enter admin password" onkeypress="if(event.key==='Enter')adminLogin()">
+                </div>
+                <button class="btn-primary" onclick="adminLogin()" style="width: 100%;">
+                    Login
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="admin-view" class="hidden">
+            <div class="tabs">
+                <button class="tab active" data-tab="papers">Papers</button>
+                <button class="tab" data-tab="reviewers">Reviewers</button>
+                <button class="tab" data-tab="assignments">Assignments</button>
+                <button class="tab" data-tab="results">Results</button>
+            </div>
+
+            <!-- Papers Tab -->
+            <div id="tab-papers" class="tab-content">
+                <div class="card">
+                    <h2>Upload Papers from CSV</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Upload a CSV file with your paper list. Required columns: <strong>title</strong>, <strong>authors</strong>, <strong>abstract</strong>
+                    </p>
+                    
+                    <div class="template-box">
+                        <strong>CSV Template Format:</strong>
+                        <code>title,authors,abstract
+"Dynamic Capabilities in Ecosystems","Chen, L., Wang, M.","This paper examines..."</code>
+                        <button class="btn-secondary btn-sm" style="margin-top: 12px;" onclick="downloadPaperTemplate()">Download Template CSV</button>
+                    </div>
+
+                    <div class="upload-area" id="paper-upload-area">
+                        <input type="file" id="paper-csv-input" accept=".csv" onchange="handlePaperCSV(event)">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">
+                            <strong>Click to upload</strong> or drag and drop<br>
+                            CSV file with papers
+                        </div>
+                    </div>
+
+                    <div class="actions-row">
+                        <button class="btn-secondary" onclick="loadSamplePapers()">Load 12 Sample Papers (Demo)</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Paper PDF Links</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Add download links for each paper (Google Drive, Dropbox, etc.). Reviewers will be able to download their assigned papers.
+                    </p>
+                    <div id="paper-file-links">
+                        <div class="empty-state">
+                            <p>Add papers first to set PDF links.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Paper List <span id="paper-count" style="color: var(--text-secondary); font-weight: normal;">(0)</span></h2>
+                    <div id="papers-list">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+
+                <!-- Manual Add -->
+                <div class="card">
+                    <div class="collapsible-header" onclick="toggleCollapsible('manual-paper')">
+                        <h2 style="margin-bottom: 0;">➕ Add Paper Manually</h2>
+                        <span id="manual-paper-icon">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="manual-paper-content">
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Paper Title</label>
+                            <input type="text" id="paper-title" placeholder="Enter paper title">
+                        </div>
+                        <div class="form-group">
+                            <label>Authors</label>
+                            <input type="text" id="paper-authors" placeholder="e.g., Smith, J., Johnson, K.">
+                        </div>
+                        <div class="form-group">
+                            <label>Abstract</label>
+                            <textarea id="paper-abstract" placeholder="Enter paper abstract"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>PDF Link (optional - Google Drive, Dropbox, etc.)</label>
+                            <input type="url" id="paper-pdf-link" placeholder="https://drive.google.com/...">
+                        </div>
+                        <button class="btn-primary" onclick="addPaper()">Add Paper</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviewers Tab -->
+            <div id="tab-reviewers" class="tab-content hidden">
+                <div class="card">
+                    <h2>Upload Reviewers from CSV</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Upload a CSV file with your reviewer list. Required columns: <strong>name</strong>, <strong>email</strong>
+                    </p>
+                    
+                    <div class="template-box">
+                        <strong>CSV Template Format:</strong>
+                        <code>name,email
+"Dr. Sarah Mitchell","s.mitchell@stanford.edu"</code>
+                        <button class="btn-secondary btn-sm" style="margin-top: 12px;" onclick="downloadReviewerTemplate()">Download Template CSV</button>
+                    </div>
+
+                    <div class="upload-area" id="reviewer-upload-area">
+                        <input type="file" id="reviewer-csv-input" accept=".csv" onchange="handleReviewerCSV(event)">
+                        <div class="upload-icon">👥</div>
+                        <div class="upload-text">
+                            <strong>Click to upload</strong> or drag and drop<br>
+                            CSV file with reviewers
+                        </div>
+                    </div>
+
+                    <div class="actions-row">
+                        <button class="btn-secondary" onclick="loadSampleReviewers()">Load 8 Sample Reviewers (Demo)</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Reviewer List <span id="reviewer-count" style="color: var(--text-secondary); font-weight: normal;">(0)</span></h2>
+                    <div id="reviewers-list">
+                        <div class="loading"><div class="spinner"></div></div>
+                    </div>
+                </div>
+
+                <!-- Manual Add -->
+                <div class="card">
+                    <div class="collapsible-header" onclick="toggleCollapsible('manual-reviewer')">
+                        <h2 style="margin-bottom: 0;">➕ Add Reviewer Manually</h2>
+                        <span id="manual-reviewer-icon">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="manual-reviewer-content">
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Reviewer Name</label>
+                            <input type="text" id="reviewer-name" placeholder="Enter reviewer name">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="reviewer-email" placeholder="reviewer@university.edu">
+                        </div>
+                        <button class="btn-primary" onclick="addReviewer()">Add Reviewer</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignments Tab -->
+            <div id="tab-assignments" class="tab-content hidden">
+                <div class="card">
+                    <h2>Assignment Settings</h2>
+                    <div class="form-group">
+                        <label>Papers per Reviewer</label>
+                        <select id="papers-per-reviewer">
+                            <option value="2">2 papers</option>
+                            <option value="3" selected>3 papers</option>
+                            <option value="4">4 papers</option>
+                            <option value="5">5 papers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reviewers per Paper</label>
+                        <select id="reviewers-per-paper">
+                            <option value="2" selected>2 reviewers</option>
+                            <option value="3">3 reviewers</option>
+                        </select>
+                    </div>
+                    <div id="assignment-status" style="margin-top: 16px;"></div>
+                    <div class="actions-row">
+                        <button class="btn-primary" onclick="generateAssignments()">Generate Random Assignments</button>
+                        <button class="btn-secondary" onclick="clearAssignments()">Clear Assignments</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Reviewer Links</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        Share these unique links with each reviewer. They will only see their assigned papers.
+                    </p>
+                    <div id="reviewer-links">
+                        <div class="empty-state">
+                            <p>Generate assignments first to see reviewer links.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="tab-results" class="tab-content hidden">
+                <div class="stats-grid" id="results-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total">0</div>
+                        <div class="stat-label">Total Reviews</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-pending">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-accepts">0</div>
+                        <div class="stat-label">Accepts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-rejects">0</div>
+                        <div class="stat-label">Rejects</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Review Results by Paper</h2>
+                    <div class="table-wrapper">
+                        <div id="results-list">
+                            <div class="loading"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Export Data</h2>
+                    <div class="actions-row">
+                        <button class="btn-primary" onclick="exportResults()">Export Results (CSV)</button>
+                        <button class="btn-danger" onclick="clearAllData()">Reset All Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviewer View -->
+        <div id="reviewer-view" class="hidden">
+            <div class="reviewer-header">
+                <h2>Welcome, <span id="reviewer-name-display"></span></h2>
+                <p style="color: var(--text-secondary);">You have been assigned <span id="reviewer-paper-count">0</span> papers to review.</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="review-progress" style="width: 0%"></div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;">
+                    <span id="completed-count">0</span> of <span id="total-assigned">0</span> reviews completed
+                </p>
+            </div>
+
+            <div id="reviewer-papers"></div>
+
+            <div class="card hidden" id="all-done-card">
+                <div class="alert alert-success">
+                    <strong>Thank you!</strong> You have completed all your reviews.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // =====================
+        // FIREBASE CONFIGURATION
+        // =====================
+        
+        let db = null;
+        let papers = [];
+        let reviewers = [];
+        let assignments = {};
+        let reviews = {};
+        let paperFiles = {};
+
+        // Check for saved Firebase config
+        const savedConfig = localStorage.getItem('firebase_config');
+        const savedAdminHash = localStorage.getItem('admin_password_hash');
+
+        if (savedConfig) {
+            try {
+                const config = JSON.parse(savedConfig);
+                initializeFirebase(config);
+            } catch (e) {
+                showSetupScreen();
+            }
+        } else {
+            showSetupScreen();
+        }
+
+        function showSetupScreen() {
+            document.getElementById('setup-screen').classList.remove('hidden');
+            document.getElementById('mode-badge').textContent = 'Setup Required';
+            document.getElementById('connection-status').textContent = 'Not Connected';
+            document.getElementById('connection-status').className = 'connection-status disconnected';
+        }
+
+        function saveFirebaseConfig() {
+            const config = {
+                apiKey: document.getElementById('setup-apiKey').value.trim(),
+                authDomain: document.getElementById('setup-authDomain').value.trim(),
+                databaseURL: document.getElementById('setup-databaseURL').value.trim(),
+                projectId: document.getElementById('setup-projectId').value.trim()
+            };
+
+            const adminPassword = document.getElementById('setup-adminPassword').value;
+
+            if (!config.apiKey || !config.databaseURL || !config.projectId || !adminPassword) {
+                showToast('Please fill in all fields');
+                return;
+            }
+
+            // Save config
+            localStorage.setItem('firebase_config', JSON.stringify(config));
+            
+            // Save password hash (simple hash for demo - use proper auth in production)
+            const hash = btoa(adminPassword);
+            localStorage.setItem('admin_password_hash', hash);
+
+            // Initialize Firebase
+            initializeFirebase(config);
+        }
+
+        function initializeFirebase(config) {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(config);
+                }
+                db = firebase.database();
+                
+                document.getElementById('connection-status').textContent = 'Connected';
+                document.getElementById('connection-status').className = 'connection-status connected';
+
+                // Check URL for reviewer mode
+                const urlParams = new URLSearchParams(window.location.search);
+                const reviewerId = urlParams.get('reviewer');
+                const isAdmin = urlParams.get('admin') !== null;
+
+                if (reviewerId) {
+                    showReviewerView(reviewerId);
+                } else if (isAdmin) {
+                    showAdminLogin();
+                } else {
+                    // Default: show admin login
+                    showAdminLogin();
+                }
+
+                // Setup real-time listeners
+                setupDatabaseListeners();
+
+            } catch (e) {
+                console.error('Firebase init error:', e);
+                showToast('Firebase connection failed. Check your config.');
+                showSetupScreen();
+            }
+        }
+
+        function showAdminLogin() {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('admin-login').classList.remove('hidden');
+            document.getElementById('mode-badge').textContent = 'Admin Login';
+        }
+
+        function adminLogin() {
+            const password = document.getElementById('login-password').value;
+            const savedHash = localStorage.getItem('admin_password_hash');
+            
+            if (btoa(password) === savedHash) {
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-view').classList.remove('hidden');
+                document.getElementById('mode-badge').textContent = 'Admin Mode';
+                setupTabNavigation();
+            } else {
+                showToast('Incorrect password');
+            }
+        }
+
+        function setupDatabaseListeners() {
+            if (!db) return;
+
+            // Listen for papers
+            db.ref('papers').on('value', (snapshot) => {
+                const data = snapshot.val();
+                papers = data ? Object.values(data) : [];
+                renderPapers();
+                renderPaperFileLinks();
+                updateAssignmentStatus();
+                renderResults();
+            });
+
+            // Listen for reviewers
+            db.ref('reviewers').on('value', (snapshot) => {
+                const data = snapshot.val();
+                reviewers = data ? Object.values(data) : [];
+                renderReviewers();
+                updateAssignmentStatus();
+                renderReviewerLinks();
+            });
+
+            // Listen for assignments
+            db.ref('assignments').on('value', (snapshot) => {
+                assignments = snapshot.val() || {};
+                updateAssignmentStatus();
+                renderReviewerLinks();
+                
+                // Re-render reviewer view if active
+                const urlParams = new URLSearchParams(window.location.search);
+                const reviewerId = urlParams.get('reviewer');
+                if (reviewerId) {
+                    renderReviewerPapers(reviewerId);
+                }
+            });
+
+            // Listen for reviews
+            db.ref('reviews').on('value', (snapshot) => {
+                reviews = snapshot.val() || {};
+                renderResults();
+                
+                // Re-render reviewer view if active
+                const urlParams = new URLSearchParams(window.location.search);
+                const reviewerId = urlParams.get('reviewer');
+                if (reviewerId) {
+                    renderReviewerPapers(reviewerId);
+                }
+            });
+
+            // Listen for paper files/links
+            db.ref('paperFiles').on('value', (snapshot) => {
+                paperFiles = snapshot.val() || {};
+                renderPapers();
+                renderPaperFileLinks();
+            });
+        }
+
+        // =====================
+        // TAB NAVIGATION
+        // =====================
+
+        function setupTabNavigation() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    tab.classList.add('active');
+                    document.getElementById('tab-' + tab.dataset.tab).classList.remove('hidden');
+                });
+            });
+        }
+
+        // =====================
+        // UTILITY FUNCTIONS
+        // =====================
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function toggleCollapsible(id) {
+            const content = document.getElementById(id + '-content');
+            const icon = document.getElementById(id + '-icon');
+            content.classList.toggle('open');
+            icon.textContent = content.classList.contains('open') ? '▲' : '▼';
+        }
+
+        // CSV Parsing
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) return [];
+            
+            const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+            const rows = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                rows.push(row);
+            }
+            
+            return rows;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            
+            return result;
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadPaperTemplate() {
+            const csv = 'title,authors,abstract\n"Paper Title Here","Author Names","Abstract text here..."';
+            downloadFile(csv, 'paper_template.csv', 'text/csv');
+        }
+
+        function downloadReviewerTemplate() {
+            const csv = 'name,email\n"Dr. Example Name","email@university.edu"';
+            downloadFile(csv, 'reviewer_template.csv', 'text/csv');
+        }
+
+        // =====================
+        // PAPERS
+        // =====================
+
+        function handlePaperCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const rows = parseCSV(e.target.result);
+                
+                if (!rows[0]?.title) {
+                    showToast('CSV must have "title" column');
+                    return;
+                }
+
+                const newPapers = rows.map((row, i) => ({
+                    id: 'P' + String(papers.length + i + 1).padStart(3, '0'),
+                    title: row.title || '',
+                    authors: row.authors || '',
+                    abstract: row.abstract || ''
+                }));
+
+                // Save to Firebase
+                const updates = {};
+                newPapers.forEach(p => {
+                    updates[p.id] = p;
+                });
+                db.ref('papers').update(updates);
+                
+                showToast(`Loaded ${newPapers.length} papers from CSV`);
+            };
+            reader.readAsText(file);
+        }
+
+        function addPaper() {
+            const title = document.getElementById('paper-title').value.trim();
+            const authors = document.getElementById('paper-authors').value.trim();
+            const abstract = document.getElementById('paper-abstract').value.trim();
+            const pdfLink = document.getElementById('paper-pdf-link').value.trim();
+
+            if (!title) {
+                showToast('Please enter a paper title');
+                return;
+            }
+
+            const paper = {
+                id: 'P' + String(papers.length + 1).padStart(3, '0'),
+                title,
+                authors,
+                abstract
+            };
+
+            db.ref('papers/' + paper.id).set(paper);
+            
+            if (pdfLink) {
+                db.ref('paperFiles/' + paper.id).set({ link: pdfLink });
+            }
+
+            document.getElementById('paper-title').value = '';
+            document.getElementById('paper-authors').value = '';
+            document.getElementById('paper-abstract').value = '';
+            document.getElementById('paper-pdf-link').value = '';
+            
+            showToast('Paper added successfully');
+        }
+
+        function loadSamplePapers() {
+            const samplePapers = [
+                { title: "Dynamic Capabilities in Digital Platform Ecosystems", authors: "Chen, L., Wang, M.", abstract: "This paper examines how firms develop and deploy dynamic capabilities within digital platform ecosystems." },
+                { title: "Alliance Portfolio Diversity and Innovation Performance", authors: "Smith, J., Brown, K.", abstract: "We investigate the relationship between alliance portfolio diversity and firm innovation performance." },
+                { title: "Corporate Political Activity in Emerging Markets", authors: "Garcia, R., Liu, H.", abstract: "This study explores how multinational corporations engage in political activities in emerging market contexts." },
+                { title: "Knowledge Transfer in Cross-Border Acquisitions", authors: "Johnson, P., Kim, S.", abstract: "We examine the mechanisms of knowledge transfer following cross-border acquisitions." },
+                { title: "Competitive Dynamics in Sharing Economy Markets", authors: "Anderson, M., Taylor, R.", abstract: "This paper analyzes competitive dynamics among sharing economy platforms." },
+                { title: "CEO Narcissism and Strategic Risk-Taking", authors: "Williams, D., Martinez, A.", abstract: "We investigate how CEO narcissism influences strategic risk-taking decisions." },
+                { title: "Open Innovation and Appropriability Regimes", authors: "Thompson, E., Lee, J.", abstract: "This study examines the tension between open innovation practices and appropriability concerns." },
+                { title: "Institutional Voids and Multinational Strategy", authors: "Davis, C., Patel, N.", abstract: "We explore how multinational corporations adapt their strategies in response to institutional voids." },
+                { title: "Platform Governance and Ecosystem Health", authors: "Wilson, B., Zhang, Y.", abstract: "This paper investigates how platform governance mechanisms affect ecosystem health." },
+                { title: "Strategic Human Capital and Competitive Advantage", authors: "Moore, S., Clark, R.", abstract: "We examine the role of strategic human capital in creating sustainable competitive advantage." },
+                { title: "Digital Transformation and Organizational Ambidexterity", authors: "Harris, T., Young, L.", abstract: "This study explores how digital transformation initiatives affect organizational ambidexterity." },
+                { title: "Stakeholder Orientation and Long-Term Value Creation", authors: "Robinson, J., Hall, M.", abstract: "We investigate the relationship between stakeholder orientation and long-term value creation." }
+            ];
+
+            const updates = {};
+            samplePapers.forEach((p, i) => {
+                const id = 'P' + String(i + 1).padStart(3, '0');
+                updates[id] = { id, ...p };
+            });
+            
+            db.ref('papers').set(updates);
+            showToast('Loaded 12 sample papers');
+        }
+
+        function renderPapers() {
+            const container = document.getElementById('papers-list');
+            if (!container) return;
+            
+            document.getElementById('paper-count').textContent = `(${papers.length})`;
+
+            if (papers.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No papers added yet. Upload a CSV or load sample data.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Authors</th>
+                                <th>PDF</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${papers.map(p => `
+                                <tr>
+                                    <td>${p.id}</td>
+                                    <td>${(p.title || '').substring(0, 50)}${(p.title || '').length > 50 ? '...' : ''}</td>
+                                    <td>${p.authors || ''}</td>
+                                    <td>${paperFiles[p.id]?.link ? '<span class="status status-has-file">✓ Link</span>' : '<span class="status status-pending">None</span>'}</td>
+                                    <td><button class="btn-secondary btn-sm" onclick="removePaper('${p.id}')">Remove</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderPaperFileLinks() {
+            const container = document.getElementById('paper-file-links');
+            if (!container) return;
+
+            if (papers.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Add papers first to set PDF links.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="alert alert-info" style="margin-bottom: 16px;">
+                    <strong>Tip:</strong> Use Google Drive "Anyone with link can view" or Dropbox shared links.
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Paper ID</th>
+                                <th>Title</th>
+                                <th>PDF Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${papers.map(p => `
+                                <tr>
+                                    <td>${p.id}</td>
+                                    <td>${(p.title || '').substring(0, 30)}${(p.title || '').length > 30 ? '...' : ''}</td>
+                                    <td>
+                                        <input type="url" 
+                                            value="${paperFiles[p.id]?.link || ''}" 
+                                            placeholder="https://drive.google.com/..."
+                                            onchange="updatePaperLink('${p.id}', this.value)"
+                                            style="width: 100%; min-width: 200px;">
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function updatePaperLink(paperId, link) {
+            if (link.trim()) {
+                db.ref('paperFiles/' + paperId).set({ link: link.trim() });
+            } else {
+                db.ref('paperFiles/' + paperId).remove();
+            }
+            showToast('Link updated');
+        }
+
+        function removePaper(id) {
+            db.ref('papers/' + id).remove();
+            db.ref('paperFiles/' + id).remove();
+            showToast('Paper removed');
+        }
+
+        // =====================
+        // REVIEWERS
+        // =====================
+
+        function handleReviewerCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const rows = parseCSV(e.target.result);
+                
+                if (!rows[0]?.name || !rows[0]?.email) {
+                    showToast('CSV must have "name" and "email" columns');
+                    return;
+                }
+
+                const newReviewers = rows.map((row, i) => ({
+                    id: 'R' + String(reviewers.length + i + 1).padStart(3, '0'),
+                    name: row.name || '',
+                    email: row.email || ''
+                }));
+
+                const updates = {};
+                newReviewers.forEach(r => {
+                    updates[r.id] = r;
+                });
+                db.ref('reviewers').update(updates);
+                
+                showToast(`Loaded ${newReviewers.length} reviewers from CSV`);
+            };
+            reader.readAsText(file);
+        }
+
+        function addReviewer() {
+            const name = document.getElementById('reviewer-name').value.trim();
+            const email = document.getElementById('reviewer-email').value.trim();
+
+            if (!name || !email) {
+                showToast('Please enter name and email');
+                return;
+            }
+
+            const reviewer = {
+                id: 'R' + String(reviewers.length + 1).padStart(3, '0'),
+                name,
+                email
+            };
+
+            db.ref('reviewers/' + reviewer.id).set(reviewer);
+
+            document.getElementById('reviewer-name').value = '';
+            document.getElementById('reviewer-email').value = '';
+            
+            showToast('Reviewer added successfully');
+        }
+
+        function loadSampleReviewers() {
+            const sampleReviewers = [
+                { name: "Dr. Sarah Mitchell", email: "s.mitchell@stanford.edu" },
+                { name: "Prof. James Chen", email: "jchen@wharton.upenn.edu" },
+                { name: "Dr. Emily Rodriguez", email: "e.rodriguez@hbs.edu" },
+                { name: "Prof. Michael Park", email: "mpark@kellogg.northwestern.edu" },
+                { name: "Dr. Lisa Thompson", email: "l.thompson@gsb.columbia.edu" },
+                { name: "Prof. David Kim", email: "dkim@haas.berkeley.edu" },
+                { name: "Dr. Jennifer Wu", email: "j.wu@booth.uchicago.edu" },
+                { name: "Prof. Robert Johnson", email: "r.johnson@ross.umich.edu" }
+            ];
+
+            const updates = {};
+            sampleReviewers.forEach((r, i) => {
+                const id = 'R' + String(i + 1).padStart(3, '0');
+                updates[id] = { id, ...r };
+            });
+            
+            db.ref('reviewers').set(updates);
+            showToast('Loaded 8 sample reviewers');
+        }
+
+        function renderReviewers() {
+            const container = document.getElementById('reviewers-list');
+            if (!container) return;
+            
+            document.getElementById('reviewer-count').textContent = `(${reviewers.length})`;
+
+            if (reviewers.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No reviewers added yet. Upload a CSV or load sample data.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${reviewers.map(r => `
+                                <tr>
+                                    <td>${r.id}</td>
+                                    <td>${r.name}</td>
+                                    <td>${r.email}</td>
+                                    <td><button class="btn-secondary btn-sm" onclick="removeReviewer('${r.id}')">Remove</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function removeReviewer(id) {
+            db.ref('reviewers/' + id).remove();
+            showToast('Reviewer removed');
+        }
+
+        // =====================
+        // ASSIGNMENTS
+        // =====================
+
+        function updateAssignmentStatus() {
+            const statusDiv = document.getElementById('assignment-status');
+            if (!statusDiv) return;
+
+            const papersPerReviewer = parseInt(document.getElementById('papers-per-reviewer')?.value || 3);
+            const reviewersPerPaper = parseInt(document.getElementById('reviewers-per-paper')?.value || 2);
+            
+            const totalAssignments = reviewers.length * papersPerReviewer;
+            const requiredAssignments = papers.length * reviewersPerPaper;
+            
+            const hasAssignments = Object.keys(assignments).length > 0;
+            const canGenerate = totalAssignments >= requiredAssignments && papers.length > 0 && reviewers.length > 0;
+
+            statusDiv.innerHTML = `
+                <div style="padding: 16px; background: var(--bg-primary); border-radius: 8px; margin-bottom: 16px;">
+                    <strong>Current Setup:</strong><br>
+                    • ${papers.length} papers × ${reviewersPerPaper} reviewers each = ${requiredAssignments} reviews needed<br>
+                    • ${reviewers.length} reviewers × ${papersPerReviewer} papers each = ${totalAssignments} reviews available<br>
+                    <br>
+                    <span style="color: ${canGenerate ? 'var(--success)' : 'var(--danger)'};">
+                        ${canGenerate ? '✓ Ready to generate assignments' : '✗ Need more reviewers or adjust settings'}
+                    </span>
+                </div>
+                ${hasAssignments ? '<div class="alert alert-success">✓ Assignments have been generated</div>' : ''}
+            `;
+        }
+
+        // Update status when settings change
+        document.getElementById('papers-per-reviewer')?.addEventListener('change', updateAssignmentStatus);
+        document.getElementById('reviewers-per-paper')?.addEventListener('change', updateAssignmentStatus);
+
+        function generateAssignments() {
+            const papersPerReviewer = parseInt(document.getElementById('papers-per-reviewer').value);
+            const reviewersPerPaper = parseInt(document.getElementById('reviewers-per-paper').value);
+
+            if (papers.length === 0) {
+                showToast('Add papers first');
+                return;
+            }
+            if (reviewers.length === 0) {
+                showToast('Add reviewers first');
+                return;
+            }
+
+            const totalAssignments = reviewers.length * papersPerReviewer;
+            const requiredAssignments = papers.length * reviewersPerPaper;
+
+            if (totalAssignments < requiredAssignments) {
+                showToast('Not enough reviewer capacity');
+                return;
+            }
+
+            // Generate assignments
+            const newAssignments = {};
+            const paperAssignmentCount = {};
+            papers.forEach(p => paperAssignmentCount[p.id] = 0);
+
+            reviewers.forEach(reviewer => {
+                newAssignments[reviewer.id] = [];
+                
+                const availablePapers = papers
+                    .filter(p => 
+                        paperAssignmentCount[p.id] < reviewersPerPaper && 
+                        !newAssignments[reviewer.id].includes(p.id)
+                    )
+                    .sort((a, b) => paperAssignmentCount[a.id] - paperAssignmentCount[b.id]);
+
+                // Shuffle
+                for (let i = availablePapers.length - 1; i > 0; i--) {
+                    if (Math.random() > 0.5) {
+                        [availablePapers[i], availablePapers[i-1]] = [availablePapers[i-1], availablePapers[i]];
+                    }
+                }
+
+                for (let i = 0; i < papersPerReviewer && i < availablePapers.length; i++) {
+                    const paperId = availablePapers[i].id;
+                    newAssignments[reviewer.id].push(paperId);
+                    paperAssignmentCount[paperId]++;
+                }
+            });
+
+            db.ref('assignments').set(newAssignments);
+            showToast('Assignments generated');
+        }
+
+        function clearAssignments() {
+            if (confirm('Clear all assignments?')) {
+                db.ref('assignments').remove();
+                db.ref('reviews').remove();
+                showToast('Assignments cleared');
+            }
+        }
+
+        function renderReviewerLinks() {
+            const container = document.getElementById('reviewer-links');
+            if (!container) return;
+
+            if (Object.keys(assignments).length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Generate assignments first to see reviewer links.</p></div>';
+                return;
+            }
+
+            const baseUrl = window.location.origin + window.location.pathname;
+
+            container.innerHTML = `
+                <button class="btn-secondary" style="margin-bottom: 16px;" onclick="copyAllLinks()">Copy All Links (for Email)</button>
+                ${reviewers.map(r => {
+                    const link = `${baseUrl}?reviewer=${r.id}`;
+                    const assignedPapers = assignments[r.id] || [];
+                    return `
+                        <div style="margin-bottom: 16px; padding: 16px; border: 1px solid var(--border); border-radius: 8px;">
+                            <strong>${r.name}</strong> (${r.email})
+                            <br><span style="font-size: 0.85rem; color: var(--text-secondary);">
+                                Assigned: ${assignedPapers.join(', ') || 'None'}
+                            </span>
+                            <div class="link-box">${link}</div>
+                            <button class="btn-secondary btn-sm" onclick="copyLink('${link}')">Copy Link</button>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+        }
+
+        function copyLink(link) {
+            navigator.clipboard.writeText(link);
+            showToast('Link copied');
+        }
+
+        function copyAllLinks() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const allLinks = reviewers.map(r => {
+                const link = `${baseUrl}?reviewer=${r.id}`;
+                const assignedPapers = assignments[r.id] || [];
+                return `${r.name} (${r.email})\nAssigned: ${assignedPapers.join(', ')}\nReview Link: ${link}`;
+            }).join('\n\n---\n\n');
+            
+            navigator.clipboard.writeText(allLinks);
+            showToast('All links copied');
+        }
+
+        // =====================
+        // RESULTS
+        // =====================
+
+        function renderResults() {
+            let totalReviews = 0;
+            let accepts = 0;
+            let rejects = 0;
+
+            Object.values(reviews).forEach(paperReviews => {
+                Object.values(paperReviews).forEach(review => {
+                    totalReviews++;
+                    if (review.decision === 'accept') accepts++;
+                    else if (review.decision === 'reject') rejects++;
+                });
+            });
+
+            const reviewersPerPaper = parseInt(document.getElementById('reviewers-per-paper')?.value || 2);
+            const expectedReviews = papers.length * reviewersPerPaper;
+            const pending = Math.max(0, expectedReviews - totalReviews);
+
+            const statTotal = document.getElementById('stat-total');
+            const statPending = document.getElementById('stat-pending');
+            const statAccepts = document.getElementById('stat-accepts');
+            const statRejects = document.getElementById('stat-rejects');
+
+            if (statTotal) statTotal.textContent = totalReviews;
+            if (statPending) statPending.textContent = pending;
+            if (statAccepts) statAccepts.textContent = accepts;
+            if (statRejects) statRejects.textContent = rejects;
+
+            const container = document.getElementById('results-list');
+            if (!container) return;
+
+            if (papers.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No papers to show.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Paper ID</th>
+                            <th>Title</th>
+                            <th>Review 1</th>
+                            <th>Review 2</th>
+                            <th>Final</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${papers.map(p => {
+                            const paperReviews = reviews[p.id] || {};
+                            const reviewList = Object.entries(paperReviews);
+                            
+                            const review1 = reviewList[0] ? reviewList[0][1] : null;
+                            const review2 = reviewList[1] ? reviewList[1][1] : null;
+
+                            const getStatusBadge = (review) => {
+                                if (!review) return '<span class="status status-pending">Pending</span>';
+                                if (review.decision === 'accept') return '<span class="status status-accept">Accept</span>';
+                                return '<span class="status status-reject">Reject</span>';
+                            };
+
+                            const getFinal = () => {
+                                if (!review1 || !review2) return '-';
+                                if (review1.decision === review2.decision) {
+                                    return review1.decision === 'accept' ? 
+                                        '<span class="status status-accept">Accept</span>' : 
+                                        '<span class="status status-reject">Reject</span>';
+                                }
+                                return '<span class="status status-pending">Split</span>';
+                            };
+
+                            return `
+                                <tr>
+                                    <td>${p.id}</td>
+                                    <td>${(p.title || '').substring(0, 40)}${(p.title || '').length > 40 ? '...' : ''}</td>
+                                    <td>${getStatusBadge(review1)}</td>
+                                    <td>${getStatusBadge(review2)}</td>
+                                    <td>${getFinal()}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function exportResults() {
+            let csv = 'Paper ID,Title,Authors,Reviewer,Decision,Comments\n';
+            
+            papers.forEach(paper => {
+                const paperReviews = reviews[paper.id] || {};
+                if (Object.keys(paperReviews).length === 0) {
+                    csv += `"${paper.id}","${paper.title}","${paper.authors}","","Pending",""\n`;
+                } else {
+                    Object.entries(paperReviews).forEach(([reviewerId, review]) => {
+                        const reviewer = reviewers.find(r => r.id === reviewerId);
+                        const comments = (review.comments || '').replace(/"/g, '""');
+                        csv += `"${paper.id}","${paper.title}","${paper.authors}","${reviewer?.name || reviewerId}","${review.decision}","${comments}"\n`;
+                    });
+                }
+            });
+
+            downloadFile(csv, 'review_results.csv', 'text/csv');
+            showToast('Results exported');
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure? This will delete ALL papers, reviewers, assignments, and reviews.')) {
+                db.ref('papers').remove();
+                db.ref('reviewers').remove();
+                db.ref('assignments').remove();
+                db.ref('reviews').remove();
+                db.ref('paperFiles').remove();
+                showToast('All data cleared');
+            }
+        }
+
+        // =====================
+        // REVIEWER VIEW
+        // =====================
+
+        function showReviewerView(reviewerId) {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('admin-login').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('reviewer-view').classList.remove('hidden');
+            document.getElementById('mode-badge').textContent = 'Reviewer Mode';
+
+            // Wait for data to load
+            setTimeout(() => renderReviewerPapers(reviewerId), 500);
+        }
+
+        function renderReviewerPapers(reviewerId) {
+            const reviewer = reviewers.find(r => r.id === reviewerId);
+            
+            if (!reviewer) {
+                document.getElementById('reviewer-view').innerHTML = `
+                    <div class="card">
+                        <div class="empty-state">
+                            <h2>Invalid Reviewer Link</h2>
+                            <p>This reviewer link is not valid. Please contact the administrator.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('reviewer-name-display').textContent = reviewer.name;
+
+            const assignedPaperIds = assignments[reviewerId] || [];
+            document.getElementById('reviewer-paper-count').textContent = assignedPaperIds.length;
+            document.getElementById('total-assigned').textContent = assignedPaperIds.length;
+
+            const completed = assignedPaperIds.filter(pid => 
+                reviews[pid] && reviews[pid][reviewerId]
+            ).length;
+
+            document.getElementById('completed-count').textContent = completed;
+            document.getElementById('review-progress').style.width = 
+                assignedPaperIds.length > 0 ? `${(completed / assignedPaperIds.length) * 100}%` : '0%';
+
+            if (completed === assignedPaperIds.length && assignedPaperIds.length > 0) {
+                document.getElementById('all-done-card').classList.remove('hidden');
+            }
+
+            const container = document.getElementById('reviewer-papers');
+            
+            if (assignedPaperIds.length === 0) {
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="empty-state">
+                            <p>No papers assigned yet. Please wait for the administrator to complete assignments.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = assignedPaperIds.map(paperId => {
+                const paper = papers.find(p => p.id === paperId);
+                if (!paper) return '';
+
+                const existingReview = reviews[paperId]?.[reviewerId];
+                const isReviewed = !!existingReview;
+                const hasFile = paperFiles[paperId]?.link;
+
+                return `
+                    <div class="paper-card ${isReviewed ? 'reviewed' : ''}" id="paper-${paperId}">
+                        <div class="paper-id">${paper.id}</div>
+                        <div class="paper-title">${paper.title}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">
+                            <strong>Authors:</strong> ${paper.authors}
+                        </div>
+                        
+                        ${hasFile ? `
+                            <a href="${paperFiles[paperId].link}" target="_blank" class="download-btn">
+                                📥 Download Paper (PDF)
+                            </a>
+                        ` : `
+                            <div class="alert alert-warning" style="margin-bottom: 16px;">
+                                <strong>Note:</strong> No PDF link provided for this paper.
+                            </div>
+                        `}
+                        
+                        <div class="paper-abstract">
+                            <strong>Abstract:</strong><br>
+                            ${paper.abstract}
+                        </div>
+                        
+                        ${isReviewed ? `
+                            <div class="alert ${existingReview.decision === 'accept' ? 'alert-success' : 'alert-info'}">
+                                <strong>Your decision:</strong> ${existingReview.decision.toUpperCase()}
+                                ${existingReview.comments ? `<br><strong>Comments:</strong> ${existingReview.comments}` : ''}
+                            </div>
+                        ` : `
+                            <div class="form-group">
+                                <label>Comments (optional)</label>
+                                <textarea id="comments-${paperId}" placeholder="Add any comments for the editors..."></textarea>
+                            </div>
+                            <div class="review-actions">
+                                <button class="btn-success" onclick="submitReview('${reviewerId}', '${paperId}', 'accept')">
+                                    ✓ Accept
+                                </button>
+                                <button class="btn-danger" onclick="submitReview('${reviewerId}', '${paperId}', 'reject')">
+                                    ✗ Reject
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function submitReview(reviewerId, paperId, decision) {
+            const comments = document.getElementById(`comments-${paperId}`)?.value || '';
+
+            db.ref(`reviews/${paperId}/${reviewerId}`).set({
+                decision,
+                comments,
+                timestamp: new Date().toISOString()
+            });
+            
+            showToast(`Review submitted: ${decision.toUpperCase()}`);
+        }
+
+        // Setup drag and drop
+        ['paper-upload-area', 'reviewer-upload-area'].forEach(id => {
+            const area = document.getElementById(id);
+            if (area) {
+                area.addEventListener('click', () => {
+                    area.querySelector('input[type="file"]').click();
+                });
+                area.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    area.classList.add('dragover');
+                });
+                area.addEventListener('dragleave', () => {
+                    area.classList.remove('dragover');
+                });
+                area.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    area.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file?.name.endsWith('.csv')) {
+                        if (id === 'paper-upload-area') {
+                            handlePaperCSV({ target: { files: [file] } });
+                        } else {
+                            handleReviewerCSV({ target: { files: [file] } });
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
