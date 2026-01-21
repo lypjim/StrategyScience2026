@@ -983,54 +983,70 @@
             }
         }
 
+        // Track if initial data has loaded
+        let dataLoaded = {
+            papers: false,
+            reviewers: false,
+            assignments: false,
+            reviews: false,
+            paperFiles: false
+        };
+
+        function checkAndRenderReviewerView() {
+            // Only render reviewer view once we have reviewers and assignments data
+            if (reviewerId && dataLoaded.reviewers && dataLoaded.assignments && dataLoaded.papers) {
+                renderReviewerPapers(reviewerId);
+            }
+        }
+
         function setupDatabaseListeners() {
             // Listen for papers
             db.ref('papers').on('value', (snapshot) => {
                 const data = snapshot.val();
                 papers = data ? Object.values(data) : [];
+                dataLoaded.papers = true;
                 renderPapers();
                 renderPaperFileLinks();
                 updateAssignmentStatus();
                 renderResults();
+                checkAndRenderReviewerView();
             });
 
             // Listen for reviewers
             db.ref('reviewers').on('value', (snapshot) => {
                 const data = snapshot.val();
                 reviewers = data ? Object.values(data) : [];
+                dataLoaded.reviewers = true;
                 renderReviewers();
                 updateAssignmentStatus();
                 renderReviewerLinks();
+                checkAndRenderReviewerView();
             });
 
             // Listen for assignments
             db.ref('assignments').on('value', (snapshot) => {
                 assignments = snapshot.val() || {};
+                dataLoaded.assignments = true;
                 updateAssignmentStatus();
                 renderReviewerLinks();
-                
-                // Re-render reviewer view if active
-                if (reviewerId) {
-                    renderReviewerPapers(reviewerId);
-                }
+                checkAndRenderReviewerView();
             });
 
             // Listen for reviews
             db.ref('reviews').on('value', (snapshot) => {
                 reviews = snapshot.val() || {};
+                dataLoaded.reviews = true;
                 renderResults();
-                
-                // Re-render reviewer view if active
-                if (reviewerId) {
-                    renderReviewerPapers(reviewerId);
-                }
+                checkAndRenderReviewerView();
             });
 
             // Listen for paper files/links
             db.ref('paperFiles').on('value', (snapshot) => {
                 paperFiles = snapshot.val() || {};
+                dataLoaded.paperFiles = true;
                 renderPapers();
                 renderPaperFileLinks();
+                checkAndRenderReviewerView();
             });
         }
 
@@ -1714,22 +1730,37 @@
             document.getElementById('reviewer-view').classList.remove('hidden');
             document.getElementById('mode-badge').textContent = 'Reviewer Mode';
 
-            // Wait for data to load
-            setTimeout(() => renderReviewerPapers(reviewerId), 500);
+            // Show loading state initially
+            document.getElementById('reviewer-name-display').textContent = 'Loading...';
+            document.getElementById('reviewer-papers').innerHTML = `
+                <div class="card">
+                    <div class="loading"><div class="spinner"></div></div>
+                    <p style="text-align: center; color: var(--text-secondary);">Loading your assigned papers...</p>
+                </div>
+            `;
+            
+            // Data will be rendered when Firebase data loads via checkAndRenderReviewerView()
         }
 
         function renderReviewerPapers(rid) {
             const reviewer = reviewers.find(r => r.id === rid);
             
             if (!reviewer) {
-                document.getElementById('reviewer-view').innerHTML = `
-                    <div class="card">
-                        <div class="empty-state">
-                            <h2>Invalid Reviewer Link</h2>
-                            <p>This reviewer link is not valid. Please contact the administrator.</p>
+                // Check if reviewers have loaded but this ID doesn't exist
+                if (dataLoaded.reviewers) {
+                    document.getElementById('reviewer-view').innerHTML = `
+                        <div class="card">
+                            <div class="empty-state">
+                                <h2>❌ Invalid Reviewer Link</h2>
+                                <p>Reviewer ID "${rid}" was not found in the system.</p>
+                                <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+                                    Please contact the administrator to get a valid link.
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
+                // If reviewers haven't loaded yet, do nothing (loading state is shown)
                 return;
             }
 
