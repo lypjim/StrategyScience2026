@@ -87,13 +87,13 @@
             color: #92400e;
         }
 
-        /* Setup Screen */
-        .setup-screen {
-            max-width: 500px;
+        /* Login Screen */
+        .login-screen {
+            max-width: 400px;
             margin: 0 auto;
         }
 
-        .setup-screen .card {
+        .login-screen .card {
             text-align: center;
         }
 
@@ -650,36 +650,6 @@
             background: var(--danger-bg);
             color: var(--danger);
         }
-
-        /* Instructions */
-        .instructions {
-            background: #fffbeb;
-            border: 1px solid #fbbf24;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .instructions h3 {
-            color: #92400e;
-            margin-bottom: 8px;
-        }
-
-        .instructions ol {
-            margin-left: 20px;
-            color: #78350f;
-        }
-
-        .instructions li {
-            margin-bottom: 4px;
-        }
-
-        .instructions code {
-            background: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
     </style>
 </head>
 <body>
@@ -687,65 +657,13 @@
     
     <div class="container">
         <header>
-            <h1>Strategy Science Conference</h1>
+            <h1>Strategy Science Conference 2026</h1>
             <p class="subtitle">Paper Review Management System</p>
             <span class="badge" id="mode-badge">Loading...</span>
         </header>
 
-        <!-- Setup Screen (shown if Firebase not configured) -->
-        <div id="setup-screen" class="setup-screen hidden">
-            <div class="card">
-                <h2>🔧 Firebase Setup Required</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                    To use this system as a shared website, you need to connect it to Firebase (free).
-                </p>
-                
-                <div class="instructions">
-                    <h3>Quick Setup (5 minutes):</h3>
-                    <ol>
-                        <li>Go to <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
-                        <li>Click "Create a project" (or use existing)</li>
-                        <li>Go to "Build" → "Realtime Database" → "Create Database"</li>
-                        <li>Choose "Start in test mode" for now</li>
-                        <li>Go to Project Settings (⚙️) → scroll to "Your apps" → click web icon (&lt;/&gt;)</li>
-                        <li>Register app, then copy the config values below:</li>
-                    </ol>
-                </div>
-
-                <div class="form-group">
-                    <label>API Key</label>
-                    <input type="text" id="setup-apiKey" placeholder="AIzaSy...">
-                </div>
-                <div class="form-group">
-                    <label>Auth Domain</label>
-                    <input type="text" id="setup-authDomain" placeholder="your-project.firebaseapp.com">
-                </div>
-                <div class="form-group">
-                    <label>Database URL</label>
-                    <input type="text" id="setup-databaseURL" placeholder="https://your-project-default-rtdb.firebaseio.com">
-                </div>
-                <div class="form-group">
-                    <label>Project ID</label>
-                    <input type="text" id="setup-projectId" placeholder="your-project-id">
-                </div>
-                
-                <div class="form-group">
-                    <label>Admin Password (create one for yourself)</label>
-                    <input type="password" id="setup-adminPassword" placeholder="Choose a password for admin access">
-                </div>
-
-                <button class="btn-primary" onclick="saveFirebaseConfig()" style="width: 100%;">
-                    Save & Connect
-                </button>
-
-                <p style="margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary);">
-                    Configuration is saved in your browser. You'll need to set this up once per device.
-                </p>
-            </div>
-        </div>
-
         <!-- Admin Login -->
-        <div id="admin-login" class="setup-screen hidden">
+        <div id="admin-login" class="login-screen hidden">
             <div class="card">
                 <h2>🔐 Admin Login</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 20px;">
@@ -1009,109 +927,53 @@
 
     <script>
         // =====================
-        // FIREBASE CONFIGURATION
+        // HARDCODED FIREBASE CONFIG - NO SETUP REQUIRED
         // =====================
-        
-        let db = null;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBoRTtkKUR8EJL6cymJsvRDiUC0p163I2w",
+            authDomain: "strategyscience2026.firebaseapp.com",
+            projectId: "strategyscience2026",
+            databaseURL: "https://strategyscience2026-default-rtdb.firebaseio.com"
+        };
+
+        // Admin password (hardcoded)
+        const ADMIN_PASSWORD = "CUBoulder2026";
+
+        // Initialize Firebase immediately
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Data
         let papers = [];
         let reviewers = [];
         let assignments = {};
         let reviews = {};
         let paperFiles = {};
 
-        // Check for saved Firebase config
-        const savedConfig = localStorage.getItem('firebase_config');
-        const savedAdminHash = localStorage.getItem('admin_password_hash');
+        // Check URL and show appropriate view
+        const urlParams = new URLSearchParams(window.location.search);
+        const reviewerId = urlParams.get('reviewer');
 
-        if (savedConfig) {
-            try {
-                const config = JSON.parse(savedConfig);
-                initializeFirebase(config);
-            } catch (e) {
-                showSetupScreen();
-            }
+        if (reviewerId) {
+            // Reviewer mode - no login needed
+            document.getElementById('connection-status').textContent = 'Connected';
+            document.getElementById('connection-status').className = 'connection-status connected';
+            showReviewerView(reviewerId);
         } else {
-            showSetupScreen();
-        }
-
-        function showSetupScreen() {
-            document.getElementById('setup-screen').classList.remove('hidden');
-            document.getElementById('mode-badge').textContent = 'Setup Required';
-            document.getElementById('connection-status').textContent = 'Not Connected';
-            document.getElementById('connection-status').className = 'connection-status disconnected';
-        }
-
-        function saveFirebaseConfig() {
-            const config = {
-                apiKey: document.getElementById('setup-apiKey').value.trim(),
-                authDomain: document.getElementById('setup-authDomain').value.trim(),
-                databaseURL: document.getElementById('setup-databaseURL').value.trim(),
-                projectId: document.getElementById('setup-projectId').value.trim()
-            };
-
-            const adminPassword = document.getElementById('setup-adminPassword').value;
-
-            if (!config.apiKey || !config.databaseURL || !config.projectId || !adminPassword) {
-                showToast('Please fill in all fields');
-                return;
-            }
-
-            // Save config
-            localStorage.setItem('firebase_config', JSON.stringify(config));
-            
-            // Save password hash (simple hash for demo - use proper auth in production)
-            const hash = btoa(adminPassword);
-            localStorage.setItem('admin_password_hash', hash);
-
-            // Initialize Firebase
-            initializeFirebase(config);
-        }
-
-        function initializeFirebase(config) {
-            try {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(config);
-                }
-                db = firebase.database();
-                
-                document.getElementById('connection-status').textContent = 'Connected';
-                document.getElementById('connection-status').className = 'connection-status connected';
-
-                // Check URL for reviewer mode
-                const urlParams = new URLSearchParams(window.location.search);
-                const reviewerId = urlParams.get('reviewer');
-                const isAdmin = urlParams.get('admin') !== null;
-
-                if (reviewerId) {
-                    showReviewerView(reviewerId);
-                } else if (isAdmin) {
-                    showAdminLogin();
-                } else {
-                    // Default: show admin login
-                    showAdminLogin();
-                }
-
-                // Setup real-time listeners
-                setupDatabaseListeners();
-
-            } catch (e) {
-                console.error('Firebase init error:', e);
-                showToast('Firebase connection failed. Check your config.');
-                showSetupScreen();
-            }
-        }
-
-        function showAdminLogin() {
-            document.getElementById('setup-screen').classList.add('hidden');
+            // Admin mode - show login
+            document.getElementById('connection-status').textContent = 'Connected';
+            document.getElementById('connection-status').className = 'connection-status connected';
             document.getElementById('admin-login').classList.remove('hidden');
             document.getElementById('mode-badge').textContent = 'Admin Login';
         }
 
+        // Setup database listeners
+        setupDatabaseListeners();
+
         function adminLogin() {
             const password = document.getElementById('login-password').value;
-            const savedHash = localStorage.getItem('admin_password_hash');
             
-            if (btoa(password) === savedHash) {
+            if (password === ADMIN_PASSWORD) {
                 document.getElementById('admin-login').classList.add('hidden');
                 document.getElementById('admin-view').classList.remove('hidden');
                 document.getElementById('mode-badge').textContent = 'Admin Mode';
@@ -1122,8 +984,6 @@
         }
 
         function setupDatabaseListeners() {
-            if (!db) return;
-
             // Listen for papers
             db.ref('papers').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -1150,8 +1010,6 @@
                 renderReviewerLinks();
                 
                 // Re-render reviewer view if active
-                const urlParams = new URLSearchParams(window.location.search);
-                const reviewerId = urlParams.get('reviewer');
                 if (reviewerId) {
                     renderReviewerPapers(reviewerId);
                 }
@@ -1163,8 +1021,6 @@
                 renderResults();
                 
                 // Re-render reviewer view if active
-                const urlParams = new URLSearchParams(window.location.search);
-                const reviewerId = urlParams.get('reviewer');
                 if (reviewerId) {
                     renderReviewerPapers(reviewerId);
                 }
@@ -1853,7 +1709,6 @@
         // =====================
 
         function showReviewerView(reviewerId) {
-            document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('admin-login').classList.add('hidden');
             document.getElementById('admin-view').classList.add('hidden');
             document.getElementById('reviewer-view').classList.remove('hidden');
@@ -1863,8 +1718,8 @@
             setTimeout(() => renderReviewerPapers(reviewerId), 500);
         }
 
-        function renderReviewerPapers(reviewerId) {
-            const reviewer = reviewers.find(r => r.id === reviewerId);
+        function renderReviewerPapers(rid) {
+            const reviewer = reviewers.find(r => r.id === rid);
             
             if (!reviewer) {
                 document.getElementById('reviewer-view').innerHTML = `
@@ -1880,12 +1735,12 @@
 
             document.getElementById('reviewer-name-display').textContent = reviewer.name;
 
-            const assignedPaperIds = assignments[reviewerId] || [];
+            const assignedPaperIds = assignments[rid] || [];
             document.getElementById('reviewer-paper-count').textContent = assignedPaperIds.length;
             document.getElementById('total-assigned').textContent = assignedPaperIds.length;
 
             const completed = assignedPaperIds.filter(pid => 
-                reviews[pid] && reviews[pid][reviewerId]
+                reviews[pid] && reviews[pid][rid]
             ).length;
 
             document.getElementById('completed-count').textContent = completed;
@@ -1913,7 +1768,7 @@
                 const paper = papers.find(p => p.id === paperId);
                 if (!paper) return '';
 
-                const existingReview = reviews[paperId]?.[reviewerId];
+                const existingReview = reviews[paperId]?.[rid];
                 const isReviewed = !!existingReview;
                 const hasFile = paperFiles[paperId]?.link;
 
@@ -1951,10 +1806,10 @@
                                 <textarea id="comments-${paperId}" placeholder="Add any comments for the editors..."></textarea>
                             </div>
                             <div class="review-actions">
-                                <button class="btn-success" onclick="submitReview('${reviewerId}', '${paperId}', 'accept')">
+                                <button class="btn-success" onclick="submitReview('${rid}', '${paperId}', 'accept')">
                                     ✓ Accept
                                 </button>
-                                <button class="btn-danger" onclick="submitReview('${reviewerId}', '${paperId}', 'reject')">
+                                <button class="btn-danger" onclick="submitReview('${rid}', '${paperId}', 'reject')">
                                     ✗ Reject
                                 </button>
                             </div>
