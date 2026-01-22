@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
 """
-Strategy Science Conference 2026 - Paper Processing Script V2
+Strategy Science Conference 2026 - Paper Processing Script V3
 
 Enhanced version with:
 - Anonymized titles (author names removed)
-- Keyword extraction from PDFs
-- Theory, method, and topic detection
+- LLM-based keyword extraction using Ollama + Qwen
+- Single combined keywords column
 """
 
 import os
 import re
 import csv
+import json
 import tempfile
+import requests
 import dropbox
 from dropbox.exceptions import ApiError
 
-# Try to import pdfplumber for keyword extraction
+# Try to import pdfplumber for text extraction
 try:
     import pdfplumber
     PDF_SUPPORT = True
 except ImportError:
     PDF_SUPPORT = False
-    print("Warning: pdfplumber not installed. Keyword extraction disabled.")
+    print("Warning: pdfplumber not installed. PDF text extraction disabled.")
 
 # =====================
 # CONFIGURATION
@@ -31,56 +33,25 @@ DROPBOX_ACCESS_TOKEN = "sl.u.AGS9Kxuqm2kQoJJGqjG5wFz4cSBtGDeNo-WngAzC2VfSAPYp4Vn
 DROPBOX_FOLDER = "/StrategyScience2026"
 OUTPUT_CSV = "papers_import.csv"
 
-# Common theory keywords to look for
-THEORY_KEYWORDS = [
-    "resource-based view", "dynamic capabilities", "institutional theory",
-    "transaction cost", "agency theory", "stakeholder theory", "contingency theory",
-    "organizational learning", "knowledge-based view", "upper echelons",
-    "behavioral theory", "network theory", "evolutionary theory", "population ecology",
-    "structural inertia", "absorptive capacity", "ambidexterity", "exploration",
-    "exploitation", "core competence", "competitive advantage"
-]
-
-# Common method keywords
-METHOD_KEYWORDS = [
-    "regression", "panel data", "fixed effects", "random effects", "OLS",
-    "instrumental variable", "difference-in-difference", "event study",
-    "case study", "qualitative", "quantitative", "survey", "interview",
-    "longitudinal", "cross-sectional", "meta-analysis", "experiment",
-    "simulation", "grounded theory", "content analysis", "archival"
-]
-
-# Topic keywords
-TOPIC_KEYWORDS = [
-    "innovation", "M&A", "merger", "acquisition", "alliance", "strategy",
-    "performance", "technology", "digital", "platform", "ecosystem",
-    "diversification", "internationalization", "entrepreneurship", "startup",
-    "governance", "leadership", "CEO", "board", "sustainability", "ESG",
-    "disruption", "transformation", "change", "adaptation"
-]
+# Ollama settings
+OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_MODEL = "qwen3:8b"  # Better model with thinking mode
 
 
 def extract_anonymous_title(filename: str) -> str:
     """
     Extract just the paper title, removing author names and year.
-    
-    Input:  "Benner, M. J., & Tushman, M. L. (2003). Exploitation...pdf"
-    Output: "Exploitation, exploration, and process management"
     """
-    # Remove .pdf extension
     name = filename.replace('.pdf', '').replace('.PDF', '')
     
     # Pattern 1: Author(s) (Year). Title
-    # Match: Author, Initials, & Author2 (YYYY). Title
     match = re.search(r'\(\d{4}\)[.\s]*(.+)$', name)
     if match:
         title = match.group(1).strip()
-        # Clean up trailing punctuation
         title = re.sub(r'[-–—]\s*$', '', title).strip()
         return title[:100] if len(title) > 100 else title
     
-    # Pattern 2: Author, Author, Year, Title (comma separated)
-    # Match: Hannan, Freeman, 1984, Structural Inertia...
+    # Pattern 2: Author, Author, Year, Title
     match = re.search(r'\d{4}[,\s]+(.+)$', name)
     if match:
         title = match.group(1).strip()
@@ -92,68 +63,145 @@ def extract_anonymous_title(filename: str) -> str:
         title = match.group(1).strip()
         return title[:100] if len(title) > 100 else title
     
-    # Fallback: return cleaned filename (may still have author)
+    # Fallback
     title = name[:80]
-    # Clean up any leading dashes or punctuation
     title = re.sub(r'^[-–—\s]+', '', title)
     return title
 
 
-def extract_keywords_from_pdf(pdf_path: str) -> dict:
-    """
-    Extract keywords from PDF by:
-    1. Looking for explicit "Keywords:" section
-    2. Matching against known theory/method/topic keywords
-    """
-    result = {
-        'keywords': '',
-        'theory': '',
-        'method': '',
-        'topics': ''
-    }
-    
+def extract_abstract_from_text(full_text: str) -> str:
+    """Extract just the abstract section from paper text."""
+    # Look for abstract section with various patterns
+    abstract_patterns = [
+        r'Abstract[:\.\s]+(.*?)(?=\n\s*\n[A-Z]|\nIntroduction|\n1\.|\nKeywords:)',
+        r'ABSTRACT[:\.\s]+(.*?)(?=\n\s*\n[A-Z]|\nINTRODUCTION|\n1\.)',
+    ]
+
+    for pattern in abstract_patterns:
+        match = re.search(pattern, full_text, re.IGNORECASE | re.DOTALL)
+        if match:
+            abstract = match.group(1).strip()
+            abstract = re.sub(r'\s+', ' ', abstract)
+            if 100 < len(abstract) < 3000:
+                return abstract[:2000]
+
+    # Fallback: use first chunk after initial metadata
+    fallback = full_text[200:1500]
+    return re.sub(r'\s+', ' ', fallback).strip()
+
+
+def extract_text_from_pdf(pdf_path: str, max_pages: int = 2) -> str:
+    """Extract text from first 2 pages of PDF (usually contains abstract)."""
     if not PDF_SUPPORT:
-        return result
-    
+        return ""
+
     try:
+        text = ""
         with pdfplumber.open(pdf_path) as pdf:
-            # Extract text from first 3 pages (abstract + intro usually)
-            text = ""
-            for i, page in enumerate(pdf.pages[:3]):
+            for page in pdf.pages[:max_pages]:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text.lower() + " "
-            
-            # Look for explicit keywords section
-            kw_match = re.search(r'keywords?[:\s]+([^\n]+)', text, re.IGNORECASE)
-            if kw_match:
-                result['keywords'] = kw_match.group(1).strip()[:200]
-            
-            # Find matching theory keywords
-            found_theories = []
-            for kw in THEORY_KEYWORDS:
-                if kw.lower() in text:
-                    found_theories.append(kw)
-            result['theory'] = '; '.join(found_theories[:3])  # Top 3
-            
-            # Find matching method keywords
-            found_methods = []
-            for kw in METHOD_KEYWORDS:
-                if kw.lower() in text:
-                    found_methods.append(kw)
-            result['method'] = '; '.join(found_methods[:3])
-            
-            # Find matching topic keywords
-            found_topics = []
-            for kw in TOPIC_KEYWORDS:
-                if kw.lower() in text:
-                    found_topics.append(kw)
-            result['topics'] = '; '.join(found_topics[:3])
-            
+                    text += page_text + "\n"
+        return text[:3000]  # Get first 2 pages
     except Exception as e:
-        print(f"       ⚠ PDF parse error: {e}")
-    
-    return result
+        print(f"       ⚠ PDF read error: {e}")
+        return ""
+
+
+def parse_keywords_from_llm_output(raw_output: str) -> str:
+    """
+    Parse keywords from LLM output that may contain thinking/reasoning.
+    Looks for the actual keyword list in the output.
+    """
+    if not raw_output:
+        return ""
+
+    # Pattern 1: Look for method followed by commas (actual answer format)
+    # Match patterns like "quantitative, topic1, topic2, ..." or "Quantitative, ..."
+    method_pattern = r'(qualitative|quantitative|mixed|conceptual)[,\s]+([a-zA-Z0-9][a-zA-Z0-9\s,\-_]+)'
+    match = re.search(method_pattern, raw_output, re.IGNORECASE)
+    if match:
+        keywords = match.group(0).strip()
+        # Clean up and limit
+        keywords = re.sub(r'\s+', ' ', keywords)
+        keywords = keywords.split('\n')[0]  # First line only
+        if len(keywords) < 250:
+            return keywords[:200]
+
+    # Pattern 2: Look for explicit "Keywords:" or "Answer:" label
+    match = re.search(r'(Keywords|Answer):\s*([a-zA-Z][a-zA-Z0-9_,\s\-]+)', raw_output, re.IGNORECASE)
+    if match:
+        keywords = match.group(2).strip()
+        keywords = keywords.split('\n')[0].strip()
+        if any(keywords.lower().startswith(m) for m in ['qualitative', 'quantitative', 'mixed', 'conceptual']):
+            return keywords[:200]
+
+    # Pattern 3: Last line with commas and reasonable length
+    lines = [l.strip() for l in raw_output.split('\n') if l.strip()]
+    for line in reversed(lines):
+        if ',' in line and 50 < len(line) < 250:
+            # Check if it starts with a method
+            if any(line.lower().startswith(m) for m in ['qualitative', 'quantitative', 'mixed', 'conceptual']):
+                return line[:200]
+
+    return ""
+
+
+def extract_keywords_with_llm(text: str, title: str) -> str:
+    """
+    Use Ollama + Qwen3 to extract keywords from paper abstract.
+    Handles thinking mode output properly.
+    """
+    if not text:
+        return ""
+
+    # Extract abstract from text
+    abstract = extract_abstract_from_text(text)
+
+    prompt = f"""Classify this paper and extract keywords.
+
+Method (choose ONE): quantitative (numbers/stats/data), qualitative (cases/interviews), mixed (both), conceptual (pure theory)
+
+Title: {title}
+Abstract: {abstract}
+
+Output exactly in this format: method, keyword1, keyword2, keyword3, keyword4, keyword5
+
+Answer:"""
+
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.2,
+                    "num_predict": 400
+                }
+            },
+            timeout=90
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+
+            # qwen2.5 puts answer directly in 'response' field
+            raw_answer = result.get('response', '').strip()
+
+            # Parse to extract clean keywords
+            keywords = parse_keywords_from_llm_output(raw_answer)
+            return keywords
+        else:
+            print(f"       ⚠ Ollama error: {response.status_code}")
+            return ""
+    except requests.exceptions.ConnectionError:
+        print("       ⚠ Ollama not running (start with: ollama serve)")
+        return ""
+    except Exception as e:
+        print(f"       ⚠ LLM error: {e}")
+        return ""
 
 
 def get_shared_link(dbx: dropbox.Dropbox, path: str) -> str:
@@ -169,13 +217,41 @@ def get_shared_link(dbx: dropbox.Dropbox, path: str) -> str:
         raise e
 
 
+def check_ollama_available() -> bool:
+    """Check if Ollama is running and the model is available."""
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        if response.status_code == 200:
+            models = response.json().get('models', [])
+            model_names = [m.get('name', '') for m in models]
+            # Check if qwen3:8b or similar is available
+            for name in model_names:
+                if 'qwen' in name.lower():
+                    return True
+            print(f"⚠ Qwen model not found. Available: {model_names}")
+            print("  Run: ollama pull qwen3:8b")
+            return False
+    except:
+        print("⚠ Ollama not running. Start with: ollama serve")
+        return False
+    return False
+
+
 def main():
     print("=" * 60)
-    print("Strategy Science Conference 2026 - Paper Processor V2")
+    print("Strategy Science Conference 2026 - Paper Processor V3")
     print("=" * 60)
-    print("Features: Anonymized titles, keyword extraction")
+    print("Features: Anonymized titles, LLM keyword extraction (Qwen)")
     
-    # Initialize Dropbox client
+    # Check Ollama
+    print("\n🤖 Checking Ollama...")
+    llm_available = check_ollama_available()
+    if llm_available:
+        print("✓ Ollama + Qwen ready")
+    else:
+        print("⚠ LLM extraction disabled (falling back to no keywords)")
+    
+    # Initialize Dropbox
     print("\n📁 Connecting to Dropbox...")
     dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
     
@@ -195,12 +271,7 @@ def main():
         print(f"✗ Error: {e}")
         return
     
-    print(f"✓ Found {len(files)} PDF files")
-    if PDF_SUPPORT:
-        print("✓ PDF keyword extraction enabled")
-    else:
-        print("⚠ PDF keyword extraction disabled (install pdfplumber)")
-    print()
+    print(f"✓ Found {len(files)} PDF files\n")
     
     # Process each file
     papers = []
@@ -220,10 +291,9 @@ def main():
             print(f"       ✗ Link failed: {e}")
             link = ""
         
-        # Extract keywords from PDF
-        keywords = {'keywords': '', 'theory': '', 'method': '', 'topics': ''}
-        if PDF_SUPPORT and link:
-            print(f"       ⏳ Extracting keywords...")
+        # Extract keywords using LLM
+        keywords = ""
+        if llm_available and PDF_SUPPORT:
             try:
                 # Download PDF to temp file
                 with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
@@ -231,30 +301,31 @@ def main():
                     tmp.write(response.content)
                     tmp_path = tmp.name
                 
-                keywords = extract_keywords_from_pdf(tmp_path)
-                os.unlink(tmp_path)  # Clean up
+                # Extract text
+                text = extract_text_from_pdf(tmp_path)
+                os.unlink(tmp_path)
                 
-                if keywords['theory'] or keywords['method'] or keywords['topics']:
-                    print(f"       ✓ Keywords found")
-                else:
-                    print(f"       ○ No keywords matched")
+                if text:
+                    print(f"       ⏳ Extracting keywords with Qwen...")
+                    keywords = extract_keywords_with_llm(text, title)
+                    if keywords:
+                        print(f"       ✓ Keywords: {keywords[:50]}...")
+                    else:
+                        print(f"       ○ No keywords extracted")
             except Exception as e:
-                print(f"       ⚠ Keyword extraction failed: {e}")
+                print(f"       ⚠ Error: {e}")
         
         papers.append({
             'id': paper_id,
             'title': title,
             'link': link,
-            'keywords': keywords.get('keywords', ''),
-            'theory': keywords.get('theory', ''),
-            'method': keywords.get('method', ''),
-            'topics': keywords.get('topics', ''),
+            'keywords': keywords,
             'original_filename': filename
         })
     
     # Write CSV
     print(f"\n📝 Writing {OUTPUT_CSV}...")
-    fieldnames = ['id', 'title', 'link', 'keywords', 'theory', 'method', 'topics', 'original_filename']
+    fieldnames = ['id', 'title', 'link', 'keywords', 'original_filename']
     with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -262,7 +333,7 @@ def main():
     
     print(f"✓ Saved {len(papers)} papers to {OUTPUT_CSV}")
     print("\n" + "=" * 60)
-    print("Done! Titles are now anonymized (no author names).")
+    print("Done! Titles anonymized, keywords extracted with LLM.")
     print("=" * 60)
 
 
