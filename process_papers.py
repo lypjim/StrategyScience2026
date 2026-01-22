@@ -38,63 +38,121 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "qwen2.5:7b"  # More reliable output without thinking mode
 
 
-def extract_anonymous_title(filename: str) -> str:
+def extract_title_from_pdf(pdf_path: str) -> str:
     """
-    Extract just the paper title, removing author names and year.
+    Extract the actual paper title from PDF content (not filename).
+    Academic papers usually have the title in large font on page 1 or 2.
     """
-    name = filename.replace('.pdf', '').replace('.PDF', '')
-    
-    # Pattern 1: Author(s) (Year). Title
-    match = re.search(r'\(\d{4}\)[.\s]*(.+)$', name)
-    if match:
-        title = match.group(1).strip()
-        title = re.sub(r'[-–—]\s*$', '', title).strip()
-        return title[:100] if len(title) > 100 else title
-    
-    # Pattern 2: Author, Author, Year, Title
-    match = re.search(r'\d{4}[,\s]+(.+)$', name)
-    if match:
-        title = match.group(1).strip()
-        return title[:100] if len(title) > 100 else title
-    
-    # Pattern 3: Author Year - Title
-    match = re.search(r'\d{4}\s*[-–—]\s*(.+)$', name)
-    if match:
-        title = match.group(1).strip()
-        return title[:100] if len(title) > 100 else title
-    
-    # Fallback
-    title = name[:80]
-    title = re.sub(r'^[-–—\s]+', '', title)
-    return title
-
-
-def extract_abstract_from_text(full_text: str) -> str:
-    """Extract just the abstract section from paper text."""
-    # Look for abstract section with various patterns
-    abstract_patterns = [
-        r'Abstract[:\.\s]+(.*?)(?=\n\s*\n[A-Z]|\nIntroduction|\n1\.|\nKeywords:)',
-        r'ABSTRACT[:\.\s]+(.*?)(?=\n\s*\n[A-Z]|\nINTRODUCTION|\n1\.)',
-    ]
-
-    for pattern in abstract_patterns:
-        match = re.search(pattern, full_text, re.IGNORECASE | re.DOTALL)
-        if match:
-            abstract = match.group(1).strip()
-            abstract = re.sub(r'\s+', ' ', abstract)
-            if 100 < len(abstract) < 3000:
-                return abstract[:2000]
-
-    # Fallback: use first chunk after initial metadata
-    fallback = full_text[200:1500]
-    return re.sub(r'\s+', ' ', fallback).strip()
-
-
-def extract_text_from_pdf(pdf_path: str, max_pages: int = 2) -> str:
-    """Extract text from first 2 pages of PDF (usually contains abstract)."""
     if not PDF_SUPPORT:
         return ""
+    
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            # Check first 2 pages
+            for page_num in range(min(2, len(pdf.pages))):
+                text = pdf.pages[page_num].extract_text()
+                if not text:
+                    continue
+                
+                lines = [l.strip() for l in text.split('\n') if l.strip()]
+                
+                # Look for all-caps title (common in academic papers)
+                # It might be split across multiple lines
+                title_lines = []
+                for i, line in enumerate(lines[:20]):  # Check first 20 lines
+                    # Skip metadata
+                    if any(skip in line.lower() for skip in ['jstor', 'stable url', 'published by', 'author(s)', 'source:', 'downloaded from', 'academy of management review']):
+                        continue
+                    
+                    # Check if line is all caps and looks like a title
+                    if line.isupper() and len(line.split()) >= 2 and len(line) > 15:
+                        title_lines.append(line)
+                        # Check if next line is also all caps (multi-line title)
+                        if i + 1 < len(lines) and lines[i+1].isupper() and len(lines[i+1].split()) >= 2:
+                            title_lines.append(lines[i+1])
+                        break
+                
+                if title_lines:
+                    title = ' '.join(title_lines)
+                    return title.title()  # Convert to title case
+        
+        return ""
+    except Exception as e:
+        print(f"       ⚠ Title extraction error: {e}")
+        return ""
 
+
+def extract_abstract_from_pdf(pdf_path: str) -> str:
+    """
+    Extract the actual abstract from PDF content.
+    Looks for the abstract paragraph after author affiliations.
+    """
+    if not PDF_SUPPORT:
+        return ""
+    
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            # Get text from pages 2-3 (page 1 is usually JSTOR metadata)
+            full_text = ""
+            for page_num in range(1, min(4, len(pdf.pages))):
+                page_text = pdf.pages[page_num].extract_text()
+                if page_text:
+                    full_text += page_text + "\n"
+            
+            # Clean up
+            full_text = re.sub(r'\(cid:\d+\)', '', full_text)
+            full_text = re.sub(r'\s+', ' ', full_text)
+            
+            # Strategy 1: Extract chunk after "University" (likely contains abstract)
+            # Find last occurrence of University/College
+            last_univ_pos = max(
+                full_text.rfind('University'),
+                full_text.rfind('College'),
+                full_text.rfind('university'),
+                full_text.rfind('college')
+            )
+            
+            if last_univ_pos > 0:
+                # Get text starting 20 chars after university mention
+                text_after = full_text[last_univ_pos + 20:]
+                # Take first 1500 chars (should include full abstract)
+                abstract_candidate = text_after[:1500].strip()
+                
+                # Try to stop at "Introduction" or section markers if they appear early
+                for marker in ['Introduction', 'INTRODUCTION', ' 1.', 'Background', 'BACKGROUND']:
+                    marker_pos = abstract_candidate.find(marker)
+                    if 200 < marker_pos < 1200:  # Only if marker appears in reasonable position
+                        abstract_candidate = abstract_candidate[:marker_pos]
+                        break
+                
+                if 150 < len(abstract_candidate) < 2000:
+                    return abstract_candidate[:1500]
+            
+            # Strategy 2: Explicit "Abstract" label
+            patterns = [
+                r'Abstract[:\s]+(.*?)(?=Introduction|INTRODUCTION|Keywords|1\.)',
+                r'ABSTRACT[:\s]+(.*?)(?=INTRODUCTION|Introduction|Keywords|1\.)',
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, full_text, re.IGNORECASE | re.DOTALL)
+                if match:
+                    abstract = match.group(1).strip()
+                    abstract = re.sub(r'\s+', ' ', abstract)
+                    if 100 < len(abstract) < 3000:
+                        return abstract[:1500]
+            
+            return ""
+    except Exception as e:
+        print(f"       ⚠ Abstract extraction error: {e}")
+        return ""
+
+
+def extract_text_from_pdf(pdf_path: str, max_pages: int = 3) -> str:
+    """Extract text from first few pages of PDF for LLM processing."""
+    if not PDF_SUPPORT:
+        return ""
+    
     try:
         text = ""
         with pdfplumber.open(pdf_path) as pdf:
@@ -102,7 +160,7 @@ def extract_text_from_pdf(pdf_path: str, max_pages: int = 2) -> str:
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n"
-        return text[:3000]  # Get first 2 pages
+        return text[:5000]  # Limit for LLM
     except Exception as e:
         print(f"       ⚠ PDF read error: {e}")
         return ""
@@ -149,21 +207,20 @@ def parse_keywords_from_llm_output(raw_output: str) -> str:
 
 def extract_keywords_with_llm(text: str, title: str) -> str:
     """
-    Use Ollama + Qwen3 to extract keywords from paper abstract.
-    Handles thinking mode output properly.
+    Use Ollama + Qwen to extract keywords from paper text.
     """
     if not text:
         return ""
 
-    # Extract abstract from text
-    abstract = extract_abstract_from_text(text)
+    # Use first 2000 chars of text (should include abstract)
+    text_sample = text[:2000]
 
     prompt = f"""Classify this paper and extract keywords.
 
 Method (choose ONE): quantitative (numbers/stats/data), qualitative (cases/interviews), mixed (both), conceptual (pure theory)
 
 Title: {title}
-Abstract: {abstract}
+Text: {text_sample}
 
 Output exactly in this format: method, keyword1, keyword2, keyword3, keyword4, keyword5
 
@@ -279,9 +336,24 @@ def main():
         paper_id = f"P{str(i + 1).zfill(3)}"
         filename = file_entry.name
         
-        # Anonymized title
-        title = extract_anonymous_title(filename)
-        print(f"[{paper_id}] {title[:50]}...")
+        # Download PDF to temp file (do this once)
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
+                _, response = dbx.files_download(file_entry.path_display)
+                tmp.write(response.content)
+                tmp_path = tmp.name
+        except Exception as e:
+            print(f"[{paper_id}] ✗ Download failed: {e}")
+            continue
+        
+        # Extract title from PDF content
+        title = extract_title_from_pdf(tmp_path) if PDF_SUPPORT else ""
+        if not title:
+            # Fallback to filename if PDF extraction fails
+            title = filename.replace('.pdf', '').replace('.PDF', '')[:80]
+        
+        print(f"[{paper_id}] {title[:60]}...")
         
         # Get shareable link
         try:
@@ -291,20 +363,17 @@ def main():
             print(f"       ✗ Link failed: {e}")
             link = ""
         
+        # Extract abstract from PDF
+        abstract = extract_abstract_from_pdf(tmp_path) if PDF_SUPPORT else ""
+        if abstract:
+            print(f"       ✓ Abstract extracted ({len(abstract)} chars)")
+        
         # Extract keywords using LLM
         keywords = ""
-        text = ""
         if llm_available and PDF_SUPPORT:
             try:
-                # Download PDF to temp file
-                with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
-                    _, response = dbx.files_download(file_entry.path_display)
-                    tmp.write(response.content)
-                    tmp_path = tmp.name
-                
-                # Extract text
+                # Extract text for LLM
                 text = extract_text_from_pdf(tmp_path)
-                os.unlink(tmp_path)
                 
                 if text:
                     print(f"       ⏳ Extracting keywords with Qwen...")
@@ -316,12 +385,16 @@ def main():
             except Exception as e:
                 print(f"       ⚠ Error: {e}")
         
+        # Clean up temp file
+        if tmp_path:
+            os.unlink(tmp_path)
+        
         papers.append({
             'id': paper_id,
             'title': title,
             'link': link,
             'keywords': keywords,
-            'abstract': extract_abstract_from_text(text) if llm_available and PDF_SUPPORT and text else "",
+            'abstract': abstract,
             'original_filename': filename
         })
     

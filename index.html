@@ -761,7 +761,7 @@
         }
 
         .modal-content {
-            background: var(--card-bg);
+            background: var(--bg-secondary);
             padding: 24px;
             border-radius: 12px;
             width: 90%;
@@ -770,6 +770,20 @@
             overflow-y: auto;
             position: relative;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content h2 {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .modal-content h4 {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .modal-content strong {
+            color: var(--text-primary);
         }
 
         .modal-close {
@@ -782,13 +796,21 @@
         }
 
         .info-btn {
-            background: none;
-            border: none;
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1.1rem;
-            color: var(--primary);
-            padding: 0 4px;
-            margin-right: 4px;
+            font-size: 1rem;
+            color: var(--accent);
+            padding: 4px 8px;
+            margin-right: 8px;
+            transition: all 0.2s;
+        }
+
+        .info-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.1);
         }
 
         .keyword-tag {
@@ -1914,16 +1936,21 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const updates = {};
                 let count = 0;
 
+                // Decision options: 'no', 'maybe-no', 'maybe-yes', 'yes'
+                const decisions = ['no', 'maybe-no', 'maybe-yes', 'yes'];
+
                 // Loop through all reviewers and their assignments
                 for (const [revId, assignedPapers] of Object.entries(assignments)) {
                     if (!assignedPapers) continue;
 
                     assignedPapers.forEach(paperId => {
-                        // Generate random score 1-4
-                        const score = Math.floor(Math.random() * 4) + 1;
-                        // Corresponds to: 4 (Yes), 3 (Maybe Yes), 2 (Maybe No), 1 (No)
+                        // Randomly pick one of the four decisions
+                        const randomDecision = decisions[Math.floor(Math.random() * decisions.length)];
 
-                        updates[`reviews/${paperId}/${revId}`] = score;
+                        updates[`reviews/${paperId}/${revId}`] = {
+                            decision: randomDecision,
+                            timestamp: new Date().toISOString()
+                        };
                         count++;
                     });
                 }
