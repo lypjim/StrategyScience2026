@@ -699,10 +699,10 @@
             color: var(--danger);
         }
 
-        /* Cutoff row */
+        /* Cutoff row - the LAST accepted paper gets a bottom border */
         .cutoff-row {
-            background: #fef3c7 !important;
-            border-top: 3px solid var(--warning);
+            background: var(--success-bg) !important;
+            border-bottom: 3px solid var(--warning) !important;
         }
 
         .above-cutoff {
@@ -890,6 +890,9 @@
                         </select>
                         <button class="btn-secondary btn-sm" onclick="generateRandomAssignments()">🎲 Auto Assign
                             (Random)</button>
+                        <button class="btn-secondary btn-sm"
+                            onclick="renderAssignments(); renderReviewerWorkload(); showToast('Refreshed')">🔄
+                            Refresh</button>
                     </div>
 
                     <div id="assignments-list">
