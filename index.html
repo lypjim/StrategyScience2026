@@ -1011,6 +1011,12 @@
 
         const ADMIN_PASSWORD = "CUBoulder2026";
 
+        // =====================
+        // TEST MODE - Set to false for production
+        // =====================
+        const TEST_MODE = true;
+        const TEST_EMAIL = "yupengjim@gmail.com";
+
         const SCORE_MAP = { 'no': 1, 'maybe-no': 2, 'maybe-yes': 3, 'yes': 4 };
         const SCORE_LABELS = { 'no': 'No', 'maybe-no': 'Maybe No', 'maybe-yes': 'Maybe Yes', 'yes': 'Yes' };
 
@@ -1540,7 +1546,11 @@
             const baseUrl = window.location.origin + window.location.pathname;
 
             container.innerHTML = `
+                <div class="alert ${TEST_MODE ? 'alert-warning' : 'alert-info'}" style="margin-bottom:16px">
+                    ${TEST_MODE ? '<strong>⚠️ TEST MODE:</strong> All emails will be sent to ' + TEST_EMAIL + ' for testing.' : '<strong>Tip:</strong> Click "Send Email" to open your email client with a pre-filled message.'}
+                </div>
                 <button class="btn-secondary" style="margin-bottom:16px" onclick="copyAllLinks()">Copy All Links</button>
+                <button class="btn-primary" style="margin-bottom:16px;margin-left:8px" onclick="sendAllEmails()">📧 Send All Emails</button>
                 ${withAssignments.map(r => {
                 const link = `${baseUrl}?reviewer=${r.id}`;
                 const count = (assignments[r.id] || []).length;
@@ -1549,6 +1559,7 @@
                             <strong>${r.name}</strong> <span style="color:var(--text-secondary)">(${count} papers)</span>
                             <div class="link-box">${link}</div>
                             <button class="btn-secondary btn-sm" onclick="copyLink('${link}')">Copy</button>
+                            <button class="btn-primary btn-sm" style="margin-left:4px" onclick="sendEmail('${r.id}')">📧 Send Email</button>
                         </div>`;
             }).join('')}`;
         }
@@ -1556,6 +1567,80 @@
         function copyLink(link) {
             navigator.clipboard.writeText(link);
             showToast('Copied');
+        }
+
+        function getEmailTemplate(reviewer, link, paperCount) {
+            const subject = `Strategy Science Conference 2026 - Paper Review Request`;
+
+            const body = `Dear ${reviewer.name},
+
+Thank you for agreeing to review for the Strategy Science Conference 2026. Your expertise is invaluable to our selection process.
+
+You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} to review. Please use the secure link below to access your assigned papers and submit your evaluations:
+
+${link}
+
+Review Guidelines:
+• This is a double-blind review - author information is not displayed
+• For each paper, please select one of the following recommendations:
+   - Yes (Score: 4) - Strong accept
+   - Maybe Yes (Score: 3) - Weak accept  
+   - Maybe No (Score: 2) - Weak reject
+   - No (Score: 1) - Strong reject
+• You can change your decision at any time before the deadline
+
+If you have any questions or encounter any issues, please don't hesitate to reach out.
+
+Thank you for your contribution to the conference!
+
+Best regards,
+Strategy Science Conference 2026 Organizing Committee`;
+
+            return { subject, body };
+        }
+
+        function sendEmail(reviewerId) {
+            const reviewer = reviewers.find(r => r.id === reviewerId);
+            if (!reviewer) return showToast('Reviewer not found');
+
+            const baseUrl = window.location.origin + window.location.pathname;
+            const link = `${baseUrl}?reviewer=${reviewer.id}`;
+            const paperCount = (assignments[reviewer.id] || []).length;
+
+            const { subject, body } = getEmailTemplate(reviewer, link, paperCount);
+
+            // In test mode, send to test email instead
+            const toEmail = TEST_MODE ? TEST_EMAIL : reviewer.email;
+            const mailtoUrl = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+            window.open(mailtoUrl, '_blank');
+
+            if (TEST_MODE) {
+                showToast(`Test email opened (to: ${TEST_EMAIL})`);
+            } else {
+                showToast(`Email opened for ${reviewer.name}`);
+            }
+        }
+
+        function sendAllEmails() {
+            const withAssignments = reviewers.filter(r => (assignments[r.id] || []).length > 0);
+
+            if (withAssignments.length === 0) {
+                return showToast('No reviewers with assignments');
+            }
+
+            if (TEST_MODE) {
+                alert(`TEST MODE: This will open ${withAssignments.length} email window(s), all addressed to ${TEST_EMAIL}.\n\nIn production mode, emails would be sent to actual reviewer addresses.`);
+            } else {
+                if (!confirm(`This will open ${withAssignments.length} email windows. Continue?`)) return;
+            }
+
+            // Open emails with a small delay to prevent browser blocking
+            withAssignments.forEach((r, index) => {
+                setTimeout(() => {
+                    sendEmail(r.id);
+                }, index * 500);
+            });
         }
 
         function copyAllLinks() {
