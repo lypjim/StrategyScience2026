@@ -293,6 +293,7 @@ def main():
         
         # Extract keywords using LLM
         keywords = ""
+        text = ""
         if llm_available and PDF_SUPPORT:
             try:
                 # Download PDF to temp file
@@ -320,12 +321,13 @@ def main():
             'title': title,
             'link': link,
             'keywords': keywords,
+            'abstract': extract_abstract_from_text(text) if llm_available and PDF_SUPPORT and text else "",
             'original_filename': filename
         })
     
     # Write CSV
     print(f"\n📝 Writing {OUTPUT_CSV}...")
-    fieldnames = ['id', 'title', 'link', 'keywords', 'original_filename']
+    fieldnames = ['id', 'title', 'link', 'keywords', 'abstract', 'original_filename']
     with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
