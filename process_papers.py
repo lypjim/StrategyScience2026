@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
 """
-Strategy Science Conference 2026 - Paper Processing Script V3
+Strategy Science Conference 2026 - Paper Processing Script V4
 
-Enhanced version with:
-- Anonymized titles (author names removed)
-- LLM-based keyword extraction using Ollama + Qwen
-- Single combined keywords column
+Uses LLM for ALL extraction:
+- Title extraction via Qwen
+- Abstract extraction via Qwen  
+- Method + Keywords extraction via Qwen
 """
 
 import os
 import re
 import csv
-import json
 import tempfile
 import requests
 import dropbox
 from dropbox.exceptions import ApiError
 
-# Try to import pdfplumber for text extraction
 try:
     import pdfplumber
     PDF_SUPPORT = True
 except ImportError:
     PDF_SUPPORT = False
-    print("Warning: pdfplumber not installed. PDF text extraction disabled.")
+    print("Warning: pdfplumber not installed.")
 
 # =====================
 # CONFIGURATION
@@ -33,126 +31,14 @@ DROPBOX_ACCESS_TOKEN = "sl.u.AGSca_oogXOCEe0XcOpwZukt_CH7WK8XnyGxAyJWV45HxByrLJl
 DROPBOX_FOLDER = "/StrategyScience2026"
 OUTPUT_CSV = "papers_import.csv"
 
-# Ollama settings
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen2.5:7b"  # More reliable output without thinking mode
-
-
-def extract_title_from_pdf(pdf_path: str) -> str:
-    """
-    Extract the actual paper title from PDF content (not filename).
-    Academic papers usually have the title in large font on page 1 or 2.
-    """
-    if not PDF_SUPPORT:
-        return ""
-    
-    try:
-        with pdfplumber.open(pdf_path) as pdf:
-            # Check first 2 pages
-            for page_num in range(min(2, len(pdf.pages))):
-                text = pdf.pages[page_num].extract_text()
-                if not text:
-                    continue
-                
-                lines = [l.strip() for l in text.split('\n') if l.strip()]
-                
-                # Look for all-caps title (common in academic papers)
-                # It might be split across multiple lines
-                title_lines = []
-                for i, line in enumerate(lines[:20]):  # Check first 20 lines
-                    # Skip metadata
-                    if any(skip in line.lower() for skip in ['jstor', 'stable url', 'published by', 'author(s)', 'source:', 'downloaded from', 'academy of management review']):
-                        continue
-                    
-                    # Check if line is all caps and looks like a title
-                    if line.isupper() and len(line.split()) >= 2 and len(line) > 15:
-                        title_lines.append(line)
-                        # Check if next line is also all caps (multi-line title)
-                        if i + 1 < len(lines) and lines[i+1].isupper() and len(lines[i+1].split()) >= 2:
-                            title_lines.append(lines[i+1])
-                        break
-                
-                if title_lines:
-                    title = ' '.join(title_lines)
-                    return title.title()  # Convert to title case
-        
-        return ""
-    except Exception as e:
-        print(f"       ⚠ Title extraction error: {e}")
-        return ""
-
-
-def extract_abstract_from_pdf(pdf_path: str) -> str:
-    """
-    Extract the actual abstract from PDF content.
-    Looks for the abstract paragraph after author affiliations.
-    """
-    if not PDF_SUPPORT:
-        return ""
-    
-    try:
-        with pdfplumber.open(pdf_path) as pdf:
-            # Get text from pages 2-3 (page 1 is usually JSTOR metadata)
-            full_text = ""
-            for page_num in range(1, min(4, len(pdf.pages))):
-                page_text = pdf.pages[page_num].extract_text()
-                if page_text:
-                    full_text += page_text + "\n"
-            
-            # Clean up
-            full_text = re.sub(r'\(cid:\d+\)', '', full_text)
-            full_text = re.sub(r'\s+', ' ', full_text)
-            
-            # Strategy 1: Extract chunk after "University" (likely contains abstract)
-            # Find last occurrence of University/College
-            last_univ_pos = max(
-                full_text.rfind('University'),
-                full_text.rfind('College'),
-                full_text.rfind('university'),
-                full_text.rfind('college')
-            )
-            
-            if last_univ_pos > 0:
-                # Get text starting 20 chars after university mention
-                text_after = full_text[last_univ_pos + 20:]
-                # Take first 1500 chars (should include full abstract)
-                abstract_candidate = text_after[:1500].strip()
-                
-                # Try to stop at "Introduction" or section markers if they appear early
-                for marker in ['Introduction', 'INTRODUCTION', ' 1.', 'Background', 'BACKGROUND']:
-                    marker_pos = abstract_candidate.find(marker)
-                    if 200 < marker_pos < 1200:  # Only if marker appears in reasonable position
-                        abstract_candidate = abstract_candidate[:marker_pos]
-                        break
-                
-                if 150 < len(abstract_candidate) < 2000:
-                    return abstract_candidate[:1500]
-            
-            # Strategy 2: Explicit "Abstract" label
-            patterns = [
-                r'Abstract[:\s]+(.*?)(?=Introduction|INTRODUCTION|Keywords|1\.)',
-                r'ABSTRACT[:\s]+(.*?)(?=INTRODUCTION|Introduction|Keywords|1\.)',
-            ]
-            
-            for pattern in patterns:
-                match = re.search(pattern, full_text, re.IGNORECASE | re.DOTALL)
-                if match:
-                    abstract = match.group(1).strip()
-                    abstract = re.sub(r'\s+', ' ', abstract)
-                    if 100 < len(abstract) < 3000:
-                        return abstract[:1500]
-            
-            return ""
-    except Exception as e:
-        print(f"       ⚠ Abstract extraction error: {e}")
-        return ""
+OLLAMA_MODEL = "qwen2.5:7b"
 
 
 def extract_text_from_pdf(pdf_path: str, max_pages: int = 3) -> str:
-    """Extract text from first few pages of PDF for LLM processing."""
+    """Extract text from first pages of PDF."""
     if not PDF_SUPPORT:
         return ""
-    
     try:
         text = ""
         with pdfplumber.open(pdf_path) as pdf:
@@ -160,72 +46,16 @@ def extract_text_from_pdf(pdf_path: str, max_pages: int = 3) -> str:
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n"
-        return text[:5000]  # Limit for LLM
+        # Clean up
+        text = re.sub(r'\(cid:\d+\)', '', text)
+        return text[:6000]
     except Exception as e:
         print(f"       ⚠ PDF read error: {e}")
         return ""
 
 
-def parse_keywords_from_llm_output(raw_output: str) -> str:
-    """
-    Parse keywords from LLM output that may contain thinking/reasoning.
-    Looks for the actual keyword list in the output.
-    """
-    if not raw_output:
-        return ""
-
-    # Pattern 1: Look for method followed by commas (actual answer format)
-    # Match patterns like "quantitative, topic1, topic2, ..." or "Quantitative, ..."
-    method_pattern = r'(qualitative|quantitative|mixed|conceptual)[,\s]+([a-zA-Z0-9][a-zA-Z0-9\s,\-_]+)'
-    match = re.search(method_pattern, raw_output, re.IGNORECASE)
-    if match:
-        keywords = match.group(0).strip()
-        # Clean up and limit
-        keywords = re.sub(r'\s+', ' ', keywords)
-        keywords = keywords.split('\n')[0]  # First line only
-        if len(keywords) < 250:
-            return keywords[:200]
-
-    # Pattern 2: Look for explicit "Keywords:" or "Answer:" label
-    match = re.search(r'(Keywords|Answer):\s*([a-zA-Z][a-zA-Z0-9_,\s\-]+)', raw_output, re.IGNORECASE)
-    if match:
-        keywords = match.group(2).strip()
-        keywords = keywords.split('\n')[0].strip()
-        if any(keywords.lower().startswith(m) for m in ['qualitative', 'quantitative', 'mixed', 'conceptual']):
-            return keywords[:200]
-
-    # Pattern 3: Last line with commas and reasonable length
-    lines = [l.strip() for l in raw_output.split('\n') if l.strip()]
-    for line in reversed(lines):
-        if ',' in line and 50 < len(line) < 250:
-            # Check if it starts with a method
-            if any(line.lower().startswith(m) for m in ['qualitative', 'quantitative', 'mixed', 'conceptual']):
-                return line[:200]
-
-    return ""
-
-
-def extract_keywords_with_llm(text: str, title: str) -> str:
-    """
-    Use Ollama + Qwen to extract keywords from paper text.
-    """
-    if not text:
-        return ""
-
-    # Use first 2000 chars of text (should include abstract)
-    text_sample = text[:2000]
-
-    prompt = f"""Classify this paper and extract keywords.
-
-Method (choose ONE): quantitative (numbers/stats/data), qualitative (cases/interviews), mixed (both), conceptual (pure theory)
-
-Title: {title}
-Text: {text_sample}
-
-Output exactly in this format: method, keyword1, keyword2, keyword3, keyword4, keyword5
-
-Answer:"""
-
+def query_llm(prompt: str, max_tokens: int = 500) -> str:
+    """Query Ollama with prompt, return response."""
     try:
         response = requests.post(
             OLLAMA_URL,
@@ -234,31 +64,70 @@ Answer:"""
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.2,
-                    "num_predict": 400
+                    "temperature": 0.1,
+                    "num_predict": max_tokens
                 }
             },
-            timeout=90
+            timeout=120
         )
-
         if response.status_code == 200:
-            result = response.json()
-
-            # qwen2.5 puts answer directly in 'response' field
-            raw_answer = result.get('response', '').strip()
-
-            # Parse to extract clean keywords
-            keywords = parse_keywords_from_llm_output(raw_answer)
-            return keywords
-        else:
-            print(f"       ⚠ Ollama error: {response.status_code}")
-            return ""
-    except requests.exceptions.ConnectionError:
-        print("       ⚠ Ollama not running (start with: ollama serve)")
-        return ""
+            return response.json().get('response', '').strip()
     except Exception as e:
         print(f"       ⚠ LLM error: {e}")
-        return ""
+    return ""
+
+
+def extract_paper_info(text: str, filename: str) -> dict:
+    """
+    Use LLM to extract title, abstract, and keywords from paper text.
+    Returns dict with 'title', 'abstract', 'keywords'.
+    """
+    prompt = f"""You are extracting information from an academic paper PDF.
+
+IGNORE all metadata like:
+- JSTOR links, DOIs, "Downloaded from", "Terms and Conditions"
+- Author profiles, citations counts, "See Profile"
+- Journal names alone (like "Management Science")
+- Publisher info, page numbers, dates
+
+From the text below, extract:
+
+1. TITLE: The actual paper title (not journal name, not author names)
+2. ABSTRACT: The paper's abstract (the summary paragraph, NOT introduction text)
+3. KEYWORDS: 5-6 topic keywords describing what the paper is about
+
+Filename hint: {filename}
+
+Paper text:
+{text[:4000]}
+
+Respond in EXACTLY this format (no other text):
+TITLE: [paper title here]
+ABSTRACT: [abstract text here, 2-4 sentences]
+KEYWORDS: [keyword1, keyword2, keyword3, keyword4, keyword5]"""
+
+    response = query_llm(prompt, max_tokens=600)
+    
+    result = {
+        'title': '',
+        'abstract': '',
+        'keywords': ''
+    }
+    
+    if not response:
+        return result
+    
+    # Parse response
+    for line in response.split('\n'):
+        line = line.strip()
+        if line.upper().startswith('TITLE:'):
+            result['title'] = line[6:].strip()
+        elif line.upper().startswith('ABSTRACT:'):
+            result['abstract'] = line[9:].strip()
+        elif line.upper().startswith('KEYWORDS:'):
+            result['keywords'] = line[9:].strip()
+    
+    return result
 
 
 def get_shared_link(dbx: dropbox.Dropbox, path: str) -> str:
@@ -275,38 +144,32 @@ def get_shared_link(dbx: dropbox.Dropbox, path: str) -> str:
 
 
 def check_ollama_available() -> bool:
-    """Check if Ollama is running and the model is available."""
+    """Check if Ollama is running."""
     try:
         response = requests.get("http://localhost:11434/api/tags", timeout=5)
         if response.status_code == 200:
             models = response.json().get('models', [])
-            model_names = [m.get('name', '') for m in models]
-            # Check if qwen3:8b or similar is available
-            for name in model_names:
-                if 'qwen' in name.lower():
+            for m in models:
+                if 'qwen' in m.get('name', '').lower():
                     return True
-            print(f"⚠ Qwen model not found. Available: {model_names}")
-            print("  Run: ollama pull qwen3:8b")
-            return False
+            print("⚠ Qwen model not found")
     except:
-        print("⚠ Ollama not running. Start with: ollama serve")
-        return False
+        print("⚠ Ollama not running")
     return False
 
 
 def main():
     print("=" * 60)
-    print("Strategy Science Conference 2026 - Paper Processor V3")
+    print("Strategy Science Conference 2026 - Paper Processor V4")
     print("=" * 60)
-    print("Features: Anonymized titles, LLM keyword extraction (Qwen)")
+    print("Using LLM for ALL extraction (title, abstract, keywords)")
     
     # Check Ollama
     print("\n🤖 Checking Ollama...")
-    llm_available = check_ollama_available()
-    if llm_available:
-        print("✓ Ollama + Qwen ready")
-    else:
-        print("⚠ LLM extraction disabled (falling back to no keywords)")
+    if not check_ollama_available():
+        print("✗ Ollama not available. Exiting.")
+        return
+    print("✓ Ollama + Qwen ready")
     
     # Initialize Dropbox
     print("\n📁 Connecting to Dropbox...")
@@ -336,7 +199,9 @@ def main():
         paper_id = f"P{str(i + 1).zfill(3)}"
         filename = file_entry.name
         
-        # Download PDF to temp file (do this once)
+        print(f"[{paper_id}] Processing {filename[:50]}...")
+        
+        # Download PDF
         tmp_path = None
         try:
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
@@ -344,16 +209,8 @@ def main():
                 tmp.write(response.content)
                 tmp_path = tmp.name
         except Exception as e:
-            print(f"[{paper_id}] ✗ Download failed: {e}")
+            print(f"       ✗ Download failed: {e}")
             continue
-        
-        # Extract title from PDF content
-        title = extract_title_from_pdf(tmp_path) if PDF_SUPPORT else ""
-        if not title:
-            # Fallback to filename if PDF extraction fails
-            title = filename.replace('.pdf', '').replace('.PDF', '')[:80]
-        
-        print(f"[{paper_id}] {title[:60]}...")
         
         # Get shareable link
         try:
@@ -363,38 +220,33 @@ def main():
             print(f"       ✗ Link failed: {e}")
             link = ""
         
-        # Extract abstract from PDF
-        abstract = extract_abstract_from_pdf(tmp_path) if PDF_SUPPORT else ""
-        if abstract:
-            print(f"       ✓ Abstract extracted ({len(abstract)} chars)")
+        # Extract text
+        text = extract_text_from_pdf(tmp_path)
         
-        # Extract keywords using LLM
-        keywords = ""
-        if llm_available and PDF_SUPPORT:
-            try:
-                # Extract text for LLM
-                text = extract_text_from_pdf(tmp_path)
-                
-                if text:
-                    print(f"       ⏳ Extracting keywords with Qwen...")
-                    keywords = extract_keywords_with_llm(text, title)
-                    if keywords:
-                        print(f"       ✓ Keywords: {keywords[:50]}...")
-                    else:
-                        print(f"       ○ No keywords extracted")
-            except Exception as e:
-                print(f"       ⚠ Error: {e}")
+        # Use LLM to extract everything
+        print(f"       ⏳ Extracting with LLM...")
+        info = extract_paper_info(text, filename)
         
-        # Clean up temp file
+        # Fallback title if LLM fails
+        if not info['title']:
+            info['title'] = filename.replace('.pdf', '').replace('.PDF', '')[:80]
+        
+        print(f"       ✓ Title: {info['title'][:50]}...")
+        if info['abstract']:
+            print(f"       ✓ Abstract: {len(info['abstract'])} chars")
+        if info['keywords']:
+            print(f"       ✓ Keywords: {info['keywords'][:50]}...")
+        
+        # Clean up
         if tmp_path:
             os.unlink(tmp_path)
         
         papers.append({
             'id': paper_id,
-            'title': title,
+            'title': info['title'],
             'link': link,
-            'keywords': keywords,
-            'abstract': abstract,
+            'keywords': info['keywords'],
+            'abstract': info['abstract'],
             'original_filename': filename
         })
     
@@ -408,7 +260,7 @@ def main():
     
     print(f"✓ Saved {len(papers)} papers to {OUTPUT_CSV}")
     print("\n" + "=" * 60)
-    print("Done! Titles anonymized, keywords extracted with LLM.")
+    print("Done! All fields extracted via LLM.")
     print("=" * 60)
 
 
