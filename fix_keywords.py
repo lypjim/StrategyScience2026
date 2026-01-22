@@ -19,7 +19,7 @@ INPUT_CSV = "papers_import.csv"
 OUTPUT_CSV = "papers_import.csv"
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen3:8b"  # Better model with thinking mode
+OLLAMA_MODEL = "qwen2.5:7b"  # More reliable output
 
 
 def extract_abstract_from_text(full_text):
@@ -68,6 +68,28 @@ def parse_keywords_from_llm_output(raw_output):
     """
     if not raw_output:
         return ""
+
+    # Pattern 0: Handle when LLM outputs "method, keyword1, keyword2..."
+    # We need to infer the actual method from the keywords
+    if raw_output.lower().startswith('method,'):
+        # Extract everything after "method,"
+        keywords_part = raw_output[7:].strip()
+        keywords_part = keywords_part.split('\n')[0]  # First line only
+        if len(keywords_part) < 250:
+            # Try to infer method from keywords
+            kw_lower = keywords_part.lower()
+            # Check for quantitative indicators
+            if any(word in kw_lower for word in ['quantitative', 'empirical', 'data', 'regression', 'statistical', 'experiment', 'rct', 'patent', 'lottery', 'evidence from']):
+                return f"quantitative, {keywords_part}"[:200]
+            # Check for qualitative indicators
+            elif any(word in kw_lower for word in ['qualitative', 'case study', 'interview', 'ethnograph']):
+                return f"qualitative, {keywords_part}"[:200]
+            # Check for conceptual indicators
+            elif any(word in kw_lower for word in ['conceptual', 'theory', 'theoretical', 'framework', 'view', 'perspective']):
+                return f"conceptual, {keywords_part}"[:200]
+            else:
+                # Default to conceptual if unsure
+                return f"conceptual, {keywords_part}"[:200]
 
     # Pattern 1: Look for method followed by commas (actual answer format)
     # Match patterns like "quantitative, topic1, topic2, ..." or "Quantitative, ..."

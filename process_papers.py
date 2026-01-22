@@ -35,7 +35,7 @@ OUTPUT_CSV = "papers_import.csv"
 
 # Ollama settings
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen3:8b"  # Better model with thinking mode
+OLLAMA_MODEL = "qwen2.5:7b"  # More reliable output without thinking mode
 
 
 def extract_anonymous_title(filename: str) -> str:
