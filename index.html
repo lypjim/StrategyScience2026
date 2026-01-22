@@ -818,6 +818,15 @@
                         <button class="btn-secondary" onclick="loadSamplePapers()">Load 200 Sample Papers
                             (Demo)</button>
                     </div>
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                        <h3 style="font-size: 1rem; margin-bottom: 12px;">📁 Import from CSV</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                            Upload a CSV file with columns: <code>id</code>, <code>title</code>, <code>link</code>
+                        </p>
+                        <input type="file" id="csv-file-input" accept=".csv" style="margin-bottom: 12px;">
+                        <button class="btn-secondary" onclick="importFromCSV()">Import CSV</button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -1250,6 +1259,97 @@
 
             db.ref('papers').set(updates);
             showToast('Loaded 200 sample papers');
+        }
+
+        function importFromCSV() {
+            const fileInput = document.getElementById('csv-file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                return showToast('Please select a CSV file first');
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim());
+
+                if (lines.length < 2) {
+                    return showToast('CSV file is empty or has no data rows');
+                }
+
+                // Parse header
+                const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+                const idIdx = header.indexOf('id');
+                const titleIdx = header.indexOf('title');
+                const linkIdx = header.indexOf('link');
+
+                if (titleIdx === -1) {
+                    return showToast('CSV must have a "title" column');
+                }
+
+                // Parse data rows
+                const updates = {};
+                let count = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const row = parseCSVLine(lines[i]);
+                    if (row.length === 0) continue;
+
+                    // Get or generate ID
+                    let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
+                    if (!id) {
+                        id = 'P' + String(papers.length + count + 1).padStart(3, '0');
+                    }
+
+                    const title = row[titleIdx] ? row[titleIdx].trim() : 'TBD';
+                    const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
+
+                    updates['papers/' + id] = { id, title };
+                    if (link) {
+                        updates['paperFiles/' + id] = { link };
+                    }
+                    count++;
+                }
+
+                if (count === 0) {
+                    return showToast('No valid papers found in CSV');
+                }
+
+                // Use update to merge, not overwrite
+                db.ref().update(updates);
+                showToast(`Imported ${count} papers from CSV`);
+                fileInput.value = ''; // Reset file input
+            };
+
+            reader.onerror = function () {
+                showToast('Error reading file');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function parseCSVLine(line) {
+            // Simple CSV parser that handles quoted fields
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+
+            return result.map(s => s.replace(/^"|"$/g, '').trim());
         }
 
         // =====================
