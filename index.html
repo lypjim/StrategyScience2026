@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strategy Science Conference 2026 - Paper Review System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    
+
     <style>
         :root {
             --bg-primary: #faf9f7;
@@ -25,7 +28,7 @@
             --danger: #c53030;
             --danger-bg: #fff5f5;
             --border: #e2e2e2;
-            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         * {
@@ -166,7 +169,9 @@
             color: var(--text-secondary);
         }
 
-        input, textarea, select {
+        input,
+        textarea,
+        select {
             width: 100%;
             padding: 10px 14px;
             border: 1px solid var(--border);
@@ -176,7 +181,9 @@
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        input:focus, textarea:focus, select:focus {
+        input:focus,
+        textarea:focus,
+        select:focus {
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-light);
@@ -256,7 +263,8 @@
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid var(--border);
@@ -436,14 +444,41 @@
             color: var(--text-secondary);
         }
 
-        .review-option.opt-no { border-color: var(--danger); background: var(--danger-bg); }
-        .review-option.opt-no:hover { background: #feb2b2; }
-        .review-option.opt-maybe-no { border-color: #ed8936; background: #feebc8; }
-        .review-option.opt-maybe-no:hover { background: #fbd38d; }
-        .review-option.opt-maybe-yes { border-color: #48bb78; background: #c6f6d5; }
-        .review-option.opt-maybe-yes:hover { background: #9ae6b4; }
-        .review-option.opt-yes { border-color: var(--success); background: var(--success-bg); }
-        .review-option.opt-yes:hover { background: #9ae6b4; }
+        .review-option.opt-no {
+            border-color: var(--danger);
+            background: var(--danger-bg);
+        }
+
+        .review-option.opt-no:hover {
+            background: #feb2b2;
+        }
+
+        .review-option.opt-maybe-no {
+            border-color: #ed8936;
+            background: #feebc8;
+        }
+
+        .review-option.opt-maybe-no:hover {
+            background: #fbd38d;
+        }
+
+        .review-option.opt-maybe-yes {
+            border-color: #48bb78;
+            background: #c6f6d5;
+        }
+
+        .review-option.opt-maybe-yes:hover {
+            background: #9ae6b4;
+        }
+
+        .review-option.opt-yes {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+
+        .review-option.opt-yes:hover {
+            background: #9ae6b4;
+        }
 
         /* Stats */
         .stats-grid {
@@ -556,7 +591,7 @@
             background: var(--text-primary);
             color: white;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             transform: translateY(100px);
             opacity: 0;
             transition: all 0.3s;
@@ -629,7 +664,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Assignment item */
@@ -685,7 +722,8 @@
             margin-bottom: 0;
         }
 
-        .filter-row input, .filter-row select {
+        .filter-row input,
+        .filter-row select {
             width: auto;
         }
 
@@ -712,16 +750,17 @@
             .review-options {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
+
             .form-row {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="connection-status" id="connection-status">Connecting...</div>
-    
+
     <div class="container">
         <header>
             <h1>Strategy Science Conference 2026</h1>
@@ -738,7 +777,8 @@
                 </p>
                 <div class="form-group">
                     <label>Admin Password</label>
-                    <input type="password" id="login-password" placeholder="Enter admin password" onkeypress="if(event.key==='Enter')adminLogin()">
+                    <input type="password" id="login-password" placeholder="Enter admin password"
+                        onkeypress="if(event.key==='Enter')adminLogin()">
                 </div>
                 <button class="btn-primary" onclick="adminLogin()" style="width: 100%;">
                     Login
@@ -762,7 +802,7 @@
                     <p style="color: var(--text-secondary); margin-bottom: 16px;">
                         Add papers with PDF links. Author info is hidden from reviewers (double-blind).
                     </p>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label>Paper Title (or leave as TBD)</label>
@@ -780,9 +820,12 @@
                 </div>
 
                 <div class="card">
-                    <h2>Paper List <span id="paper-count" style="color: var(--text-secondary); font-weight: normal;">(0)</span></h2>
+                    <h2>Paper List <span id="paper-count"
+                            style="color: var(--text-secondary); font-weight: normal;">(0)</span></h2>
                     <div id="papers-list">
-                        <div class="loading"><div class="spinner"></div></div>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -813,14 +856,18 @@
                     </div>
                     <div class="actions-row">
                         <button class="btn-primary" onclick="addReviewer()">Add Reviewer</button>
-                        <button class="btn-secondary" onclick="loadDefaultReviewers()">Load 17 Default Reviewers</button>
+                        <button class="btn-secondary" onclick="loadDefaultReviewers()">Load 17 Default
+                            Reviewers</button>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h2>Reviewer List <span id="reviewer-count" style="color: var(--text-secondary); font-weight: normal;">(0)</span></h2>
+                    <h2>Reviewer List <span id="reviewer-count"
+                            style="color: var(--text-secondary); font-weight: normal;">(0)</span></h2>
                     <div id="reviewers-list">
-                        <div class="loading"><div class="spinner"></div></div>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -832,7 +879,7 @@
                     <p style="color: var(--text-secondary); margin-bottom: 16px;">
                         Assign 2 reviewers to each paper. You can see each reviewer's expertise and current workload.
                     </p>
-                    
+
                     <div class="filter-row">
                         <label>Filter:</label>
                         <select id="filter-assignment-status" onchange="renderAssignments()">
@@ -840,8 +887,10 @@
                             <option value="incomplete">Needs Reviewers</option>
                             <option value="complete">Fully Assigned</option>
                         </select>
+                        <button class="btn-secondary btn-sm" onclick="generateRandomAssignments()">🎲 Auto Assign
+                            (Random)</button>
                     </div>
-                    
+
                     <div id="assignments-list">
                         <div class="empty-state">
                             <p>Add papers first to make assignments.</p>
@@ -896,15 +945,18 @@
                     <h2>Rankings & Results</h2>
                     <div class="filter-row">
                         <label>Accept Top:</label>
-                        <input type="number" id="cutoff-number" placeholder="e.g., 50" min="1" style="width: 80px;" onchange="renderResults()">
+                        <input type="number" id="cutoff-number" placeholder="e.g., 50" min="1" style="width: 80px;"
+                            onchange="renderResults()">
                         <span style="color: var(--text-secondary);">papers (yellow = cutoff line)</span>
-                        
+
                         <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
                     </div>
-                    
+
                     <div class="table-wrapper">
                         <div id="results-list">
-                            <div class="loading"><div class="spinner"></div></div>
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -920,7 +972,8 @@
         <div id="reviewer-view" class="hidden">
             <div class="reviewer-header">
                 <h2>Welcome, <span id="reviewer-name-display"></span></h2>
-                <p style="color: var(--text-secondary);">You have <span id="reviewer-paper-count">0</span> papers to review.</p>
+                <p style="color: var(--text-secondary);">You have <span id="reviewer-paper-count">0</span> papers to
+                    review.</p>
                 <p style="font-size: 0.85rem; color: var(--accent); margin-top: 8px;">
                     ⚠️ Double-blind review: Author information is hidden.
                 </p>
@@ -1093,7 +1146,7 @@
         function renderPapers() {
             const container = document.getElementById('papers-list');
             if (!container) return;
-            
+
             document.getElementById('paper-count').textContent = `(${papers.length})`;
 
             if (papers.length === 0) {
@@ -1107,8 +1160,8 @@
                         <thead><tr><th>ID</th><th>Title</th><th>PDF</th><th>Reviewers</th><th>Action</th></tr></thead>
                         <tbody>
                             ${papers.map(p => {
-                                const revs = getReviewersForPaper(p.id);
-                                return `<tr>
+                const revs = getReviewersForPaper(p.id);
+                return `<tr>
                                     <td>${p.id}</td>
                                     <td>${(p.title || 'TBD').substring(0, 40)}...</td>
                                     <td>${paperFiles[p.id]?.link ? '<span class="status status-has-file">✓</span>' : '-'}</td>
@@ -1118,7 +1171,7 @@
                                         <button class="btn-danger btn-sm" onclick="removePaper('${p.id}')">×</button>
                                     </td>
                                 </tr>`;
-                            }).join('')}
+            }).join('')}
                         </tbody>
                     </table>
                 </div>`;
@@ -1135,10 +1188,10 @@
         function editPaper(paperId) {
             const paper = papers.find(p => p.id === paperId);
             if (!paper) return;
-            
+
             const newTitle = prompt('Paper title:', paper.title || 'TBD');
             if (newTitle !== null) db.ref('papers/' + paperId + '/title').set(newTitle);
-            
+
             const newLink = prompt('PDF link:', paperFiles[paperId]?.link || '');
             if (newLink !== null) {
                 if (newLink.trim()) db.ref('paperFiles/' + paperId).set({ link: newLink.trim() });
@@ -1181,7 +1234,7 @@
                 const id = 'P' + String(i + 1).padStart(3, '0');
                 updates[id] = { id, title: p.title };
             });
-            
+
             db.ref('papers').set(updates);
             showToast('Loaded 12 sample papers');
         }
@@ -1198,7 +1251,7 @@
             if (!name || !email) return showToast('Name and email required');
 
             const id = 'R' + String(reviewers.length + 1).padStart(3, '0');
-            db.ref('reviewers/' + id).set({ 
+            db.ref('reviewers/' + id).set({
                 id, name, email,
                 maxPapers: maxPapers ? parseInt(maxPapers) : null,
                 expertise: expertise || null
@@ -1244,7 +1297,7 @@
         function renderReviewers() {
             const container = document.getElementById('reviewers-list');
             if (!container) return;
-            
+
             document.getElementById('reviewer-count').textContent = `(${reviewers.length})`;
 
             if (reviewers.length === 0) {
@@ -1276,13 +1329,13 @@
         function editReviewer(id) {
             const r = reviewers.find(x => x.id === id);
             if (!r) return;
-            
+
             const max = prompt('Max papers (empty = no limit):', r.maxPapers || '');
             if (max !== null) db.ref('reviewers/' + id + '/maxPapers').set(max ? parseInt(max) : null);
-            
+
             const exp = prompt('Expertise:', r.expertise || '');
             if (exp !== null) db.ref('reviewers/' + id + '/expertise').set(exp || null);
-            
+
             showToast('Updated');
         }
 
@@ -1330,15 +1383,15 @@
                                 <strong>${paper.id}</strong>: ${(paper.title || 'TBD').substring(0, 45)}
                                 <div style="margin-top:8px">
                                     ${assigned.map(rid => {
-                                        const rev = reviewers.find(r => r.id === rid);
-                                        return `<span class="reviewer-tag">${rev?.name || rid}<span class="remove" onclick="unassign('${paper.id}','${rid}')">×</span></span>`;
-                                    }).join('')}
+                    const rev = reviewers.find(r => r.id === rid);
+                    return `<span class="reviewer-tag">${rev?.name || rid}<span class="remove" onclick="unassign('${paper.id}','${rid}')">×</span></span>`;
+                }).join('')}
                                     ${!isComplete ? `<span style="color:var(--warning);font-size:0.8rem">Need ${2 - assigned.length} more</span>` : ''}
                                 </div>
                             </div>
                             <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
                                 <option value="">+ Add reviewer</option>
-                                ${available.map(r => `<option value="${r.id}">${r.name} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${r.expertise ? ' • ' + r.expertise.substring(0,15) : ''}</option>`).join('')}
+                                ${available.map(r => `<option value="${r.id}">${r.name} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${r.expertise ? ' • ' + r.expertise.substring(0, 15) : ''}</option>`).join('')}
                             </select>
                         </div>
                     </div>`;
@@ -1347,11 +1400,82 @@
 
         function assign(paperId, revId) {
             if (!revId) return;
+
+            // Check paper limit (max 2)
+            const currentAssigns = getReviewersForPaper(paperId);
+            if (currentAssigns.length >= 2) {
+                return showToast('Paper already has 2 reviewers');
+            }
+
+            // Check reviewer limit
+            const r = reviewers.find(x => x.id === revId);
+            const rCount = getReviewerPaperCount(revId);
+            if (r.maxPapers && rCount >= r.maxPapers) {
+                return showToast('Reviewer is at max capacity');
+            }
+
             const current = assignments[revId] || [];
             if (!current.includes(paperId)) {
                 current.push(paperId);
                 db.ref('assignments/' + revId).set(current);
                 showToast('Assigned');
+            }
+        }
+
+        function generateRandomAssignments() {
+            if (!confirm('This will attempt to assign 2 reviewers to every paper based on availability. Existing assignments are kept. Continue?')) return;
+
+            let updates = {};
+            let madeChanges = false;
+
+            // Clone current assignments to track locally during generation
+            let tempAssignments = JSON.parse(JSON.stringify(assignments));
+
+            // Helper to get local count
+            const getLocalCount = (rid) => (tempAssignments[rid] || []).length;
+            const getLocalPaperAssigns = (pid) => {
+                const res = [];
+                Object.entries(tempAssignments).forEach(([rid, list]) => {
+                    if (list.includes(pid)) res.push(rid);
+                });
+                return res;
+            };
+
+            // Shuffle arrays
+            const shuffledPapers = [...papers].sort(() => 0.5 - Math.random());
+
+            shuffledPapers.forEach(p => {
+                const current = getLocalPaperAssigns(p.id);
+                if (current.length >= 2) return; // Already full
+
+                const needed = 2 - current.length;
+
+                // Find eligible reviewers
+                const eligible = reviewers
+                    .filter(r => {
+                        // Not already assigned to this paper
+                        if (current.includes(r.id)) return false;
+                        // Has capacity
+                        if (r.maxPapers && getLocalCount(r.id) >= r.maxPapers) return false;
+                        return true;
+                    })
+                    .sort(() => 0.5 - Math.random()); // Shuffle reviewers
+
+                // Assign up to 'needed' amount
+                for (let i = 0; i < needed && i < eligible.length; i++) {
+                    const r = eligible[i];
+                    if (!tempAssignments[r.id]) tempAssignments[r.id] = [];
+                    tempAssignments[r.id].push(p.id);
+                    updates[r.id] = tempAssignments[r.id];
+                    madeChanges = true;
+                }
+            });
+
+            if (madeChanges) {
+                db.ref('assignments').update(updates);
+                showToast('Random assignments generated');
+            } else {
+                showToast('No new assignments possible (check capacity)');
             }
         }
 
@@ -1377,11 +1501,11 @@
                         <thead><tr><th>Reviewer</th><th>Expertise</th><th>Assigned</th><th>Capacity</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
-                                const count = getReviewerPaperCount(r.id);
-                                const max = r.maxPapers || 999;
-                                const pct = Math.min(100, (count / max) * 100);
-                                const full = r.maxPapers && count >= r.maxPapers;
-                                return `<tr>
+                const count = getReviewerPaperCount(r.id);
+                const max = r.maxPapers || 999;
+                const pct = Math.min(100, (count / max) * 100);
+                const full = r.maxPapers && count >= r.maxPapers;
+                return `<tr>
                                     <td>${r.name}</td>
                                     <td style="font-size:0.8rem">${r.expertise || '-'}</td>
                                     <td>${count}</td>
@@ -1392,7 +1516,7 @@
                                         ` : '<span style="font-size:0.8rem;color:var(--text-secondary)">No limit</span>'}
                                     </td>
                                 </tr>`;
-                            }).join('')}
+            }).join('')}
                         </tbody>
                     </table>
                 </div>`;
@@ -1414,15 +1538,15 @@
             container.innerHTML = `
                 <button class="btn-secondary" style="margin-bottom:16px" onclick="copyAllLinks()">Copy All Links</button>
                 ${withAssignments.map(r => {
-                    const link = `${baseUrl}?reviewer=${r.id}`;
-                    const count = (assignments[r.id] || []).length;
-                    return `
+                const link = `${baseUrl}?reviewer=${r.id}`;
+                const count = (assignments[r.id] || []).length;
+                return `
                         <div style="margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:8px">
                             <strong>${r.name}</strong> <span style="color:var(--text-secondary)">(${count} papers)</span>
                             <div class="link-box">${link}</div>
                             <button class="btn-secondary btn-sm" onclick="copyLink('${link}')">Copy</button>
                         </div>`;
-                }).join('')}`;
+            }).join('')}`;
         }
 
         function copyLink(link) {
@@ -1446,7 +1570,7 @@
             const pr = reviews[paperId] || {};
             const list = Object.values(pr);
             if (list.length === 0) return { score: null, count: 0, details: [] };
-            
+
             let total = 0;
             const details = [];
             list.forEach(r => {
@@ -1502,10 +1626,10 @@
                     <thead><tr><th>#</th><th>ID</th><th>Title</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th></tr></thead>
                     <tbody>
                         ${scores.map((p, i) => {
-                            const rank = i + 1;
-                            const isCutoff = cutoff > 0 && rank === cutoff;
-                            const aboveCutoff = cutoff > 0 && rank <= cutoff;
-                            return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''}">
+                const rank = i + 1;
+                const isCutoff = cutoff > 0 && rank === cutoff;
+                const aboveCutoff = cutoff > 0 && rank <= cutoff;
+                return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''}">
                                 <td><span class="rank ${rank <= 3 ? 'rank-top' : 'rank-normal'}">${rank}</span></td>
                                 <td>${p.id}</td>
                                 <td>${(p.title || 'TBD').substring(0, 30)}...</td>
@@ -1514,7 +1638,7 @@
                                 <td><span class="score ${scoreClass(p.score)}">${p.score !== null ? p.score + '/8' : '-'}</span></td>
                                 <td>${p.count >= 2 ? '<span class="status status-yes">Done</span>' : `<span class="status status-pending">${p.count}/2</span>`}</td>
                             </tr>`;
-                        }).join('')}
+            }).join('')}
                     </tbody>
                 </table>`;
         }
@@ -1527,7 +1651,7 @@
             scores.forEach((p, i) => {
                 const r1 = p.details[0] ? `${SCORE_LABELS[p.details[0].decision]}(${p.details[0].score})` : 'Pending';
                 const r2 = p.details[1] ? `${SCORE_LABELS[p.details[1].decision]}(${p.details[1].score})` : 'Pending';
-                csv += `${i+1},"${p.id}","${p.title||'TBD'}","${r1}","${r2}",${p.score||''},${p.count>=2?'Complete':p.count+'/2'}\n`;
+                csv += `${i + 1},"${p.id}","${p.title || 'TBD'}","${r1}","${r2}",${p.score || ''},${p.count >= 2 ? 'Complete' : p.count + '/2'}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -1564,7 +1688,7 @@
 
         function renderReviewerPapers(rid) {
             const reviewer = reviewers.find(r => r.id === rid);
-            
+
             if (!reviewer && dataLoaded.reviewers) {
                 document.getElementById('reviewer-view').innerHTML = `<div class="card"><div class="empty-state"><h2>❌ Invalid Link</h2><p>Reviewer "${rid}" not found.</p></div></div>`;
                 return;
@@ -1611,6 +1735,7 @@
                         ${existing ? `
                             <div class="alert alert-success">
                                 <strong>Your decision:</strong> ${SCORE_LABELS[existing.decision]} (Score: ${SCORE_MAP[existing.decision]})
+                                <button class="btn-secondary btn-sm" style="margin-left:12px;" onclick="undoReview('${rid}','${pid}')">Change</button>
                             </div>
                         ` : `
                             <p style="color:var(--text-secondary);margin-bottom:12px">Select your recommendation:</p>
@@ -1637,10 +1762,16 @@
             }).join('');
         }
 
+        function undoReview(rid, pid) {
+            if (!confirm('Change your review?')) return;
+            db.ref(`reviews/${pid}/${rid}`).remove();
+        }
+
         function submitReview(rid, pid, decision) {
             db.ref(`reviews/${pid}/${rid}`).set({ decision, timestamp: new Date().toISOString() });
             showToast('Submitted: ' + SCORE_LABELS[decision]);
         }
     </script>
 </body>
+
 </html>
