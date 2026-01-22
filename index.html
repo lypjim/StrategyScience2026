@@ -834,7 +834,22 @@
             font-size: 0.75rem;
             margin: 2px;
             font-weight: 500;
-            color: var(--text-primary);
+        }
+
+        .method-tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin: 2px;
+            font-weight: 600;
+        }
+
+        .conflict-row {
+            background: #fef3c7 !important;
+            border-left: 4px solid #f59e0b !important;
         }
     </style>
 </head>
@@ -1159,36 +1174,36 @@
             const SCORE_MAP = { 'no': 1, 'maybe-no': 2, 'maybe-yes': 3, 'yes': 4 };
             const SCORE_LABELS = { 'no': 'No', 'maybe-no': 'Maybe No', 'maybe-yes': 'Maybe Yes', 'yes': 'Yes' };
 
-            // Expertise keywords from committee_table.csv
+            // Expertise keywords from committee_table.csv (Method first, then theories, then topics)
             const REVIEWER_EXPERTISE = {
-                "Janet Bercovitz": ["Transaction Cost Economics", "Org. Learning", "Academic Entrepreneurship", "Tech Transfer"],
-                "Danielle Bovenberg": ["Craft Knowledge", "Org. Theory", "Innovation", "Knowledge Diffusion"],
-                "Mukund Chari": ["Transaction Cost Economics", "Agency Theory", "Intellectual Property", "Patent Systems"],
-                "Ashton Hawk": ["Resource-Based View", "Dynamic Capabilities", "Investment Speed", "Political Capital"],
-                "Sina Sokhan": ["Knowledge Recombination", "IP Theory", "Innovation Process", "Pharma Innovation"],
-                "MJ Yang": ["Complementarity Theory", "RBV", "CEO Strategy", "Tech Uniqueness", "Industrial AI"],
-                "Kenneth Huang": ["Institutional Theory", "Knowledge-Based View", "IP Strategy", "Innovation in China"],
-                "Aldona Kapacinskaite": ["Resource-Based View", "Appropriability Theory", "Trade Secrets", "Platform Competition"],
-                "Wesley W. Koo": ["Platform Theory", "Institutional Theory", "Platform Governance", "Digital Entrepreneurship"],
-                "Catherine Magelssen": ["Property Rights Theory", "TCE", "Multinational Strategy", "IP Governance"],
-                "Anparasan Mahalingam": ["Platform Theory", "Org. Economics", "Digital Corporate Strategy", "Platform Governance"],
-                "Francisco Morales": ["Strategic Human Capital", "Signaling Theory", "Human Capital", "Immigration"],
-                "Metin Sengul": ["Org. Design Theory", "Behavioral Theory", "Org. Design", "Multiunit Firms"],
-                "Xiaoli Tang": ["Institutional Theory", "Stakeholder Theory", "Accountable Secrecy", "Self-Regulation"],
-                "Andy Wu": ["Org. Design Theory", "Platform Theory", "Entrepreneurship", "Innovation", "Platform Ecosystems"],
-                "Mingtao Xu": ["Property Rights Theory", "Org. Learning", "AI & Strategy", "Property Rights", "Patent Litigation"],
-                "Tony Tong": ["Strategy", "Innovation", "International Business"]
+                "Janet Bercovitz": { method: "Quantitative", keywords: ["Transaction Cost Economics", "Org. Learning", "Academic Entrepreneurship", "Tech Transfer"] },
+                "Danielle Bovenberg": { method: "Qualitative", keywords: ["Craft Knowledge", "Org. Theory", "Innovation", "Knowledge Diffusion"] },
+                "Mukund Chari": { method: "Quantitative", keywords: ["Transaction Cost Economics", "Agency Theory", "Intellectual Property", "Patent Systems"] },
+                "Ashton Hawk": { method: "Quantitative", keywords: ["Resource-Based View", "Dynamic Capabilities", "Investment Speed", "Political Capital"] },
+                "Sina Sokhan": { method: "Quantitative", keywords: ["Knowledge Recombination", "IP Theory", "Innovation Process", "Pharma Innovation"] },
+                "MJ Yang": { method: "Quant/Mixed", keywords: ["Complementarity Theory", "RBV", "CEO Strategy", "Tech Uniqueness"] },
+                "Kenneth Huang": { method: "Quant/Mixed", keywords: ["Institutional Theory", "Knowledge-Based View", "IP Strategy", "Innovation in China"] },
+                "Aldona Kapacinskaite": { method: "Quantitative", keywords: ["Resource-Based View", "Appropriability Theory", "Trade Secrets", "Platform Competition"] },
+                "Wesley W. Koo": { method: "Quant/Mixed", keywords: ["Platform Theory", "Institutional Theory", "Platform Governance", "Digital Entrepreneurship"] },
+                "Catherine Magelssen": { method: "Quantitative", keywords: ["Property Rights Theory", "TCE", "Multinational Strategy", "IP Governance"] },
+                "Anparasan Mahalingam": { method: "Quantitative", keywords: ["Platform Theory", "Org. Economics", "Digital Corporate Strategy", "Platform Governance"] },
+                "Francisco Morales": { method: "Quantitative", keywords: ["Strategic Human Capital", "Signaling Theory", "Human Capital", "Immigration"] },
+                "Metin Sengul": { method: "Quantitative", keywords: ["Org. Design Theory", "Behavioral Theory", "Org. Design", "Multiunit Firms"] },
+                "Xiaoli Tang": { method: "Quant/Mixed", keywords: ["Institutional Theory", "Stakeholder Theory", "Accountable Secrecy", "Self-Regulation"] },
+                "Andy Wu": { method: "Quant/Mixed", keywords: ["Org. Design Theory", "Platform Theory", "Entrepreneurship", "Platform Ecosystems"] },
+                "Mingtao Xu": { method: "Quantitative", keywords: ["Property Rights Theory", "Org. Learning", "AI & Strategy", "Patent Litigation"] },
+                "Tony Tong": { method: "Mixed", keywords: ["Strategy", "Innovation", "International Business"] }
             };
 
-            // Helper to get expertise keywords for a reviewer
-            function getExpertiseKeywords(reviewerName) {
+            // Helper to get expertise info for a reviewer (method + keywords)
+            function getExpertiseInfo(reviewerName) {
                 // Match by last name or full name
-                for (const [name, keywords] of Object.entries(REVIEWER_EXPERTISE)) {
+                for (const [name, info] of Object.entries(REVIEWER_EXPERTISE)) {
                     if (name.includes(reviewerName) || reviewerName.includes(name.split(' ').pop())) {
-                        return keywords;
+                        return info;
                     }
                 }
-                return [];
+                return null;
             }
 
             // Initialize Firebase
@@ -1400,7 +1415,7 @@
             }
 
             function loadSamplePapers() {
-                if (!confirm('Load 200 sample papers? This will overwrite existing papers.')) return;
+                if (!confirm('Load 200 sample papers? These will be ADDED to the existing list.')) return;
 
                 const baseTitles = [
                     "Dynamic Capabilities in Digital Platform Ecosystems",
@@ -1417,15 +1432,49 @@
                     "Stakeholder Orientation and Long-Term Value Creation"
                 ];
 
+                const baseKeywords = [
+                    "quantitative, platform ecosystems, digital transformation, dynamic capabilities, competitive advantage",
+                    "quantitative, alliance portfolios, innovation, strategic partnerships, diversification",
+                    "mixed, corporate political activity, emerging markets, institutional theory, lobbying",
+                    "qualitative, knowledge transfer, M&A, cross-border acquisitions, organizational learning",
+                    "quantitative, sharing economy, competitive dynamics, platform competition, disruptive innovation",
+                    "quantitative, CEO characteristics, risk-taking, narcissism, upper echelons",
+                    "conceptual, open innovation, appropriability, intellectual property, knowledge spillovers",
+                    "qualitative, institutional voids, multinational strategy, emerging markets, market entry",
+                    "mixed, platform governance, ecosystem health, two-sided markets, network effects",
+                    "quantitative, human capital, competitive advantage, talent management, strategic HR",
+                    "mixed, digital transformation, ambidexterity, exploration, exploitation",
+                    "conceptual, stakeholder theory, long-term value, corporate governance, sustainability"
+                ];
+
+                const baseAbstracts = [
+                    "This study examines how firms develop and leverage dynamic capabilities within digital platform ecosystems. Using a multi-method approach combining quantitative analysis with case studies, we find that successful platform orchestrators develop sensing, seizing, and transforming capabilities that differ significantly from traditional hierarchical organizations.",
+                    "We investigate the relationship between alliance portfolio diversity and innovation performance across 500 firms over a 10-year period. Our findings suggest that moderate levels of diversity optimize innovation outcomes, while excessive diversity leads to coordination costs that outweigh benefits.",
+                    "This research explores corporate political activity strategies in emerging markets characterized by institutional voids. Through comparative case analysis of firms in Brazil, India, and China, we identify distinct political strategies that firms employ to navigate uncertain regulatory environments.",
+                    "We examine knowledge transfer mechanisms in cross-border acquisitions, focusing on the role of organizational integration approaches. Our longitudinal study of 150 acquisitions reveals that hybrid integration strategies outperform both full integration and preservation approaches.",
+                    "This paper analyzes competitive dynamics in sharing economy markets using game-theoretic models and empirical validation. We demonstrate that platform-based competitors face unique strategic challenges related to network effects and multi-homing behavior.",
+                    "Drawing on upper echelons theory, we investigate how CEO narcissism influences strategic risk-taking decisions. Analysis of 300 CEO-firm dyads reveals that narcissistic CEOs pursue bolder strategies but also exhibit greater sensitivity to media attention.",
+                    "This conceptual paper develops a framework for understanding the relationship between open innovation practices and appropriability regimes. We propose that firms must balance openness with protection mechanisms to capture value from collaborative innovation.",
+                    "We explore how multinational corporations navigate institutional voids in emerging markets through qualitative research in Sub-Saharan Africa. Our findings highlight the importance of local partnerships and institutional entrepreneurship.",
+                    "This study examines platform governance mechanisms and their impact on ecosystem health. Using data from 50 digital platforms, we identify governance practices that promote both platform growth and participant welfare.",
+                    "We investigate strategic human capital investments and their contribution to sustainable competitive advantage. Our resource-based analysis reveals that firm-specific human capital creates more durable advantages than general human capital.",
+                    "This research explores the organizational challenges of digital transformation through the lens of ambidexterity theory. Case studies of five incumbent firms reveal successful strategies for balancing exploration and exploitation.",
+                    "We develop and test a stakeholder-oriented model of long-term value creation. Analysis of firm performance over 20 years demonstrates that balanced stakeholder management leads to superior long-term financial outcomes."
+                ];
+
                 const updates = {};
+                const startIdx = papers.length;
                 for (let i = 0; i < 200; i++) {
-                    const id = 'P' + String(i + 1).padStart(3, '0');
-                    const title = `${baseTitles[i % baseTitles.length]} - Sample ${i + 1}`;
-                    updates[id] = { id, title };
+                    const id = 'P' + String(startIdx + i + 1).padStart(3, '0');
+                    const idx = i % baseTitles.length;
+                    const title = `${baseTitles[idx]} - Sample ${i + 1}`;
+                    const keywords = baseKeywords[idx];
+                    const abstract = baseAbstracts[idx];
+                    updates['papers/' + id] = { id, title, keywords, abstract };
                 }
 
-                db.ref('papers').set(updates);
-                showToast('Loaded 200 sample papers');
+                db.ref().update(updates);
+                showToast('Added 200 sample papers');
             }
 
             function importFromCSV() {
@@ -1633,16 +1682,19 @@
                         <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Max</th><th>Expertise</th><th>Action</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
-                                const keywords = getExpertiseKeywords(r.name);
-                                const keywordsHtml = keywords.length > 0
-                                    ? keywords.slice(0, 4).map(k => `<span class="expertise-tag">${k}</span>`).join('')
-                                    : (r.expertise || '-');
+                                const info = getExpertiseInfo(r.name);
+                                let expertiseHtml = r.expertise || '-';
+                                if (info) {
+                                    const methodTag = `<span class="method-tag">${info.method}</span>`;
+                                    const keywordTags = info.keywords.slice(0, 3).map(k => `<span class="expertise-tag">${k}</span>`).join('');
+                                    expertiseHtml = methodTag + keywordTags;
+                                }
                                 return `<tr>
                                 <td>${r.id}</td>
                                 <td>${r.name}</td>
                                 <td style="font-size:0.8rem">${r.email}</td>
                                 <td>${r.maxPapers || '∞'}</td>
-                                <td style="font-size:0.8rem;max-width:300px;">${keywordsHtml}</td>
+                                <td style="font-size:0.8rem;max-width:350px;">${expertiseHtml}</td>
                                 <td>
                                     <button class="btn-secondary btn-sm" onclick="editReviewer('${r.id}')">Edit</button>
                                     <button class="btn-danger btn-sm" onclick="removeReviewer('${r.id}')">×</button>
@@ -2024,17 +2076,28 @@ Strategy Science Conference 2026 Organizing Committee`;
 
             function calcScore(paperId) {
                 const pr = reviews[paperId] || {};
-                const list = Object.values(pr);
-                if (list.length === 0) return { score: null, count: 0, details: [] };
+                const entries = Object.entries(pr);
+                if (entries.length === 0) return { score: null, count: 0, details: [], hasConflict: false };
 
                 let total = 0;
                 const details = [];
-                list.forEach(r => {
+                entries.forEach(([revId, r]) => {
                     const s = SCORE_MAP[r.decision] || 0;
                     total += s;
-                    details.push({ decision: r.decision, score: s });
+                    const reviewer = reviewers.find(rev => rev.id === revId);
+                    details.push({
+                        decision: r.decision,
+                        score: s,
+                        reviewerId: revId,
+                        reviewerName: reviewer ? reviewer.name : revId
+                    });
                 });
-                return { score: total, count: list.length, details };
+
+                // Check for conflict: one says 'yes' and another says 'no'
+                const decisions = details.map(d => d.decision);
+                const hasConflict = decisions.includes('yes') && decisions.includes('no');
+
+                return { score: total, count: entries.length, details, hasConflict };
             }
 
             function renderResults() {
@@ -2067,7 +2130,8 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                 const badge = (d) => {
                     if (!d) return '<span class="status status-pending">Pending</span>';
-                    return `<span class="status status-${d.decision}">${SCORE_LABELS[d.decision]} (${d.score})</span>`;
+                    const tooltip = d.reviewerName ? `title="${d.reviewerName}"` : '';
+                    return `<span class="status status-${d.decision}" ${tooltip} style="cursor:pointer">${SCORE_LABELS[d.decision]} (${d.score})</span>`;
                 };
 
                 const scoreClass = (s) => {
@@ -2085,14 +2149,15 @@ Strategy Science Conference 2026 Organizing Committee`;
                     const rank = i + 1;
                     const isCutoff = cutoff > 0 && rank === cutoff;
                     const aboveCutoff = cutoff > 0 && rank <= cutoff;
-                    return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''}">
+                    const conflictClass = p.hasConflict ? 'conflict-row' : '';
+                    return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''} ${conflictClass}">
                                 <td><span class="rank rank-normal">${rank}</span></td>
                                 <td>${p.id}</td>
                                 <td>${(p.title || 'TBD').substring(0, 30)}...</td>
                                 <td>${badge(p.details[0])}</td>
                                 <td>${badge(p.details[1])}</td>
                                 <td><span class="score ${scoreClass(p.score)}">${p.score !== null ? p.score + '/8' : '-'}</span></td>
-                                <td>${p.count >= 2 ? '<span class="status status-yes">Done</span>' : `<span class="status status-pending">${p.count}/2</span>`}</td>
+                                <td>${p.hasConflict ? '<span class="status" style="background:#fef3c7;color:#92400e">⚠ Conflict</span>' : (p.count >= 2 ? '<span class="status status-yes">Done</span>' : `<span class="status status-pending">${p.count}/2</span>`)}</td>
                             </tr>`;
                 }).join('')}
                     </tbody>
@@ -2103,12 +2168,42 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const scores = papers.map(p => ({ ...p, ...calcScore(p.id) }));
                 scores.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-                let csv = 'Rank,ID,Title,R1,R2,Score,Status\n';
+                const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
+
+                // Build CSV with all info
+                let csv = 'Rank,ID,Title,R1_Name,R1_Decision,R1_Score,R2_Name,R2_Decision,R2_Score,Total_Score,Status,Accepted,Conflict,PDF_Link\n';
                 scores.forEach((p, i) => {
-                    const r1 = p.details[0] ? `${SCORE_LABELS[p.details[0].decision]}(${p.details[0].score})` : 'Pending';
-                    const r2 = p.details[1] ? `${SCORE_LABELS[p.details[1].decision]}(${p.details[1].score})` : 'Pending';
-                    csv += `${i + 1},"${p.id}","${p.title || 'TBD'}","${r1}","${r2}",${p.score || ''},${p.count >= 2 ? 'Complete' : p.count + '/2'}\n`;
+                    const rank = i + 1;
+                    const isAccepted = cutoff > 0 && rank <= cutoff;
+                    const link = paperFiles[p.id]?.link || '';
+
+                    const r1Name = p.details[0]?.reviewerName || '';
+                    const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
+                    const r1Score = p.details[0]?.score || '';
+
+                    const r2Name = p.details[1]?.reviewerName || '';
+                    const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
+                    const r2Score = p.details[1]?.score || '';
+
+                    const status = p.count >= 2 ? 'Complete' : `${p.count}/2`;
+                    const conflict = p.hasConflict ? 'YES' : '';
+
+                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}",${r1Score},"${r2Name}","${r2Dec}",${r2Score},${p.score || ''},${status},${isAccepted ? 'ACCEPTED' : ''},${conflict},"${link}"\n`;
                 });
+
+                // Add separator and accepted-only section
+                if (cutoff > 0) {
+                    csv += '\n\n--- ACCEPTED PAPERS ONLY ---\n';
+                    csv += 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Total_Score,PDF_Link\n';
+                    scores.slice(0, cutoff).forEach((p, i) => {
+                        const link = paperFiles[p.id]?.link || '';
+                        const r1Name = p.details[0]?.reviewerName || '';
+                        const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
+                        const r2Name = p.details[1]?.reviewerName || '';
+                        const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
+                        csv += `${i + 1},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}",${p.score || ''},"${link}"\n`;
+                    });
+                }
 
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const a = document.createElement('a');
