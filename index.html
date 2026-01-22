@@ -307,8 +307,8 @@
         }
 
         .status-yes {
-            background: var(--success-bg);
-            color: var(--success);
+            background: #38a169;
+            color: #ffffff;
         }
 
         .status-maybe-yes {
@@ -322,8 +322,8 @@
         }
 
         .status-no {
-            background: var(--danger-bg);
-            color: var(--danger);
+            background: #e53e3e;
+            color: #ffffff;
         }
 
         .status-has-file {
@@ -445,12 +445,13 @@
         }
 
         .review-option.opt-no {
-            border-color: var(--danger);
-            background: var(--danger-bg);
+            border-color: #c53030;
+            background: #fc8181;
+            color: #ffffff;
         }
 
         .review-option.opt-no:hover {
-            background: #feb2b2;
+            background: #e53e3e;
         }
 
         .review-option.opt-maybe-no {
@@ -472,12 +473,13 @@
         }
 
         .review-option.opt-yes {
-            border-color: var(--success);
-            background: var(--success-bg);
+            border-color: #2f855a;
+            background: #68d391;
+            color: #ffffff;
         }
 
         .review-option.opt-yes:hover {
-            background: #9ae6b4;
+            background: #48bb78;
         }
 
         /* Stats */
@@ -701,12 +703,12 @@
 
         /* Cutoff row - the LAST accepted paper gets a bottom border */
         .cutoff-row {
-            background: var(--success-bg) !important;
+            background: #fffbeb !important;
             border-bottom: 3px solid var(--warning) !important;
         }
 
         .above-cutoff {
-            background: var(--success-bg) !important;
+            background: #fffbeb !important;
         }
 
         /* Filter row */
@@ -821,6 +823,17 @@
             font-size: 0.85rem;
             margin-right: 6px;
             margin-bottom: 6px;
+        }
+
+        .expertise-tag {
+            display: inline-block;
+            background: #d4f4dd;
+            color: #1e6636;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin: 2px;
+            font-weight: 500;
             color: var(--text-primary);
         }
     </style>
@@ -853,16 +866,6 @@
             </div>
         </div>
     </div>
-
-    @media (max-width: 768px) {
-    .review-options {
-    grid-template-columns: repeat(2, 1fr);
-    }
-
-    .form-row {
-    grid-template-columns: 1fr;
-    }
-    }
     </style>
     </head>
 
@@ -919,6 +922,16 @@
                             <div class="form-group">
                                 <label>PDF Link (Google Drive / Dropbox)</label>
                                 <input type="url" id="paper-pdf-link" placeholder="https://drive.google.com/...">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Keywords (optional)</label>
+                                <input type="text" id="paper-keywords" placeholder="e.g., innovation, entrepreneurship, strategy">
+                            </div>
+                            <div class="form-group">
+                                <label>Abstract (optional)</label>
+                                <textarea id="paper-abstract" placeholder="Paper abstract or summary..." rows="3" style="resize: vertical;"></textarea>
                             </div>
                         </div>
                         <div class="actions-row">
@@ -1146,6 +1159,38 @@
             const SCORE_MAP = { 'no': 1, 'maybe-no': 2, 'maybe-yes': 3, 'yes': 4 };
             const SCORE_LABELS = { 'no': 'No', 'maybe-no': 'Maybe No', 'maybe-yes': 'Maybe Yes', 'yes': 'Yes' };
 
+            // Expertise keywords from committee_table.csv
+            const REVIEWER_EXPERTISE = {
+                "Janet Bercovitz": ["Transaction Cost Economics", "Org. Learning", "Academic Entrepreneurship", "Tech Transfer"],
+                "Danielle Bovenberg": ["Craft Knowledge", "Org. Theory", "Innovation", "Knowledge Diffusion"],
+                "Mukund Chari": ["Transaction Cost Economics", "Agency Theory", "Intellectual Property", "Patent Systems"],
+                "Ashton Hawk": ["Resource-Based View", "Dynamic Capabilities", "Investment Speed", "Political Capital"],
+                "Sina Sokhan": ["Knowledge Recombination", "IP Theory", "Innovation Process", "Pharma Innovation"],
+                "MJ Yang": ["Complementarity Theory", "RBV", "CEO Strategy", "Tech Uniqueness", "Industrial AI"],
+                "Kenneth Huang": ["Institutional Theory", "Knowledge-Based View", "IP Strategy", "Innovation in China"],
+                "Aldona Kapacinskaite": ["Resource-Based View", "Appropriability Theory", "Trade Secrets", "Platform Competition"],
+                "Wesley W. Koo": ["Platform Theory", "Institutional Theory", "Platform Governance", "Digital Entrepreneurship"],
+                "Catherine Magelssen": ["Property Rights Theory", "TCE", "Multinational Strategy", "IP Governance"],
+                "Anparasan Mahalingam": ["Platform Theory", "Org. Economics", "Digital Corporate Strategy", "Platform Governance"],
+                "Francisco Morales": ["Strategic Human Capital", "Signaling Theory", "Human Capital", "Immigration"],
+                "Metin Sengul": ["Org. Design Theory", "Behavioral Theory", "Org. Design", "Multiunit Firms"],
+                "Xiaoli Tang": ["Institutional Theory", "Stakeholder Theory", "Accountable Secrecy", "Self-Regulation"],
+                "Andy Wu": ["Org. Design Theory", "Platform Theory", "Entrepreneurship", "Innovation", "Platform Ecosystems"],
+                "Mingtao Xu": ["Property Rights Theory", "Org. Learning", "AI & Strategy", "Property Rights", "Patent Litigation"],
+                "Tony Tong": ["Strategy", "Innovation", "International Business"]
+            };
+
+            // Helper to get expertise keywords for a reviewer
+            function getExpertiseKeywords(reviewerName) {
+                // Match by last name or full name
+                for (const [name, keywords] of Object.entries(REVIEWER_EXPERTISE)) {
+                    if (name.includes(reviewerName) || reviewerName.includes(name.split(' ').pop())) {
+                        return keywords;
+                    }
+                }
+                return [];
+            }
+
             // Initialize Firebase
             firebase.initializeApp(firebaseConfig);
             const db = firebase.database();
@@ -1266,13 +1311,21 @@
             function addPaper() {
                 const title = document.getElementById('paper-title').value.trim() || 'TBD';
                 const pdfLink = document.getElementById('paper-pdf-link').value.trim();
+                const keywords = document.getElementById('paper-keywords').value.trim();
+                const abstract = document.getElementById('paper-abstract').value.trim();
                 const paperId = 'P' + String(papers.length + 1).padStart(3, '0');
 
-                db.ref('papers/' + paperId).set({ id: paperId, title });
+                const paperData = { id: paperId, title };
+                if (keywords) paperData.keywords = keywords;
+                if (abstract) paperData.abstract = abstract;
+
+                db.ref('papers/' + paperId).set(paperData);
                 if (pdfLink) db.ref('paperFiles/' + paperId).set({ link: pdfLink });
 
                 document.getElementById('paper-title').value = '';
                 document.getElementById('paper-pdf-link').value = '';
+                document.getElementById('paper-keywords').value = '';
+                document.getElementById('paper-abstract').value = '';
                 showToast('Paper added: ' + paperId);
             }
 
@@ -1579,17 +1632,23 @@
                     <table>
                         <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Max</th><th>Expertise</th><th>Action</th></tr></thead>
                         <tbody>
-                            ${reviewers.map(r => `<tr>
+                            ${reviewers.map(r => {
+                                const keywords = getExpertiseKeywords(r.name);
+                                const keywordsHtml = keywords.length > 0
+                                    ? keywords.slice(0, 4).map(k => `<span class="expertise-tag">${k}</span>`).join('')
+                                    : (r.expertise || '-');
+                                return `<tr>
                                 <td>${r.id}</td>
                                 <td>${r.name}</td>
                                 <td style="font-size:0.8rem">${r.email}</td>
                                 <td>${r.maxPapers || '∞'}</td>
-                                <td style="font-size:0.8rem;max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.expertise || '-'}</td>
+                                <td style="font-size:0.8rem;max-width:300px;">${keywordsHtml}</td>
                                 <td>
                                     <button class="btn-secondary btn-sm" onclick="editReviewer('${r.id}')">Edit</button>
                                     <button class="btn-danger btn-sm" onclick="removeReviewer('${r.id}')">×</button>
                                 </td>
-                            </tr>`).join('')}
+                            </tr>`;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>`;
@@ -1662,7 +1721,7 @@
                                 </div>
                             </div>
                             <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
-                                <option value="">+ Add reviewer (${reviewers.length} total)</option>
+                                <option value="">+ Add reviewer</option>
                                 ${reviewers.map(r => {
                         const alreadyAssigned = assigned.includes(r.id);
                         const atCapacity = r.maxPapers && getReviewerPaperCount(r.id) >= r.maxPapers;

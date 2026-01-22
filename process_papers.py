@@ -92,21 +92,21 @@ IGNORE all metadata like:
 
 From the text below, extract:
 
-1. TITLE: The actual paper title (not journal name, not author names)
-2. ABSTRACT: The paper's abstract (the summary paragraph, NOT introduction text)
-3. KEYWORDS: 5-6 topic keywords describing what the paper is about
+1. TITLE: The actual paper title in Title Case (not ALL CAPS, not journal name)
+2. ABSTRACT: The paper's abstract (the summary paragraph, 3-5 sentences)
+3. KEYWORDS: 5-6 lowercase topic keywords describing what the paper is about
 
 Filename hint: {filename}
 
 Paper text:
-{text[:4000]}
+{text[:5000]}
 
 Respond in EXACTLY this format (no other text):
-TITLE: [paper title here]
-ABSTRACT: [abstract text here, 2-4 sentences]
+TITLE: [Title In Title Case Like This]
+ABSTRACT: [abstract text here, 3-5 sentences]
 KEYWORDS: [keyword1, keyword2, keyword3, keyword4, keyword5]"""
 
-    response = query_llm(prompt, max_tokens=600)
+    response = query_llm(prompt, max_tokens=800)
     
     result = {
         'title': '',
@@ -126,6 +126,21 @@ KEYWORDS: [keyword1, keyword2, keyword3, keyword4, keyword5]"""
             result['abstract'] = line[9:].strip()
         elif line.upper().startswith('KEYWORDS:'):
             result['keywords'] = line[9:].strip()
+    
+    # Normalize formatting for consistency
+    if result['title']:
+        # Convert to Title Case (handles ALL CAPS titles)
+        result['title'] = result['title'].title()
+        # Fix common words that should be lowercase
+        for word in ['A', 'An', 'And', 'As', 'At', 'But', 'By', 'For', 'In', 'Of', 'On', 'Or', 'The', 'To', 'With']:
+            result['title'] = result['title'].replace(f' {word} ', f' {word.lower()} ')
+        # Keep first word capitalized
+        if result['title']:
+            result['title'] = result['title'][0].upper() + result['title'][1:]
+    
+    if result['keywords']:
+        # Lowercase all keywords
+        result['keywords'] = result['keywords'].lower()
     
     return result
 
