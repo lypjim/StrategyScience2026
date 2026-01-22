@@ -773,7 +773,10 @@
                             <input type="url" id="paper-pdf-link" placeholder="https://drive.google.com/...">
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="addPaper()">Add Paper</button>
+                    <div class="actions-row">
+                        <button class="btn-primary" onclick="addPaper()">Add Paper</button>
+                        <button class="btn-secondary" onclick="loadSamplePapers()">Load 12 Sample Papers (Demo)</button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -1155,6 +1158,32 @@
                 }
             });
             showToast('Removed');
+        }
+
+        function loadSamplePapers() {
+            const samplePapers = [
+                { title: "Dynamic Capabilities in Digital Platform Ecosystems" },
+                { title: "Alliance Portfolio Diversity and Innovation Performance" },
+                { title: "Corporate Political Activity in Emerging Markets" },
+                { title: "Knowledge Transfer in Cross-Border Acquisitions" },
+                { title: "Competitive Dynamics in Sharing Economy Markets" },
+                { title: "CEO Narcissism and Strategic Risk-Taking" },
+                { title: "Open Innovation and Appropriability Regimes" },
+                { title: "Institutional Voids and Multinational Strategy" },
+                { title: "Platform Governance and Ecosystem Health" },
+                { title: "Strategic Human Capital and Competitive Advantage" },
+                { title: "Digital Transformation and Organizational Ambidexterity" },
+                { title: "Stakeholder Orientation and Long-Term Value Creation" }
+            ];
+
+            const updates = {};
+            samplePapers.forEach((p, i) => {
+                const id = 'P' + String(i + 1).padStart(3, '0');
+                updates[id] = { id, title: p.title };
+            });
+            
+            db.ref('papers').set(updates);
+            showToast('Loaded 12 sample papers');
         }
 
         // =====================
