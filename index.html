@@ -1400,8 +1400,14 @@
                                 </div>
                             </div>
                             <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
-                                <option value="">+ Add reviewer</option>
-                                ${available.map(r => `<option value="${r.id}">${r.name} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${r.expertise ? ' • ' + r.expertise.substring(0, 15) : ''}</option>`).join('')}
+                                <option value="">+ Add reviewer (${reviewers.length} total)</option>
+                                ${reviewers.map(r => {
+                    const alreadyAssigned = assigned.includes(r.id);
+                    const atCapacity = r.maxPapers && getReviewerPaperCount(r.id) >= r.maxPapers;
+                    const disabled = alreadyAssigned || atCapacity;
+                    const status = alreadyAssigned ? ' [assigned]' : atCapacity ? ' [full]' : '';
+                    return `<option value="${r.id}" ${disabled ? 'disabled' : ''}>${r.name} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${status}</option>`;
+                }).join('')}
                             </select>
                         </div>
                     </div>`;
@@ -1572,7 +1578,11 @@
         function getEmailTemplate(reviewer, link, paperCount) {
             const subject = `Strategy Science Conference 2026 - Paper Review Request`;
 
-            const body = `Dear ${reviewer.name},
+            // Extract surname (last word of the name)
+            const nameParts = reviewer.name.trim().split(' ');
+            const surname = nameParts[nameParts.length - 1];
+
+            const body = `Dear Professor ${surname},
 
 Thank you for agreeing to review for the Strategy Science Conference 2026. Your expertise is invaluable to our selection process.
 
