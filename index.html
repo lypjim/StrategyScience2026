@@ -815,7 +815,8 @@
                     </div>
                     <div class="actions-row">
                         <button class="btn-primary" onclick="addPaper()">Add Paper</button>
-                        <button class="btn-secondary" onclick="loadSamplePapers()">Load 12 Sample Papers (Demo)</button>
+                        <button class="btn-secondary" onclick="loadSamplePapers()">Load 200 Sample Papers
+                            (Demo)</button>
                     </div>
                 </div>
 
@@ -1214,29 +1215,32 @@
         }
 
         function loadSamplePapers() {
-            const samplePapers = [
-                { title: "Dynamic Capabilities in Digital Platform Ecosystems" },
-                { title: "Alliance Portfolio Diversity and Innovation Performance" },
-                { title: "Corporate Political Activity in Emerging Markets" },
-                { title: "Knowledge Transfer in Cross-Border Acquisitions" },
-                { title: "Competitive Dynamics in Sharing Economy Markets" },
-                { title: "CEO Narcissism and Strategic Risk-Taking" },
-                { title: "Open Innovation and Appropriability Regimes" },
-                { title: "Institutional Voids and Multinational Strategy" },
-                { title: "Platform Governance and Ecosystem Health" },
-                { title: "Strategic Human Capital and Competitive Advantage" },
-                { title: "Digital Transformation and Organizational Ambidexterity" },
-                { title: "Stakeholder Orientation and Long-Term Value Creation" }
+            if (!confirm('Load 200 sample papers? This will overwrite existing papers.')) return;
+
+            const baseTitles = [
+                "Dynamic Capabilities in Digital Platform Ecosystems",
+                "Alliance Portfolio Diversity and Innovation Performance",
+                "Corporate Political Activity in Emerging Markets",
+                "Knowledge Transfer in Cross-Border Acquisitions",
+                "Competitive Dynamics in Sharing Economy Markets",
+                "CEO Narcissism and Strategic Risk-Taking",
+                "Open Innovation and Appropriability Regimes",
+                "Institutional Voids and Multinational Strategy",
+                "Platform Governance and Ecosystem Health",
+                "Strategic Human Capital and Competitive Advantage",
+                "Digital Transformation and Organizational Ambidexterity",
+                "Stakeholder Orientation and Long-Term Value Creation"
             ];
 
             const updates = {};
-            samplePapers.forEach((p, i) => {
+            for (let i = 0; i < 200; i++) {
                 const id = 'P' + String(i + 1).padStart(3, '0');
-                updates[id] = { id, title: p.title };
-            });
+                const title = `${baseTitles[i % baseTitles.length]} - Sample ${i + 1}`;
+                updates[id] = { id, title };
+            }
 
             db.ref('papers').set(updates);
-            showToast('Loaded 12 sample papers');
+            showToast('Loaded 200 sample papers');
         }
 
         // =====================
