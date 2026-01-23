@@ -57,15 +57,18 @@
             justify-content: center;
             gap: 12px;
         }
+
         .cu-logo {
             height: 36px;
         }
+
         .cu-topbar-text {
             color: #CFB87C;
             font-size: 0.85rem;
             font-weight: 500;
             letter-spacing: 0.5px;
         }
+
         .cu-topbar-divider {
             color: #CFB87C;
             opacity: 0.5;
@@ -84,6 +87,7 @@
             border-bottom: 3px solid var(--cu-gold);
             position: relative;
         }
+
         header::after {
             content: '';
             position: absolute;
@@ -113,6 +117,7 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
         }
+
         .venue-info strong {
             color: var(--cu-gold);
         }
@@ -420,19 +425,55 @@
             color: var(--text-secondary);
         }
 
+        /* Reviewer tags in assignments */
+        .reviewer-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e2e8f0;
+            /* Darker grey/blue for better visibility */
+            color: #2d3748;
+            /* Dark text */
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin: 2px;
+            font-weight: 600;
+        }
+
+        .reviewer-tag .remove {
+            cursor: pointer;
+            margin-left: 6px;
+            color: #e53e3e;
+            /* Red for remove action */
+            font-weight: bold;
+        }
+
+        .reviewer-tag .remove:hover {
+            color: #c53030;
+        }
+
         /* Link box */
         .link-box {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
+            background: #f7fafc;
+            border: 1px solid #cbd5e0;
             border-radius: 8px;
             padding: 12px;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            color: #2d3748;
+            /* Dark text for readability */
             word-break: break-all;
             margin: 8px 0;
+            user-select: all;
+            /* Easier selection */
         }
 
-        /* Paper review card */
+        .header-logo {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
         .paper-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -623,6 +664,7 @@
             margin-bottom: 4px;
             color: #fff;
         }
+
         .reviewer-header h2 span {
             color: var(--cu-gold);
         }
@@ -917,11 +959,13 @@
             font-size: 0.85rem;
             cursor: pointer;
         }
+
         .judgment-select.accepted {
             background: #d4f4dd;
             border-color: #38a169;
             color: #1e6636;
         }
+
         .judgment-select.rejected {
             background: #fed7d7;
             border-color: #e53e3e;
@@ -965,9 +1009,9 @@
         <div class="cu-topbar">
             <svg class="cu-logo" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <!-- Simplified CU Buffalo icon -->
-                <path d="M20 8c-6 0-12 4-14 10 2-4 7-6 12-6 3 0 6 1 8 3 2-4-2-7-6-7z" fill="#CFB87C"/>
-                <path d="M6 20c0 8 6 14 14 14s14-6 14-14c0-5-3-10-7-12-3 5-10 6-14 4-4-2-7 4-7 8z" fill="#CFB87C"/>
-                <circle cx="12" cy="22" r="2" fill="#000"/>
+                <path d="M20 8c-6 0-12 4-14 10 2-4 7-6 12-6 3 0 6 1 8 3 2-4-2-7-6-7z" fill="#CFB87C" />
+                <path d="M6 20c0 8 6 14 14 14s14-6 14-14c0-5-3-10-7-12-3 5-10 6-14 4-4-2-7 4-7 8z" fill="#CFB87C" />
+                <circle cx="12" cy="22" r="2" fill="#000" />
             </svg>
             <span class="cu-topbar-text">UNIVERSITY OF COLORADO BOULDER</span>
             <span class="cu-topbar-divider">|</span>
@@ -978,6 +1022,7 @@
 
         <div class="container">
             <header>
+                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo">
                 <h1>Strategy Science Conference 2026</h1>
                 <p class="subtitle">Paper Review Management System</p>
                 <p class="venue-info">Hosted at <strong>Leeds School of Business</strong> · Boulder, Colorado</p>
@@ -1032,11 +1077,13 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Keywords (optional)</label>
-                                <input type="text" id="paper-keywords" placeholder="e.g., innovation, entrepreneurship, strategy">
+                                <input type="text" id="paper-keywords"
+                                    placeholder="e.g., innovation, entrepreneurship, strategy">
                             </div>
                             <div class="form-group">
                                 <label>Abstract (optional)</label>
-                                <textarea id="paper-abstract" placeholder="Paper abstract or summary..." rows="3" style="resize: vertical;"></textarea>
+                                <textarea id="paper-abstract" placeholder="Paper abstract or summary..." rows="3"
+                                    style="resize: vertical;"></textarea>
                             </div>
                         </div>
                         <div class="actions-row">
@@ -1187,14 +1234,15 @@
                         <div class="filter-row" style="flex-wrap: wrap; gap: 12px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <label>Accept Top:</label>
-                                <input type="number" id="cutoff-number" placeholder="e.g., 50" min="1" style="width: 80px;"
-                                    onchange="applyDefaultJudgments(); renderResults()">
+                                <input type="number" id="cutoff-number" placeholder="e.g., 50" min="1"
+                                    style="width: 80px;" onchange="applyDefaultJudgments(); renderResults()">
                                 <span style="color: var(--text-secondary);">papers</span>
                             </div>
 
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <label>Filter:</label>
-                                <select id="conflict-filter" onchange="renderResults()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
+                                <select id="conflict-filter" onchange="renderResults()"
+                                    style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
                                     <option value="all">All Papers</option>
                                     <option value="conflicts">⚠️ Conflicts Only</option>
                                     <option value="accepted">✓ Accepted</option>
@@ -1205,7 +1253,8 @@
 
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <label>Sort:</label>
-                                <select id="sort-order" onchange="renderResults()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
+                                <select id="sort-order" onchange="renderResults()"
+                                    style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
                                     <option value="score">By Score</option>
                                     <option value="accepted-first">Accepted First</option>
                                     <option value="rejected-first">Rejected First</option>
@@ -1213,8 +1262,11 @@
                             </div>
 
                             <div style="display:flex; gap:8px;">
-                                <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo Review</button>
-                                <button class="btn-secondary btn-sm" onclick="applyDefaultJudgments(); renderResults(); showToast('Refreshed')">🔄 Apply & Refresh</button>
+                                <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo
+                                    Review</button>
+                                <button class="btn-secondary btn-sm"
+                                    onclick="applyDefaultJudgments(); renderResults(); showToast('Refreshed')">🔄 Apply
+                                    & Refresh</button>
                                 <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
                             </div>
                         </div>
@@ -1733,7 +1785,10 @@
 
                 if (!name || !email) return showToast('Name and email required');
 
-                const id = 'R' + String(reviewers.length + 1).padStart(3, '0');
+                // Generate secure random ID (8 chars)
+                const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
+                const id = 'REV-' + randomId;
+
                 db.ref('reviewers/' + id).set({
                     id, name, email,
                     maxPapers: maxPapers ? parseInt(maxPapers) : null,
@@ -1744,7 +1799,7 @@
                 document.getElementById('reviewer-email').value = '';
                 document.getElementById('reviewer-max').value = '';
                 document.getElementById('reviewer-expertise').value = '';
-                showToast('Reviewer added');
+                showToast('Reviewer added with Secure ID');
             }
 
             function loadDefaultReviewers() {
@@ -1794,14 +1849,14 @@
                         <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Max</th><th>Expertise</th><th>Action</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
-                                const info = getExpertiseInfo(r.name);
-                                let expertiseHtml = r.expertise || '-';
-                                if (info) {
-                                    const methodTag = `<span class="method-tag">${info.method}</span>`;
-                                    const keywordTags = info.keywords.slice(0, 3).map(k => `<span class="expertise-tag">${k}</span>`).join('');
-                                    expertiseHtml = methodTag + keywordTags;
-                                }
-                                return `<tr>
+                    const info = getExpertiseInfo(r.name);
+                    let expertiseHtml = r.expertise || '-';
+                    if (info) {
+                        const methodTag = `<span class="method-tag">${info.method}</span>`;
+                        const keywordTags = info.keywords.slice(0, 3).map(k => `<span class="expertise-tag">${k}</span>`).join('');
+                        expertiseHtml = methodTag + keywordTags;
+                    }
+                    return `<tr>
                                 <td>${r.id}</td>
                                 <td>${r.name}</td>
                                 <td style="font-size:0.8rem">${r.email}</td>
@@ -1812,7 +1867,7 @@
                                     <button class="btn-danger btn-sm" onclick="removeReviewer('${r.id}')">×</button>
                                 </td>
                             </tr>`;
-                            }).join('')}
+                }).join('')}
                         </tbody>
                     </table>
                 </div>`;
@@ -2213,7 +2268,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                 // Check for conflict: yes+no OR maybe-yes+maybe-no
                 const decisions = details.map(d => d.decision);
                 const hasConflict = (decisions.includes('yes') && decisions.includes('no')) ||
-                                   (decisions.includes('maybe-yes') && decisions.includes('maybe-no'));
+                    (decisions.includes('maybe-yes') && decisions.includes('maybe-no'));
 
                 // Determine pair type and priority for ordering
                 // Priority: Yes+No (conflict) > Yes+Yes > Yes+MaybeYes > etc.
@@ -2606,10 +2661,11 @@ Strategy Science Conference 2026 Organizing Committee`;
             <div class="footer-content">
                 <div class="footer-logo">
                     <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="50" r="45" stroke="#CFB87C" stroke-width="3" fill="none"/>
-                        <path d="M35 35c-8 0-16 5-18 13 3-5 9-8 16-8 4 0 8 1 11 4 2-5-3-9-9-9z" fill="#CFB87C"/>
-                        <path d="M17 50c0 11 8 19 19 19s19-8 19-19c0-7-4-14-10-16-4 7-13 8-19 5-5-3-9 5-9 11z" fill="#CFB87C"/>
-                        <circle cx="27" cy="53" r="2.5" fill="#000"/>
+                        <circle cx="50" cy="50" r="45" stroke="#CFB87C" stroke-width="3" fill="none" />
+                        <path d="M35 35c-8 0-16 5-18 13 3-5 9-8 16-8 4 0 8 1 11 4 2-5-3-9-9-9z" fill="#CFB87C" />
+                        <path d="M17 50c0 11 8 19 19 19s19-8 19-19c0-7-4-14-10-16-4 7-13 8-19 5-5-3-9 5-9 11z"
+                            fill="#CFB87C" />
+                        <circle cx="27" cy="53" r="2.5" fill="#000" />
                     </svg>
                 </div>
                 <div class="footer-text">
@@ -2630,6 +2686,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                 padding: 40px 20px 20px;
                 margin-top: 60px;
             }
+
             .footer-content {
                 max-width: 1100px;
                 margin: 0 auto;
@@ -2639,27 +2696,33 @@ Strategy Science Conference 2026 Organizing Committee`;
                 padding-bottom: 20px;
                 border-bottom: 1px solid rgba(207, 184, 124, 0.3);
             }
+
             .footer-logo svg {
                 display: block;
             }
+
             .footer-text p {
                 margin: 4px 0;
                 font-size: 0.9rem;
             }
+
             .footer-text strong {
                 color: #CFB87C;
                 font-size: 1.1rem;
             }
+
             .footer-address {
                 color: #888;
                 font-size: 0.8rem !important;
             }
+
             .footer-bottom {
                 max-width: 1100px;
                 margin: 0 auto;
                 padding-top: 20px;
                 text-align: center;
             }
+
             .footer-bottom p {
                 color: #666;
                 font-size: 0.8rem;
