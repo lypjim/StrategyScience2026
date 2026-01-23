@@ -675,7 +675,7 @@
         }
 
         .reviewer-header h2 span {
-            color: var(--cu-black);
+            color: var(--cu-black) !important;
         }
 
         .reviewer-header p,
@@ -1735,15 +1735,25 @@
                     const updates = {};
                     let count = 0;
 
+                    // Calculate start index for new IDs to avoid collision
+                    // Find max ID number currently in use (e.g. from P200 -> 200)
+                    let maxIdNum = 0;
+                    papers.forEach(p => {
+                        const match = p.id.match(/^P(\d+)$/);
+                        if (match) {
+                            const num = parseInt(match[1]);
+                            if (num > maxIdNum) maxIdNum = num;
+                        }
+                    });
+
                     for (let i = 1; i < lines.length; i++) {
                         const row = parseCSVLine(lines[i]);
                         if (row.length === 0) continue;
 
-                        // Get or generate ID
-                        let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
-                        if (!id) {
-                            id = 'P' + String(papers.length + count + 1).padStart(3, '0');
-                        }
+                        // Always generate a NEW unique ID to ensure we APPEND (200 + import)
+                        // Ignore the ID in the CSV to prevent collisions/overwrites
+                        maxIdNum++;
+                        const id = 'P' + String(maxIdNum).padStart(3, '0');
 
                         const title = row[titleIdx] ? row[titleIdx].trim() : 'TBD';
                         const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
