@@ -1901,7 +1901,8 @@
 
                 const updates = {};
                 list.forEach((r, i) => {
-                    const id = 'R' + String(i + 1).padStart(3, '0');
+                    // Use secure REV- IDs directly to avoid migration loop
+                    const id = 'REV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
                     updates[id] = { id, ...r, maxPapers: null, expertise: null };
                 });
                 db.ref('reviewers').set(updates);
