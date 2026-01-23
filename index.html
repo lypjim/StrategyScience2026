@@ -865,81 +865,6 @@
             border-color: #e53e3e;
             color: #c53030;
         }
-
-        /* Pair Statistics */
-        /* Pie Chart */
-        .pie-container {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-        .pie-chart {
-            position: relative;
-            width: 160px;
-            height: 160px;
-        }
-        .pie-chart svg {
-            transform: rotate(-90deg);
-        }
-        .pie-slice {
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .pie-slice:hover {
-            opacity: 0.8;
-        }
-        .pie-legend {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-        }
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-        }
-        .legend-label {
-            color: var(--text-secondary);
-        }
-        .legend-count {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .pie-tooltip {
-            position: absolute;
-            background: var(--text-primary);
-            color: white;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            white-space: nowrap;
-            z-index: 100;
-        }
-        .pie-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-        .pie-center-count {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .pie-center-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-        }
     </style>
 </head>
 
@@ -1181,14 +1106,6 @@
                         </div>
                     </div>
 
-                    <!-- Review Pair Statistics -->
-                    <div class="card">
-                        <h2>Review Pair Statistics</h2>
-                        <div id="pair-stats" class="pie-container">
-                            <!-- Pie chart will be rendered here -->
-                        </div>
-                    </div>
-
                     <div class="card">
                         <h2>Rankings & Results</h2>
                         <div class="filter-row" style="flex-wrap: wrap; gap: 12px;">
@@ -1211,7 +1128,6 @@
                             </div>
 
                             <div style="display:flex; gap:8px;">
-                                <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo Review</button>
                                 <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
                             </div>
                         </div>
@@ -2148,41 +2064,6 @@ Strategy Science Conference 2026 Organizing Committee`;
             // RESULTS
             // =====================
 
-            function performDemoReview() {
-                if (!confirm('This will assign RANDOM scores to all currently assigned papers. Existing scores will be overwritten. Continue?')) {
-                    return;
-                }
-
-                const updates = {};
-                let count = 0;
-
-                // Decision options: 'no', 'maybe-no', 'maybe-yes', 'yes'
-                const decisions = ['no', 'maybe-no', 'maybe-yes', 'yes'];
-
-                // Loop through all reviewers and their assignments
-                for (const [revId, assignedPapers] of Object.entries(assignments)) {
-                    if (!assignedPapers) continue;
-
-                    assignedPapers.forEach(paperId => {
-                        // Randomly pick one of the four decisions
-                        const randomDecision = decisions[Math.floor(Math.random() * decisions.length)];
-
-                        updates[`reviews/${paperId}/${revId}`] = {
-                            decision: randomDecision,
-                            timestamp: new Date().toISOString()
-                        };
-                        count++;
-                    });
-                }
-
-                if (count === 0) {
-                    return showToast('No assignments found to review.');
-                }
-
-                db.ref().update(updates);
-                showToast(`Auto-reviewed ${count} assignments!`);
-            }
-
             // Store admin judgments (persisted in Firebase)
             let adminJudgments = {};
 
@@ -2211,9 +2092,10 @@ Strategy Science Conference 2026 Organizing Committee`;
                     });
                 });
 
-                // Check for conflict: one says 'yes' and another says 'no'
+                // Check for conflict: yes+no OR maybe-yes+maybe-no
                 const decisions = details.map(d => d.decision);
-                const hasConflict = decisions.includes('yes') && decisions.includes('no');
+                const hasConflict = (decisions.includes('yes') && decisions.includes('no')) ||
+                                   (decisions.includes('maybe-yes') && decisions.includes('maybe-no'));
 
                 // Determine pair type and priority for ordering
                 // Priority: Yes+No (conflict) > Yes+Yes > Yes+MaybeYes > etc.
@@ -2295,124 +2177,6 @@ Strategy Science Conference 2026 Organizing Committee`;
                 }
             }
 
-            function renderPairStatistics(scores) {
-                const pairCounts = {};
-                scores.forEach(p => {
-                    if (p.count >= 2 && p.pairType) {
-                        pairCounts[p.pairType] = (pairCounts[p.pairType] || 0) + 1;
-                    }
-                });
-
-                const statsContainer = document.getElementById('pair-stats');
-                if (!statsContainer) return;
-
-                const pairs = Object.entries(pairCounts).sort((a, b) => b[1] - a[1]);
-                const total = pairs.reduce((sum, [, count]) => sum + count, 0);
-
-                if (total === 0) {
-                    statsContainer.innerHTML = '<div style="color:var(--text-secondary)">No completed reviews yet</div>';
-                    return;
-                }
-
-                // Color mapping for pair types
-                const pairColors = {
-                    'yes + yes': '#38a169',
-                    'maybe-yes + yes': '#68d391',
-                    'maybe-yes + maybe-yes': '#9ae6b4',
-                    'maybe-no + maybe-yes': '#ecc94b',
-                    'maybe-no + maybe-no': '#ed8936',
-                    'no + maybe-no': '#fc8181',
-                    'no + no': '#e53e3e',
-                    'no + yes': '#f59e0b',
-                    'maybe-no + yes': '#fbd38d',
-                    'no + maybe-yes': '#fdba74'
-                };
-
-                // Build SVG pie chart
-                const size = 160;
-                const radius = 70;
-                const center = size / 2;
-                let currentAngle = 0;
-
-                const slices = pairs.map(([type, count]) => {
-                    const percentage = count / total;
-                    const angle = percentage * 360;
-                    const startAngle = currentAngle;
-                    const endAngle = currentAngle + angle;
-                    currentAngle = endAngle;
-
-                    // Calculate arc path
-                    const startRad = (startAngle * Math.PI) / 180;
-                    const endRad = (endAngle * Math.PI) / 180;
-                    const x1 = center + radius * Math.cos(startRad);
-                    const y1 = center + radius * Math.sin(startRad);
-                    const x2 = center + radius * Math.cos(endRad);
-                    const y2 = center + radius * Math.sin(endRad);
-                    const largeArc = angle > 180 ? 1 : 0;
-
-                    const color = pairColors[type] || '#a0aec0';
-                    const label = getPairLabel(type);
-
-                    return {
-                        path: `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`,
-                        color,
-                        type,
-                        count,
-                        label,
-                        percentage: (percentage * 100).toFixed(1)
-                    };
-                });
-
-                // Build legend
-                const legend = pairs.map(([type, count]) => {
-                    const color = pairColors[type] || '#a0aec0';
-                    const label = getPairLabel(type);
-                    const pct = ((count / total) * 100).toFixed(0);
-                    return `
-                        <div class="legend-item">
-                            <span class="legend-color" style="background:${color}"></span>
-                            <span class="legend-count">${count}</span>
-                            <span class="legend-label">${label} (${pct}%)</span>
-                        </div>
-                    `;
-                }).join('');
-
-                statsContainer.innerHTML = `
-                    <div class="pie-chart">
-                        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-                            ${slices.map((s, i) => `
-                                <path class="pie-slice" d="${s.path}" fill="${s.color}"
-                                    onmouseenter="showPieTooltip(event, '${s.label}: ${s.count} (${s.percentage}%)')"
-                                    onmouseleave="hidePieTooltip()"/>
-                            `).join('')}
-                        </svg>
-                        <div class="pie-center">
-                            <div class="pie-center-count">${total}</div>
-                            <div class="pie-center-label">reviewed</div>
-                        </div>
-                        <div id="pie-tooltip" class="pie-tooltip"></div>
-                    </div>
-                    <div class="pie-legend">${legend}</div>
-                `;
-            }
-
-            function showPieTooltip(event, text) {
-                const tooltip = document.getElementById('pie-tooltip');
-                if (tooltip) {
-                    tooltip.textContent = text;
-                    tooltip.style.opacity = '1';
-                    tooltip.style.left = (event.offsetX + 10) + 'px';
-                    tooltip.style.top = (event.offsetY - 30) + 'px';
-                }
-            }
-
-            function hidePieTooltip() {
-                const tooltip = document.getElementById('pie-tooltip');
-                if (tooltip) {
-                    tooltip.style.opacity = '0';
-                }
-            }
-
             function renderResults() {
                 const totalPapers = papers.length;
                 let reviewed = 0, pending = 0, totalScore = 0, scoredCount = 0;
@@ -2437,9 +2201,6 @@ Strategy Science Conference 2026 Organizing Committee`;
                     if (b.score !== a.score) return b.score - a.score;
                     return b.priority - a.priority;
                 });
-
-                // Render pair statistics
-                renderPairStatistics(scores);
 
                 const container = document.getElementById('results-list');
                 if (!container) return;
