@@ -48,31 +48,6 @@
             min-height: 100vh;
         }
 
-        /* CU Boulder branded top bar */
-        .cu-topbar {
-            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .cu-logo {
-            height: 36px;
-        }
-
-        .cu-topbar-text {
-            color: #CFB87C;
-            font-size: 0.85rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
-
-        .cu-topbar-divider {
-            color: #CFB87C;
-            opacity: 0.5;
-        }
 
         .container {
             max-width: 1100px;
@@ -688,7 +663,7 @@
 
         .progress-bar {
             height: 8px;
-            background: #333;
+            background: #e5e5e5;
             border-radius: 4px;
             margin-top: 12px;
             overflow: hidden;
@@ -798,8 +773,9 @@
         }
 
         .assignment-paper.complete {
-            border-color: var(--success);
-            background: var(--success-bg);
+            border-color: #38a169;
+            border-width: 2px;
+            background: #e6ffed;
         }
 
         .reviewer-tag {
@@ -2192,11 +2168,18 @@
                     const link = `${baseUrl}?reviewer=${r.id}`;
                     const count = (assignments[r.id] || []).length;
                     return `
-                        <div style="margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:8px">
-                            <strong>${r.name}</strong> <span style="color:var(--text-secondary)">(${count} papers)</span>
-                            <div class="link-box">${link}</div>
-                            <button class="btn-secondary btn-sm" onclick="copyLink('${link}')">Copy</button>
-                            <button class="btn-primary btn-sm" style="margin-left:4px" onclick="sendEmail('${r.id}')">📧 Send Email</button>
+                        <div style="margin-bottom:12px;padding:16px;border:1px solid var(--border);border-radius:8px;background:#fff">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                                <div>
+                                    <strong style="color:#1a1a1a">${r.name}</strong>
+                                    <span style="color:#666;margin-left:8px">(${count} papers)</span>
+                                </div>
+                                <div>
+                                    <button class="btn-secondary btn-sm" onclick="copyLink('${link}')">📋 Copy</button>
+                                    <button class="btn-primary btn-sm" style="margin-left:4px" onclick="sendEmail('${r.id}')">📧 Email</button>
+                                </div>
+                            </div>
+                            <div class="link-box" style="margin-top:10px;font-size:0.85rem">${link}</div>
                         </div>`;
                 }).join('')}`;
             }
