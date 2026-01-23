@@ -15,12 +15,15 @@
 
     <style>
         :root {
-            --bg-primary: #faf9f7;
+            --bg-primary: #f8f7f5;
             --bg-secondary: #ffffff;
             --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --accent: #2c5282;
-            --accent-light: #ebf4ff;
+            --text-secondary: #565A5C;
+            --accent: #CFB87C;
+            --accent-dark: #A89458;
+            --accent-light: #FDF8EC;
+            --cu-black: #000000;
+            --cu-gold: #CFB87C;
             --success: #276749;
             --success-bg: #f0fff4;
             --warning: #b7791f;
@@ -45,6 +48,29 @@
             min-height: 100vh;
         }
 
+        /* CU Boulder branded top bar */
+        .cu-topbar {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .cu-logo {
+            height: 36px;
+        }
+        .cu-topbar-text {
+            color: #CFB87C;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .cu-topbar-divider {
+            color: #CFB87C;
+            opacity: 0.5;
+        }
+
         .container {
             max-width: 1100px;
             margin: 0 auto;
@@ -55,14 +81,25 @@
             text-align: center;
             margin-bottom: 40px;
             padding-bottom: 30px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 3px solid var(--cu-gold);
+            position: relative;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: var(--cu-black);
         }
 
         h1 {
             font-family: 'Crimson Pro', serif;
-            font-size: 2.2rem;
-            font-weight: 500;
-            color: var(--text-primary);
+            font-size: 2.4rem;
+            font-weight: 600;
+            color: var(--cu-black);
             margin-bottom: 8px;
         }
 
@@ -71,13 +108,23 @@
             font-size: 0.95rem;
         }
 
+        .venue-info {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .venue-info strong {
+            color: var(--cu-gold);
+        }
+
         .badge {
             display: inline-block;
             padding: 4px 12px;
             background: var(--accent-light);
-            color: var(--accent);
+            color: var(--accent-dark);
             border-radius: 20px;
             font-size: 0.8rem;
+            border: 1px solid var(--cu-gold);
             font-weight: 500;
             margin-top: 12px;
         }
@@ -118,8 +165,8 @@
         }
 
         .tab.active {
-            color: var(--accent);
-            font-weight: 500;
+            color: var(--cu-black);
+            font-weight: 600;
         }
 
         .tab.active::after {
@@ -128,8 +175,8 @@
             bottom: -1px;
             left: 0;
             right: 0;
-            height: 2px;
-            background: var(--accent);
+            height: 3px;
+            background: var(--cu-gold);
         }
 
         /* Cards */
@@ -206,12 +253,13 @@
         }
 
         .btn-primary {
-            background: var(--accent);
-            color: white;
+            background: var(--cu-black);
+            color: var(--cu-gold);
+            font-weight: 500;
         }
 
         .btn-primary:hover {
-            background: #1e3a5f;
+            background: #333;
             transform: translateY(-1px);
         }
 
@@ -222,7 +270,8 @@
         }
 
         .btn-secondary:hover {
-            background: var(--border);
+            background: var(--accent-light);
+            border-color: var(--cu-gold);
         }
 
         .btn-success {
@@ -496,18 +545,21 @@
             border-radius: 12px;
             padding: 20px;
             text-align: center;
+            border-top: 3px solid var(--cu-gold);
         }
 
         .stat-number {
             font-size: 2rem;
             font-weight: 600;
-            color: var(--accent);
+            color: var(--cu-black);
         }
 
         .stat-label {
             font-size: 0.8rem;
             color: var(--text-secondary);
             margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Alerts */
@@ -559,19 +611,29 @@
 
         /* Reviewer info header */
         .reviewer-header {
-            background: var(--accent-light);
+            background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
             border-radius: 12px;
-            padding: 20px;
+            padding: 24px;
             margin-bottom: 24px;
+            color: #fff;
+            border-left: 4px solid var(--cu-gold);
         }
 
         .reviewer-header h2 {
             margin-bottom: 4px;
+            color: #fff;
+        }
+        .reviewer-header h2 span {
+            color: var(--cu-gold);
+        }
+
+        .reviewer-header p {
+            color: #ccc;
         }
 
         .progress-bar {
             height: 8px;
-            background: var(--border);
+            background: #333;
             border-radius: 4px;
             margin-top: 12px;
             overflow: hidden;
@@ -579,7 +641,7 @@
 
         .progress-fill {
             height: 100%;
-            background: var(--accent);
+            background: linear-gradient(90deg, var(--cu-gold) 0%, #e8d4a0 100%);
             border-radius: 4px;
             transition: width 0.3s;
         }
@@ -899,12 +961,26 @@
     </head>
 
     <body>
+        <!-- CU Boulder Branded Top Bar -->
+        <div class="cu-topbar">
+            <svg class="cu-logo" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Simplified CU Buffalo icon -->
+                <path d="M20 8c-6 0-12 4-14 10 2-4 7-6 12-6 3 0 6 1 8 3 2-4-2-7-6-7z" fill="#CFB87C"/>
+                <path d="M6 20c0 8 6 14 14 14s14-6 14-14c0-5-3-10-7-12-3 5-10 6-14 4-4-2-7 4-7 8z" fill="#CFB87C"/>
+                <circle cx="12" cy="22" r="2" fill="#000"/>
+            </svg>
+            <span class="cu-topbar-text">UNIVERSITY OF COLORADO BOULDER</span>
+            <span class="cu-topbar-divider">|</span>
+            <span class="cu-topbar-text">LEEDS SCHOOL OF BUSINESS</span>
+        </div>
+
         <div class="connection-status" id="connection-status">Connecting...</div>
 
         <div class="container">
             <header>
                 <h1>Strategy Science Conference 2026</h1>
                 <p class="subtitle">Paper Review Management System</p>
+                <p class="venue-info">Hosted at <strong>Leeds School of Business</strong> · Boulder, Colorado</p>
                 <span class="badge" id="mode-badge">Loading...</span>
             </header>
 
@@ -2524,6 +2600,71 @@ Strategy Science Conference 2026 Organizing Committee`;
                 showToast('Submitted: ' + SCORE_LABELS[decision]);
             }
         </script>
+
+        <!-- Footer -->
+        <footer class="cu-footer">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" stroke="#CFB87C" stroke-width="3" fill="none"/>
+                        <path d="M35 35c-8 0-16 5-18 13 3-5 9-8 16-8 4 0 8 1 11 4 2-5-3-9-9-9z" fill="#CFB87C"/>
+                        <path d="M17 50c0 11 8 19 19 19s19-8 19-19c0-7-4-14-10-16-4 7-13 8-19 5-5-3-9 5-9 11z" fill="#CFB87C"/>
+                        <circle cx="27" cy="53" r="2.5" fill="#000"/>
+                    </svg>
+                </div>
+                <div class="footer-text">
+                    <p><strong>Strategy Science Conference 2026</strong></p>
+                    <p>Leeds School of Business · University of Colorado Boulder</p>
+                    <p class="footer-address">995 Regent Drive, Boulder, CO 80309</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 Strategy Science Conference. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <style>
+            .cu-footer {
+                background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+                color: #fff;
+                padding: 40px 20px 20px;
+                margin-top: 60px;
+            }
+            .footer-content {
+                max-width: 1100px;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid rgba(207, 184, 124, 0.3);
+            }
+            .footer-logo svg {
+                display: block;
+            }
+            .footer-text p {
+                margin: 4px 0;
+                font-size: 0.9rem;
+            }
+            .footer-text strong {
+                color: #CFB87C;
+                font-size: 1.1rem;
+            }
+            .footer-address {
+                color: #888;
+                font-size: 0.8rem !important;
+            }
+            .footer-bottom {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding-top: 20px;
+                text-align: center;
+            }
+            .footer-bottom p {
+                color: #666;
+                font-size: 0.8rem;
+            }
+        </style>
     </body>
 
 </html>
