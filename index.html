@@ -651,33 +651,40 @@
         }
 
         /* Reviewer info header */
+        /* Reviewer info header - Light Theme */
         .reviewer-header {
-            background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+            background: #ffffff;
             border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            color: #fff;
-            border-left: 4px solid var(--cu-gold);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            /* Softer shadow */
+            color: var(--text-primary);
+            border-left: 5px solid var(--cu-gold);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
         .reviewer-header h2 {
-            margin-bottom: 4px;
-            color: #fff;
+            color: var(--cu-black);
+            /* Black title */
+            margin-bottom: 8px;
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
         }
 
         .reviewer-header h2 span {
-            color: var(--cu-gold);
+            color: var(--cu-black);
         }
 
         .reviewer-header p,
         .reviewer-header span {
-            color: #e2e8f0 !important;
-            /* Force light text for readability on dark bg */
+            color: var(--text-secondary) !important;
+            /* Revert to normal dark grey text */
         }
 
-        .reviewer-header p {
-            color: #ccc;
-        }
+        /* Remove redundant p rule */
 
         .progress-bar {
             height: 8px;
@@ -1171,6 +1178,7 @@
                             <button class="btn-secondary btn-sm"
                                 onclick="renderAssignments(); renderReviewerWorkload(); showToast('Refreshed')">🔄
                                 Refresh</button>
+                            <button class="btn-danger btn-sm" onclick="clearAssignments()">🗑️ Clear All</button>
                         </div>
 
                         <div id="assignments-list">
@@ -2093,6 +2101,19 @@
                 const updated = current.filter(id => id !== paperId);
                 db.ref('assignments/' + revId).set(updated.length > 0 ? updated : null);
                 showToast('Unassigned');
+            }
+
+            function clearAssignments() {
+                if (!confirm('Are you sure you want to remove ALL assignments? This cannot be undone.')) return;
+
+                db.ref('assignments').remove()
+                    .then(() => {
+                        assignments = {};
+                        renderAssignments();
+                        renderReviewerWorkload();
+                        showToast('All assignments cleared');
+                    })
+                    .catch(err => showToast('Error: ' + err.message));
             }
 
             function renderReviewerWorkload() {
