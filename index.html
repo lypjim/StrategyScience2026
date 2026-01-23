@@ -1127,7 +1127,17 @@
                                 </select>
                             </div>
 
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label>Sort:</label>
+                                <select id="sort-order" onchange="renderResults()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <option value="score">By Score</option>
+                                    <option value="accepted-first">Accepted First</option>
+                                    <option value="rejected-first">Rejected First</option>
+                                </select>
+                            </div>
+
                             <div style="display:flex; gap:8px;">
+                                <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo Review</button>
                                 <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
                             </div>
                         </div>
@@ -2064,6 +2074,37 @@ Strategy Science Conference 2026 Organizing Committee`;
             // RESULTS
             // =====================
 
+            function performDemoReview() {
+                if (!confirm('This will assign RANDOM scores to all currently assigned papers. Existing scores will be overwritten. Continue?')) {
+                    return;
+                }
+
+                const updates = {};
+                let count = 0;
+
+                const decisions = ['no', 'maybe-no', 'maybe-yes', 'yes'];
+
+                for (const [revId, assignedPapers] of Object.entries(assignments)) {
+                    if (!assignedPapers) continue;
+
+                    assignedPapers.forEach(paperId => {
+                        const randomDecision = decisions[Math.floor(Math.random() * decisions.length)];
+                        updates[`reviews/${paperId}/${revId}`] = {
+                            decision: randomDecision,
+                            timestamp: new Date().toISOString()
+                        };
+                        count++;
+                    });
+                }
+
+                if (count === 0) {
+                    return showToast('No assignments found to review.');
+                }
+
+                db.ref().update(updates);
+                showToast(`Auto-reviewed ${count} assignments!`);
+            }
+
             // Store admin judgments (persisted in Firebase)
             let adminJudgments = {};
 
@@ -2166,10 +2207,13 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const updates = {};
                 scores.forEach((p, i) => {
                     const rank = i + 1;
-                    // Only set default if no existing judgment AND not a conflict
-                    if (!adminJudgments[p.id] && !p.hasConflict) {
-                        updates[`adminJudgments/${p.id}`] = rank <= cutoff ? 'accepted' : 'rejected';
-                    }
+                    // Skip conflicts - they need manual review
+                    if (p.hasConflict) return;
+
+                    const decision = rank <= cutoff ? 'accepted' : 'rejected';
+                    updates[`adminJudgments/${p.id}`] = decision;
+                    // Also update local object immediately for UI refresh
+                    adminJudgments[p.id] = decision;
                 });
 
                 if (Object.keys(updates).length > 0) {
@@ -2193,20 +2237,46 @@ Strategy Science Conference 2026 Organizing Committee`;
                 document.getElementById('stat-pending').textContent = pending;
                 document.getElementById('stat-avg-score').textContent = scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : '-';
 
-                // Sort by score first, then by priority (Yes+No pairs higher than Maybe pairs)
-                scores.sort((a, b) => {
-                    if (a.score === null && b.score === null) return 0;
-                    if (a.score === null) return 1;
-                    if (b.score === null) return -1;
-                    if (b.score !== a.score) return b.score - a.score;
-                    return b.priority - a.priority;
-                });
-
                 const container = document.getElementById('results-list');
                 if (!container) return;
 
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
                 const filter = document.getElementById('conflict-filter')?.value || 'all';
+                const sortOrder = document.getElementById('sort-order')?.value || 'score';
+
+                // Sort based on selected order
+                if (sortOrder === 'accepted-first') {
+                    scores.sort((a, b) => {
+                        const aAccepted = adminJudgments[a.id] === 'accepted' ? 1 : 0;
+                        const bAccepted = adminJudgments[b.id] === 'accepted' ? 1 : 0;
+                        if (bAccepted !== aAccepted) return bAccepted - aAccepted;
+                        // Secondary sort by score
+                        if (a.score === null && b.score === null) return 0;
+                        if (a.score === null) return 1;
+                        if (b.score === null) return -1;
+                        return b.score - a.score;
+                    });
+                } else if (sortOrder === 'rejected-first') {
+                    scores.sort((a, b) => {
+                        const aRejected = adminJudgments[a.id] === 'rejected' ? 1 : 0;
+                        const bRejected = adminJudgments[b.id] === 'rejected' ? 1 : 0;
+                        if (bRejected !== aRejected) return bRejected - aRejected;
+                        // Secondary sort by score
+                        if (a.score === null && b.score === null) return 0;
+                        if (a.score === null) return 1;
+                        if (b.score === null) return -1;
+                        return b.score - a.score;
+                    });
+                } else {
+                    // Default: sort by score, then by priority
+                    scores.sort((a, b) => {
+                        if (a.score === null && b.score === null) return 0;
+                        if (a.score === null) return 1;
+                        if (b.score === null) return -1;
+                        if (b.score !== a.score) return b.score - a.score;
+                        return b.priority - a.priority;
+                    });
+                }
 
                 // Apply filter
                 let filteredScores = scores;
