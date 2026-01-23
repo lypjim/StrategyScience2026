@@ -1,0 +1,201 @@
+Rank,ID,Title,R1,R2,Score,Status
+1,"P055","Open Innovation and Appropriability Regimes - Sample 55","Yes(4)","Yes(4)",8,Complete
+2,"P058","Strategic Human Capital and Competitive Advantage - Sample 58","Yes(4)","Yes(4)",8,Complete
+3,"P075","Corporate Political Activity in Emerging Markets - Sample 75","Yes(4)","Yes(4)",8,Complete
+4,"P092","Institutional Voids and Multinational Strategy - Sample 92","Yes(4)","Yes(4)",8,Complete
+5,"P126","CEO Narcissism and Strategic Risk-Taking - Sample 126","Yes(4)","Yes(4)",8,Complete
+6,"P127","Open Innovation and Appropriability Regimes - Sample 127","Yes(4)","Yes(4)",8,Complete
+7,"P134","Alliance Portfolio Diversity and Innovation Performance - Sample 134","Yes(4)","Yes(4)",8,Complete
+8,"P143","Digital Transformation and Organizational Ambidexterity - Sample 143","Yes(4)","Yes(4)",8,Complete
+9,"P161","Competitive Dynamics in Sharing Economy Markets - Sample 161","Yes(4)","Yes(4)",8,Complete
+10,"P186","CEO Narcissism and Strategic Risk-Taking - Sample 186","Yes(4)","Yes(4)",8,Complete
+11,"P187","Open Innovation and Appropriability Regimes - Sample 187","Yes(4)","Yes(4)",8,Complete
+12,"P001","Dynamic Capabilities in Digital Platform Ecosystems - Sample 1","Yes(4)","Maybe Yes(3)",7,Complete
+13,"P005","Competitive Dynamics in Sharing Economy Markets - Sample 5","Maybe Yes(3)","Yes(4)",7,Complete
+14,"P008","Institutional Voids and Multinational Strategy - Sample 8","Yes(4)","Maybe Yes(3)",7,Complete
+15,"P035","Digital Transformation and Organizational Ambidexterity - Sample 35","Yes(4)","Maybe Yes(3)",7,Complete
+16,"P046","Strategic Human Capital and Competitive Advantage - Sample 46","Yes(4)","Maybe Yes(3)",7,Complete
+17,"P050","Alliance Portfolio Diversity and Innovation Performance - Sample 50","Yes(4)","Maybe Yes(3)",7,Complete
+18,"P068","Institutional Voids and Multinational Strategy - Sample 68","Yes(4)","Maybe Yes(3)",7,Complete
+19,"P074","Alliance Portfolio Diversity and Innovation Performance - Sample 74","Maybe Yes(3)","Yes(4)",7,Complete
+20,"P076","Knowledge Transfer in Cross-Border Acquisitions - Sample 76","Yes(4)","Maybe Yes(3)",7,Complete
+21,"P079","Open Innovation and Appropriability Regimes - Sample 79","Maybe Yes(3)","Yes(4)",7,Complete
+22,"P090","CEO Narcissism and Strategic Risk-Taking - Sample 90","Maybe Yes(3)","Yes(4)",7,Complete
+23,"P108","Stakeholder Orientation and Long-Term Value Creation - Sample 108","Maybe Yes(3)","Yes(4)",7,Complete
+24,"P109","Dynamic Capabilities in Digital Platform Ecosystems - Sample 109","Yes(4)","Maybe Yes(3)",7,Complete
+25,"P116","Institutional Voids and Multinational Strategy - Sample 116","Maybe Yes(3)","Yes(4)",7,Complete
+26,"P128","Institutional Voids and Multinational Strategy - Sample 128","Yes(4)","Maybe Yes(3)",7,Complete
+27,"P139","Open Innovation and Appropriability Regimes - Sample 139","Maybe Yes(3)","Yes(4)",7,Complete
+28,"P142","Strategic Human Capital and Competitive Advantage - Sample 142","Yes(4)","Maybe Yes(3)",7,Complete
+29,"P189","Platform Governance and Ecosystem Health - Sample 189","Yes(4)","Maybe Yes(3)",7,Complete
+30,"P191","Digital Transformation and Organizational Ambidexterity - Sample 191","Maybe Yes(3)","Yes(4)",7,Complete
+31,"P199","Open Innovation and Appropriability Regimes - Sample 199","Yes(4)","Maybe Yes(3)",7,Complete
+32,"P002","Alliance Portfolio Diversity and Innovation Performance - Sample 2","Maybe No(2)","Yes(4)",6,Complete
+33,"P009","Platform Governance and Ecosystem Health - Sample 9","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+34,"P014","Alliance Portfolio Diversity and Innovation Performance - Sample 14","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+35,"P018","CEO Narcissism and Strategic Risk-Taking - Sample 18","Maybe No(2)","Yes(4)",6,Complete
+36,"P020","Institutional Voids and Multinational Strategy - Sample 20","Maybe No(2)","Yes(4)",6,Complete
+37,"P022","Strategic Human Capital and Competitive Advantage - Sample 22","Maybe No(2)","Yes(4)",6,Complete
+38,"P025","Dynamic Capabilities in Digital Platform Ecosystems - Sample 25","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+39,"P028","Knowledge Transfer in Cross-Border Acquisitions - Sample 28","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+40,"P034","Strategic Human Capital and Competitive Advantage - Sample 34","Yes(4)","Maybe No(2)",6,Complete
+41,"P036","Stakeholder Orientation and Long-Term Value Creation - Sample 36","Yes(4)","Maybe No(2)",6,Complete
+42,"P043","Open Innovation and Appropriability Regimes - Sample 43","Maybe No(2)","Yes(4)",6,Complete
+43,"P065","Competitive Dynamics in Sharing Economy Markets - Sample 65","Maybe No(2)","Yes(4)",6,Complete
+44,"P066","CEO Narcissism and Strategic Risk-Taking - Sample 66","Maybe No(2)","Yes(4)",6,Complete
+45,"P069","Platform Governance and Ecosystem Health - Sample 69","Yes(4)","Maybe No(2)",6,Complete
+46,"P070","Strategic Human Capital and Competitive Advantage - Sample 70","Maybe No(2)","Yes(4)",6,Complete
+47,"P082","Strategic Human Capital and Competitive Advantage - Sample 82","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+48,"P085","Dynamic Capabilities in Digital Platform Ecosystems - Sample 85","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+49,"P096","Stakeholder Orientation and Long-Term Value Creation - Sample 96","Maybe No(2)","Yes(4)",6,Complete
+50,"P101","Competitive Dynamics in Sharing Economy Markets - Sample 101","Maybe No(2)","Yes(4)",6,Complete
+51,"P104","Institutional Voids and Multinational Strategy - Sample 104","Yes(4)","Maybe No(2)",6,Complete
+52,"P105","Platform Governance and Ecosystem Health - Sample 105","Yes(4)","Maybe No(2)",6,Complete
+53,"P106","Strategic Human Capital and Competitive Advantage - Sample 106","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+54,"P114","CEO Narcissism and Strategic Risk-Taking - Sample 114","Yes(4)","Maybe No(2)",6,Complete
+55,"P136","Knowledge Transfer in Cross-Border Acquisitions - Sample 136","Maybe No(2)","Yes(4)",6,Complete
+56,"P137","Competitive Dynamics in Sharing Economy Markets - Sample 137","Yes(4)","Maybe No(2)",6,Complete
+57,"P149","Competitive Dynamics in Sharing Economy Markets - Sample 149","Yes(4)","Maybe No(2)",6,Complete
+58,"P150","CEO Narcissism and Strategic Risk-Taking - Sample 150","Yes(4)","Maybe No(2)",6,Complete
+59,"P151","Open Innovation and Appropriability Regimes - Sample 151","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+60,"P153","Platform Governance and Ecosystem Health - Sample 153","Yes(4)","Maybe No(2)",6,Complete
+61,"P156","Stakeholder Orientation and Long-Term Value Creation - Sample 156","Maybe Yes(3)","Maybe Yes(3)",6,Complete
+62,"P169","Dynamic Capabilities in Digital Platform Ecosystems - Sample 169","Maybe No(2)","Yes(4)",6,Complete
+63,"P170","Alliance Portfolio Diversity and Innovation Performance - Sample 170","Maybe No(2)","Yes(4)",6,Complete
+64,"P171","Corporate Political Activity in Emerging Markets - Sample 171","Yes(4)","Maybe No(2)",6,Complete
+65,"P175","Open Innovation and Appropriability Regimes - Sample 175","Maybe No(2)","Yes(4)",6,Complete
+66,"P177","Platform Governance and Ecosystem Health - Sample 177","Maybe No(2)","Yes(4)",6,Complete
+67,"P179","Digital Transformation and Organizational Ambidexterity - Sample 179","Maybe No(2)","Yes(4)",6,Complete
+68,"P182","Alliance Portfolio Diversity and Innovation Performance - Sample 182","Maybe No(2)","Yes(4)",6,Complete
+69,"P183","Corporate Political Activity in Emerging Markets - Sample 183","Maybe No(2)","Yes(4)",6,Complete
+70,"P190","Strategic Human Capital and Competitive Advantage - Sample 190","Maybe No(2)","Yes(4)",6,Complete
+71,"P195","Corporate Political Activity in Emerging Markets - Sample 195","Maybe No(2)","Yes(4)",6,Complete
+72,"P003","Corporate Political Activity in Emerging Markets - Sample 3","Maybe Yes(3)","Maybe No(2)",5,Complete
+73,"P004","Knowledge Transfer in Cross-Border Acquisitions - Sample 4","Maybe No(2)","Maybe Yes(3)",5,Complete
+74,"P007","Open Innovation and Appropriability Regimes - Sample 7","No(1)","Yes(4)",5,Complete
+75,"P013","Dynamic Capabilities in Digital Platform Ecosystems - Sample 13","Yes(4)","No(1)",5,Complete
+76,"P019","Open Innovation and Appropriability Regimes - Sample 19","Maybe Yes(3)","Maybe No(2)",5,Complete
+77,"P037","Dynamic Capabilities in Digital Platform Ecosystems - Sample 37","No(1)","Yes(4)",5,Complete
+78,"P038","Alliance Portfolio Diversity and Innovation Performance - Sample 38","Yes(4)","No(1)",5,Complete
+79,"P039","Corporate Political Activity in Emerging Markets - Sample 39","Yes(4)","No(1)",5,Complete
+80,"P041","Competitive Dynamics in Sharing Economy Markets - Sample 41","Maybe No(2)","Maybe Yes(3)",5,Complete
+81,"P044","Institutional Voids and Multinational Strategy - Sample 44","Yes(4)","No(1)",5,Complete
+82,"P049","Dynamic Capabilities in Digital Platform Ecosystems - Sample 49","Yes(4)","No(1)",5,Complete
+83,"P057","Platform Governance and Ecosystem Health - Sample 57","Maybe No(2)","Maybe Yes(3)",5,Complete
+84,"P062","Alliance Portfolio Diversity and Innovation Performance - Sample 62","Maybe No(2)","Maybe Yes(3)",5,Complete
+85,"P063","Corporate Political Activity in Emerging Markets - Sample 63","Yes(4)","No(1)",5,Complete
+86,"P067","Open Innovation and Appropriability Regimes - Sample 67","Yes(4)","No(1)",5,Complete
+87,"P077","Competitive Dynamics in Sharing Economy Markets - Sample 77","Maybe No(2)","Maybe Yes(3)",5,Complete
+88,"P080","Institutional Voids and Multinational Strategy - Sample 80","Yes(4)","No(1)",5,Complete
+89,"P084","Stakeholder Orientation and Long-Term Value Creation - Sample 84","Yes(4)","No(1)",5,Complete
+90,"P087","Corporate Political Activity in Emerging Markets - Sample 87","Maybe Yes(3)","Maybe No(2)",5,Complete
+91,"P093","Platform Governance and Ecosystem Health - Sample 93","No(1)","Yes(4)",5,Complete
+92,"P095","Digital Transformation and Organizational Ambidexterity - Sample 95","Yes(4)","No(1)",5,Complete
+93,"P097","Dynamic Capabilities in Digital Platform Ecosystems - Sample 97","Yes(4)","No(1)",5,Complete
+94,"P102","CEO Narcissism and Strategic Risk-Taking - Sample 102","Yes(4)","No(1)",5,Complete
+95,"P107","Digital Transformation and Organizational Ambidexterity - Sample 107","Maybe Yes(3)","Maybe No(2)",5,Complete
+96,"P110","Alliance Portfolio Diversity and Innovation Performance - Sample 110","Yes(4)","No(1)",5,Complete
+97,"P111","Corporate Political Activity in Emerging Markets - Sample 111","Maybe Yes(3)","Maybe No(2)",5,Complete
+98,"P112","Knowledge Transfer in Cross-Border Acquisitions - Sample 112","Yes(4)","No(1)",5,Complete
+99,"P113","Competitive Dynamics in Sharing Economy Markets - Sample 113","Maybe No(2)","Maybe Yes(3)",5,Complete
+100,"P118","Strategic Human Capital and Competitive Advantage - Sample 118","Maybe No(2)","Maybe Yes(3)",5,Complete
+101,"P119","Digital Transformation and Organizational Ambidexterity - Sample 119","Maybe Yes(3)","Maybe No(2)",5,Complete
+102,"P124","Knowledge Transfer in Cross-Border Acquisitions - Sample 124","No(1)","Yes(4)",5,Complete
+103,"P129","Platform Governance and Ecosystem Health - Sample 129","Yes(4)","No(1)",5,Complete
+104,"P131","Digital Transformation and Organizational Ambidexterity - Sample 131","Maybe Yes(3)","Maybe No(2)",5,Complete
+105,"P141","Platform Governance and Ecosystem Health - Sample 141","No(1)","Yes(4)",5,Complete
+106,"P147","Corporate Political Activity in Emerging Markets - Sample 147","Yes(4)","No(1)",5,Complete
+107,"P152","Institutional Voids and Multinational Strategy - Sample 152","Maybe No(2)","Maybe Yes(3)",5,Complete
+108,"P154","Strategic Human Capital and Competitive Advantage - Sample 154","Yes(4)","No(1)",5,Complete
+109,"P155","Digital Transformation and Organizational Ambidexterity - Sample 155","No(1)","Yes(4)",5,Complete
+110,"P158","Alliance Portfolio Diversity and Innovation Performance - Sample 158","No(1)","Yes(4)",5,Complete
+111,"P160","Knowledge Transfer in Cross-Border Acquisitions - Sample 160","Yes(4)","No(1)",5,Complete
+112,"P165","Platform Governance and Ecosystem Health - Sample 165","No(1)","Yes(4)",5,Complete
+113,"P167","Digital Transformation and Organizational Ambidexterity - Sample 167","No(1)","Yes(4)",5,Complete
+114,"P172","Knowledge Transfer in Cross-Border Acquisitions - Sample 172","Maybe No(2)","Maybe Yes(3)",5,Complete
+115,"P173","Competitive Dynamics in Sharing Economy Markets - Sample 173","No(1)","Yes(4)",5,Complete
+116,"P178","Strategic Human Capital and Competitive Advantage - Sample 178","Maybe No(2)","Maybe Yes(3)",5,Complete
+117,"P180","Stakeholder Orientation and Long-Term Value Creation - Sample 180","Maybe Yes(3)","Maybe No(2)",5,Complete
+118,"P184","Knowledge Transfer in Cross-Border Acquisitions - Sample 184","Yes(4)","No(1)",5,Complete
+119,"P194","Alliance Portfolio Diversity and Innovation Performance - Sample 194","No(1)","Yes(4)",5,Complete
+120,"P196","Knowledge Transfer in Cross-Border Acquisitions - Sample 196","Maybe No(2)","Maybe Yes(3)",5,Complete
+121,"P200","Institutional Voids and Multinational Strategy - Sample 200","Maybe Yes(3)","Maybe No(2)",5,Complete
+122,"P006","CEO Narcissism and Strategic Risk-Taking - Sample 6","Maybe No(2)","Maybe No(2)",4,Complete
+123,"P010","Strategic Human Capital and Competitive Advantage - Sample 10","Maybe Yes(3)","No(1)",4,Complete
+124,"P012","Stakeholder Orientation and Long-Term Value Creation - Sample 12","Maybe No(2)","Maybe No(2)",4,Complete
+125,"P015","Corporate Political Activity in Emerging Markets - Sample 15","Maybe Yes(3)","No(1)",4,Complete
+126,"P021","Platform Governance and Ecosystem Health - Sample 21","Maybe Yes(3)","No(1)",4,Complete
+127,"P026","Alliance Portfolio Diversity and Innovation Performance - Sample 26","No(1)","Maybe Yes(3)",4,Complete
+128,"P027","Corporate Political Activity in Emerging Markets - Sample 27","No(1)","Maybe Yes(3)",4,Complete
+129,"P029","Competitive Dynamics in Sharing Economy Markets - Sample 29","Maybe Yes(3)","No(1)",4,Complete
+130,"P032","Institutional Voids and Multinational Strategy - Sample 32","Maybe Yes(3)","No(1)",4,Complete
+131,"P033","Platform Governance and Ecosystem Health - Sample 33","No(1)","Maybe Yes(3)",4,Complete
+132,"P047","Digital Transformation and Organizational Ambidexterity - Sample 47","No(1)","Maybe Yes(3)",4,Complete
+133,"P048","Stakeholder Orientation and Long-Term Value Creation - Sample 48","Maybe No(2)","Maybe No(2)",4,Complete
+134,"P052","Knowledge Transfer in Cross-Border Acquisitions - Sample 52","Maybe Yes(3)","No(1)",4,Complete
+135,"P053","Competitive Dynamics in Sharing Economy Markets - Sample 53","Maybe No(2)","Maybe No(2)",4,Complete
+136,"P056","Institutional Voids and Multinational Strategy - Sample 56","No(1)","Maybe Yes(3)",4,Complete
+137,"P059","Digital Transformation and Organizational Ambidexterity - Sample 59","Maybe No(2)","Maybe No(2)",4,Complete
+138,"P064","Knowledge Transfer in Cross-Border Acquisitions - Sample 64","Maybe No(2)","Maybe No(2)",4,Complete
+139,"P072","Stakeholder Orientation and Long-Term Value Creation - Sample 72","No(1)","Maybe Yes(3)",4,Complete
+140,"P078","CEO Narcissism and Strategic Risk-Taking - Sample 78","Maybe Yes(3)","No(1)",4,Complete
+141,"P088","Knowledge Transfer in Cross-Border Acquisitions - Sample 88","Maybe No(2)","Maybe No(2)",4,Complete
+142,"P089","Competitive Dynamics in Sharing Economy Markets - Sample 89","Maybe No(2)","Maybe No(2)",4,Complete
+143,"P094","Strategic Human Capital and Competitive Advantage - Sample 94","No(1)","Maybe Yes(3)",4,Complete
+144,"P098","Alliance Portfolio Diversity and Innovation Performance - Sample 98","Maybe Yes(3)","No(1)",4,Complete
+145,"P099","Corporate Political Activity in Emerging Markets - Sample 99","Maybe No(2)","Maybe No(2)",4,Complete
+146,"P115","Open Innovation and Appropriability Regimes - Sample 115","No(1)","Maybe Yes(3)",4,Complete
+147,"P117","Platform Governance and Ecosystem Health - Sample 117","Maybe Yes(3)","No(1)",4,Complete
+148,"P120","Stakeholder Orientation and Long-Term Value Creation - Sample 120","Maybe No(2)","Maybe No(2)",4,Complete
+149,"P122","Alliance Portfolio Diversity and Innovation Performance - Sample 122","No(1)","Maybe Yes(3)",4,Complete
+150,"P140","Institutional Voids and Multinational Strategy - Sample 140","Maybe No(2)","Maybe No(2)",4,Complete
+151,"P145","Dynamic Capabilities in Digital Platform Ecosystems - Sample 145","No(1)","Maybe Yes(3)",4,Complete
+152,"P146","Alliance Portfolio Diversity and Innovation Performance - Sample 146","Maybe No(2)","Maybe No(2)",4,Complete
+153,"P162","CEO Narcissism and Strategic Risk-Taking - Sample 162","Maybe Yes(3)","No(1)",4,Complete
+154,"P163","Open Innovation and Appropriability Regimes - Sample 163","Maybe Yes(3)","No(1)",4,Complete
+155,"P166","Strategic Human Capital and Competitive Advantage - Sample 166","Maybe No(2)","Maybe No(2)",4,Complete
+156,"P174","CEO Narcissism and Strategic Risk-Taking - Sample 174","No(1)","Maybe Yes(3)",4,Complete
+157,"P176","Institutional Voids and Multinational Strategy - Sample 176","No(1)","Maybe Yes(3)",4,Complete
+158,"P185","Competitive Dynamics in Sharing Economy Markets - Sample 185","Maybe No(2)","Maybe No(2)",4,Complete
+159,"P188","Institutional Voids and Multinational Strategy - Sample 188","No(1)","Maybe Yes(3)",4,Complete
+160,"P193","Dynamic Capabilities in Digital Platform Ecosystems - Sample 193","Maybe Yes(3)","No(1)",4,Complete
+161,"P197","Competitive Dynamics in Sharing Economy Markets - Sample 197","Maybe No(2)","Maybe No(2)",4,Complete
+162,"P011","Digital Transformation and Organizational Ambidexterity - Sample 11","Maybe No(2)","No(1)",3,Complete
+163,"P017","Competitive Dynamics in Sharing Economy Markets - Sample 17","No(1)","Maybe No(2)",3,Complete
+164,"P023","Digital Transformation and Organizational Ambidexterity - Sample 23","Maybe No(2)","No(1)",3,Complete
+165,"P030","CEO Narcissism and Strategic Risk-Taking - Sample 30","Maybe No(2)","No(1)",3,Complete
+166,"P031","Open Innovation and Appropriability Regimes - Sample 31","Maybe No(2)","No(1)",3,Complete
+167,"P040","Knowledge Transfer in Cross-Border Acquisitions - Sample 40","No(1)","Maybe No(2)",3,Complete
+168,"P045","Platform Governance and Ecosystem Health - Sample 45","Maybe No(2)","No(1)",3,Complete
+169,"P051","Corporate Political Activity in Emerging Markets - Sample 51","No(1)","Maybe No(2)",3,Complete
+170,"P061","Dynamic Capabilities in Digital Platform Ecosystems - Sample 61","Maybe No(2)","No(1)",3,Complete
+171,"P073","Dynamic Capabilities in Digital Platform Ecosystems - Sample 73","No(1)","Maybe No(2)",3,Complete
+172,"P081","Platform Governance and Ecosystem Health - Sample 81","Maybe No(2)","No(1)",3,Complete
+173,"P083","Digital Transformation and Organizational Ambidexterity - Sample 83","Maybe No(2)","No(1)",3,Complete
+174,"P100","Knowledge Transfer in Cross-Border Acquisitions - Sample 100","Maybe No(2)","No(1)",3,Complete
+175,"P123","Corporate Political Activity in Emerging Markets - Sample 123","No(1)","Maybe No(2)",3,Complete
+176,"P125","Competitive Dynamics in Sharing Economy Markets - Sample 125","No(1)","Maybe No(2)",3,Complete
+177,"P130","Strategic Human Capital and Competitive Advantage - Sample 130","No(1)","Maybe No(2)",3,Complete
+178,"P132","Stakeholder Orientation and Long-Term Value Creation - Sample 132","No(1)","Maybe No(2)",3,Complete
+179,"P133","Dynamic Capabilities in Digital Platform Ecosystems - Sample 133","Maybe No(2)","No(1)",3,Complete
+180,"P135","Corporate Political Activity in Emerging Markets - Sample 135","Maybe No(2)","No(1)",3,Complete
+181,"P144","Stakeholder Orientation and Long-Term Value Creation - Sample 144","No(1)","Maybe No(2)",3,Complete
+182,"P148","Knowledge Transfer in Cross-Border Acquisitions - Sample 148","No(1)","Maybe No(2)",3,Complete
+183,"P157","Dynamic Capabilities in Digital Platform Ecosystems - Sample 157","Maybe No(2)","No(1)",3,Complete
+184,"P168","Stakeholder Orientation and Long-Term Value Creation - Sample 168","Maybe No(2)","No(1)",3,Complete
+185,"P181","Dynamic Capabilities in Digital Platform Ecosystems - Sample 181","Maybe No(2)","No(1)",3,Complete
+186,"P198","CEO Narcissism and Strategic Risk-Taking - Sample 198","No(1)","Maybe No(2)",3,Complete
+187,"P016","Knowledge Transfer in Cross-Border Acquisitions - Sample 16","No(1)","No(1)",2,Complete
+188,"P024","Stakeholder Orientation and Long-Term Value Creation - Sample 24","No(1)","No(1)",2,Complete
+189,"P042","CEO Narcissism and Strategic Risk-Taking - Sample 42","No(1)","No(1)",2,Complete
+190,"P054","CEO Narcissism and Strategic Risk-Taking - Sample 54","No(1)","No(1)",2,Complete
+191,"P060","Stakeholder Orientation and Long-Term Value Creation - Sample 60","No(1)","No(1)",2,Complete
+192,"P071","Digital Transformation and Organizational Ambidexterity - Sample 71","No(1)","No(1)",2,Complete
+193,"P086","Alliance Portfolio Diversity and Innovation Performance - Sample 86","No(1)","No(1)",2,Complete
+194,"P091","Open Innovation and Appropriability Regimes - Sample 91","No(1)","No(1)",2,Complete
+195,"P103","Open Innovation and Appropriability Regimes - Sample 103","No(1)","No(1)",2,Complete
+196,"P121","Dynamic Capabilities in Digital Platform Ecosystems - Sample 121","No(1)","No(1)",2,Complete
+197,"P138","CEO Narcissism and Strategic Risk-Taking - Sample 138","No(1)","No(1)",2,Complete
+198,"P159","Corporate Political Activity in Emerging Markets - Sample 159","No(1)","No(1)",2,Complete
+199,"P164","Institutional Voids and Multinational Strategy - Sample 164","No(1)","No(1)",2,Complete
+200,"P192","Stakeholder Orientation and Long-Term Value Creation - Sample 192","No(1)","No(1)",2,Complete

@@ -851,6 +851,68 @@
             background: #fef3c7 !important;
             border-left: 4px solid #f59e0b !important;
         }
+
+        /* Admin Judgment Dropdown */
+        .judgment-select {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .judgment-select.accepted {
+            background: #d4f4dd;
+            border-color: #38a169;
+            color: #1e6636;
+        }
+        .judgment-select.rejected {
+            background: #fed7d7;
+            border-color: #e53e3e;
+            color: #c53030;
+        }
+
+        /* Pair Statistics */
+        .pair-stat {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 120px;
+            text-align: center;
+        }
+        .pair-stat .count {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .pair-stat .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .chart-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+        .chart-bar-fill {
+            width: 40px;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease;
+        }
+        .chart-bar-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 4px;
+            max-width: 70px;
+        }
+        .chart-bar-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 
@@ -1092,17 +1154,40 @@
                         </div>
                     </div>
 
+                    <!-- Review Pair Statistics -->
+                    <div class="card">
+                        <h2>Review Pair Statistics</h2>
+                        <div id="pair-stats" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                            <!-- Statistics will be rendered here -->
+                        </div>
+                        <div id="pair-chart" style="height: 200px; display: flex; align-items: flex-end; gap: 8px; padding: 16px 0;">
+                            <!-- Bar chart will be rendered here -->
+                        </div>
+                    </div>
+
                     <div class="card">
                         <h2>Rankings & Results</h2>
-                        <div class="filter-row">
-                            <label>Accept Top:</label>
-                            <input type="number" id="cutoff-number" placeholder="e.g., 50" min="1" style="width: 80px;"
-                                onchange="renderResults()">
-                            <span style="color: var(--text-secondary);">papers (green = cutoff line)</span>
+                        <div class="filter-row" style="flex-wrap: wrap; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label>Accept Top:</label>
+                                <input type="number" id="cutoff-number" placeholder="e.g., 50" min="1" style="width: 80px;"
+                                    onchange="applyDefaultJudgments(); renderResults()">
+                                <span style="color: var(--text-secondary);">papers</span>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label>Filter:</label>
+                                <select id="conflict-filter" onchange="renderResults()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <option value="all">All Papers</option>
+                                    <option value="conflicts">⚠️ Conflicts Only</option>
+                                    <option value="accepted">✓ Accepted</option>
+                                    <option value="rejected">✗ Rejected</option>
+                                    <option value="pending">Pending Decision</option>
+                                </select>
+                            </div>
 
                             <div style="display:flex; gap:8px;">
-                                <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo Review
-                                    (Auto-Score)</button>
+                                <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo Review</button>
                                 <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
                             </div>
                         </div>
@@ -2074,10 +2159,19 @@ Strategy Science Conference 2026 Organizing Committee`;
                 showToast(`Auto-reviewed ${count} assignments!`);
             }
 
+            // Store admin judgments (persisted in Firebase)
+            let adminJudgments = {};
+
+            // Load admin judgments from Firebase
+            db.ref('adminJudgments').on('value', snap => {
+                adminJudgments = snap.val() || {};
+                if (dataLoaded.papers) renderResults();
+            });
+
             function calcScore(paperId) {
                 const pr = reviews[paperId] || {};
                 const entries = Object.entries(pr);
-                if (entries.length === 0) return { score: null, count: 0, details: [], hasConflict: false };
+                if (entries.length === 0) return { score: null, count: 0, details: [], hasConflict: false, pairType: null, priority: 0 };
 
                 let total = 0;
                 const details = [];
@@ -2097,7 +2191,136 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const decisions = details.map(d => d.decision);
                 const hasConflict = decisions.includes('yes') && decisions.includes('no');
 
-                return { score: total, count: entries.length, details, hasConflict };
+                // Determine pair type and priority for ordering
+                // Priority: Yes+No (conflict) > Yes+Yes > Yes+MaybeYes > etc.
+                // Higher priority = higher in list when same score
+                let pairType = null;
+                let priority = 0;
+
+                if (details.length >= 2) {
+                    const sorted = [...decisions].sort();
+                    pairType = sorted.join(' + ');
+
+                    // Priority mapping: pairs with strong opinions rank higher
+                    const pairPriority = {
+                        'no + yes': 100,           // Conflict - highest priority
+                        'yes + yes': 90,           // Strong accept
+                        'no + no': 85,             // Strong reject
+                        'maybe-yes + yes': 70,     // Leaning accept
+                        'no + maybe-no': 65,       // Leaning reject
+                        'maybe-yes + maybe-yes': 50,  // Moderate accept
+                        'maybe-no + maybe-no': 45,    // Moderate reject
+                        'maybe-no + maybe-yes': 40,   // Uncertain
+                        'maybe-no + yes': 60,
+                        'no + maybe-yes': 55
+                    };
+                    priority = pairPriority[pairType] || 30;
+                }
+
+                return { score: total, count: entries.length, details, hasConflict, pairType, priority };
+            }
+
+            function getPairLabel(pairType) {
+                const labels = {
+                    'yes + yes': 'Yes + Yes',
+                    'maybe-yes + yes': 'Yes + Maybe Yes',
+                    'maybe-yes + maybe-yes': 'Maybe Yes + Maybe Yes',
+                    'maybe-no + maybe-yes': 'Maybe Yes + Maybe No',
+                    'maybe-no + maybe-no': 'Maybe No + Maybe No',
+                    'no + maybe-no': 'No + Maybe No',
+                    'no + no': 'No + No',
+                    'no + yes': 'Yes + No (Conflict)',
+                    'maybe-no + yes': 'Yes + Maybe No',
+                    'no + maybe-yes': 'No + Maybe Yes'
+                };
+                return labels[pairType] || pairType || 'Incomplete';
+            }
+
+            function setAdminJudgment(paperId, judgment) {
+                if (judgment === '') {
+                    db.ref(`adminJudgments/${paperId}`).remove();
+                } else {
+                    db.ref(`adminJudgments/${paperId}`).set(judgment);
+                }
+            }
+
+            function applyDefaultJudgments() {
+                const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
+                if (cutoff === 0) return;
+
+                const scores = papers.map(p => ({ ...p, ...calcScore(p.id) }));
+                scores.sort((a, b) => {
+                    if (a.score === null && b.score === null) return 0;
+                    if (a.score === null) return 1;
+                    if (b.score === null) return -1;
+                    if (b.score !== a.score) return b.score - a.score;
+                    return b.priority - a.priority;
+                });
+
+                const updates = {};
+                scores.forEach((p, i) => {
+                    const rank = i + 1;
+                    // Only set default if no existing judgment AND not a conflict
+                    if (!adminJudgments[p.id] && !p.hasConflict) {
+                        updates[`adminJudgments/${p.id}`] = rank <= cutoff ? 'accepted' : 'rejected';
+                    }
+                });
+
+                if (Object.keys(updates).length > 0) {
+                    db.ref().update(updates);
+                }
+            }
+
+            function renderPairStatistics(scores) {
+                const pairCounts = {};
+                scores.forEach(p => {
+                    if (p.count >= 2 && p.pairType) {
+                        pairCounts[p.pairType] = (pairCounts[p.pairType] || 0) + 1;
+                    }
+                });
+
+                const statsContainer = document.getElementById('pair-stats');
+                const chartContainer = document.getElementById('pair-chart');
+
+                if (!statsContainer || !chartContainer) return;
+
+                const pairs = Object.entries(pairCounts).sort((a, b) => b[1] - a[1]);
+                const maxCount = Math.max(...pairs.map(p => p[1]), 1);
+
+                // Color mapping for pair types
+                const pairColors = {
+                    'yes + yes': '#38a169',
+                    'maybe-yes + yes': '#68d391',
+                    'maybe-yes + maybe-yes': '#9ae6b4',
+                    'maybe-no + maybe-yes': '#faf089',
+                    'maybe-no + maybe-no': '#fed7aa',
+                    'no + maybe-no': '#feb2b2',
+                    'no + no': '#e53e3e',
+                    'no + yes': '#f59e0b',
+                    'maybe-no + yes': '#fbd38d',
+                    'no + maybe-yes': '#fdba74'
+                };
+
+                // Render stat cards
+                statsContainer.innerHTML = pairs.map(([type, count]) => `
+                    <div class="pair-stat">
+                        <div class="count">${count}</div>
+                        <div class="label">${getPairLabel(type)}</div>
+                    </div>
+                `).join('') || '<div style="color:var(--text-secondary)">No completed reviews yet</div>';
+
+                // Render bar chart
+                chartContainer.innerHTML = pairs.map(([type, count]) => {
+                    const height = Math.max((count / maxCount) * 150, 20);
+                    const color = pairColors[type] || '#a0aec0';
+                    return `
+                        <div class="chart-bar">
+                            <div class="chart-bar-count">${count}</div>
+                            <div class="chart-bar-fill" style="height:${height}px;background:${color}"></div>
+                            <div class="chart-bar-label">${getPairLabel(type)}</div>
+                        </div>
+                    `;
+                }).join('') || '';
             }
 
             function renderResults() {
@@ -2116,22 +2339,40 @@ Strategy Science Conference 2026 Organizing Committee`;
                 document.getElementById('stat-pending').textContent = pending;
                 document.getElementById('stat-avg-score').textContent = scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : '-';
 
+                // Sort by score first, then by priority (Yes+No pairs higher than Maybe pairs)
                 scores.sort((a, b) => {
                     if (a.score === null && b.score === null) return 0;
                     if (a.score === null) return 1;
                     if (b.score === null) return -1;
-                    return b.score - a.score;
+                    if (b.score !== a.score) return b.score - a.score;
+                    return b.priority - a.priority;
                 });
+
+                // Render pair statistics
+                renderPairStatistics(scores);
 
                 const container = document.getElementById('results-list');
                 if (!container) return;
 
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
+                const filter = document.getElementById('conflict-filter')?.value || 'all';
+
+                // Apply filter
+                let filteredScores = scores;
+                if (filter === 'conflicts') {
+                    filteredScores = scores.filter(p => p.hasConflict);
+                } else if (filter === 'accepted') {
+                    filteredScores = scores.filter(p => adminJudgments[p.id] === 'accepted');
+                } else if (filter === 'rejected') {
+                    filteredScores = scores.filter(p => adminJudgments[p.id] === 'rejected');
+                } else if (filter === 'pending') {
+                    filteredScores = scores.filter(p => !adminJudgments[p.id]);
+                }
 
                 const badge = (d) => {
                     if (!d) return '<span class="status status-pending">Pending</span>';
                     const tooltip = d.reviewerName ? `title="${d.reviewerName}"` : '';
-                    return `<span class="status status-${d.decision}" ${tooltip} style="cursor:pointer">${SCORE_LABELS[d.decision]} (${d.score})</span>`;
+                    return `<span class="status status-${d.decision}" ${tooltip} style="cursor:pointer">${SCORE_LABELS[d.decision]}</span>`;
                 };
 
                 const scoreClass = (s) => {
@@ -2141,23 +2382,39 @@ Strategy Science Conference 2026 Organizing Committee`;
                     return 'score-low';
                 };
 
+                const getJudgmentSelect = (paperId, rank) => {
+                    const current = adminJudgments[paperId] || '';
+                    const defaultVal = cutoff > 0 && rank <= cutoff ? 'accepted' : (cutoff > 0 ? 'rejected' : '');
+                    const val = current || defaultVal;
+                    const cls = val === 'accepted' ? 'accepted' : (val === 'rejected' ? 'rejected' : '');
+                    return `
+                        <select class="judgment-select ${cls}" onchange="setAdminJudgment('${paperId}', this.value)">
+                            <option value="" ${!val ? 'selected' : ''}>--</option>
+                            <option value="accepted" ${val === 'accepted' ? 'selected' : ''}>✓ Accept</option>
+                            <option value="rejected" ${val === 'rejected' ? 'selected' : ''}>✗ Reject</option>
+                        </select>
+                    `;
+                };
+
                 container.innerHTML = `
                 <table>
-                    <thead><tr><th>#</th><th>ID</th><th>Title</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th></tr></thead>
+                    <thead><tr><th>#</th><th></th><th>ID</th><th>Title</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th><th>Decision</th></tr></thead>
                     <tbody>
-                        ${scores.map((p, i) => {
-                    const rank = i + 1;
-                    const isCutoff = cutoff > 0 && rank === cutoff;
-                    const aboveCutoff = cutoff > 0 && rank <= cutoff;
+                        ${filteredScores.map((p) => {
+                    const originalRank = scores.findIndex(s => s.id === p.id) + 1;
+                    const isCutoff = cutoff > 0 && originalRank === cutoff;
+                    const aboveCutoff = cutoff > 0 && originalRank <= cutoff;
                     const conflictClass = p.hasConflict ? 'conflict-row' : '';
                     return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''} ${conflictClass}">
-                                <td><span class="rank rank-normal">${rank}</span></td>
+                                <td><span class="rank rank-normal">${originalRank}</span></td>
+                                <td><button class="info-btn" onclick="showPaperDetails('${p.id}')">ℹ️</button></td>
                                 <td>${p.id}</td>
                                 <td>${(p.title || 'TBD').substring(0, 30)}...</td>
                                 <td>${badge(p.details[0])}</td>
                                 <td>${badge(p.details[1])}</td>
-                                <td><span class="score ${scoreClass(p.score)}">${p.score !== null ? p.score + '/8' : '-'}</span></td>
+                                <td><span class="score ${scoreClass(p.score)}">${p.score !== null ? p.score : '-'}</span></td>
                                 <td>${p.hasConflict ? '<span class="status" style="background:#fef3c7;color:#92400e">⚠ Conflict</span>' : (p.count >= 2 ? '<span class="status status-yes">Done</span>' : `<span class="status status-pending">${p.count}/2</span>`)}</td>
+                                <td>${getJudgmentSelect(p.id, originalRank)}</td>
                             </tr>`;
                 }).join('')}
                     </tbody>
@@ -2166,42 +2423,54 @@ Strategy Science Conference 2026 Organizing Committee`;
 
             function exportResults() {
                 const scores = papers.map(p => ({ ...p, ...calcScore(p.id) }));
-                scores.sort((a, b) => (b.score || 0) - (a.score || 0));
+                // Sort by score, then by priority
+                scores.sort((a, b) => {
+                    if (a.score === null && b.score === null) return 0;
+                    if (a.score === null) return 1;
+                    if (b.score === null) return -1;
+                    if (b.score !== a.score) return b.score - a.score;
+                    return b.priority - a.priority;
+                });
 
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
 
-                // Build CSV with all info
-                let csv = 'Rank,ID,Title,R1_Name,R1_Decision,R1_Score,R2_Name,R2_Decision,R2_Score,Total_Score,Status,Accepted,Conflict,PDF_Link\n';
+                // Build CSV with all info including admin judgment
+                let csv = 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Status,Admin_Decision,Conflict,PDF_Link\n';
                 scores.forEach((p, i) => {
                     const rank = i + 1;
-                    const isAccepted = cutoff > 0 && rank <= cutoff;
+                    const adminDecision = adminJudgments[p.id] || (cutoff > 0 ? (rank <= cutoff ? 'accepted' : 'rejected') : '');
                     const link = paperFiles[p.id]?.link || '';
 
                     const r1Name = p.details[0]?.reviewerName || '';
                     const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
-                    const r1Score = p.details[0]?.score || '';
 
                     const r2Name = p.details[1]?.reviewerName || '';
                     const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
-                    const r2Score = p.details[1]?.score || '';
 
                     const status = p.count >= 2 ? 'Complete' : `${p.count}/2`;
                     const conflict = p.hasConflict ? 'YES' : '';
+                    const pairLabel = getPairLabel(p.pairType);
 
-                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}",${r1Score},"${r2Name}","${r2Dec}",${r2Score},${p.score || ''},${status},${isAccepted ? 'ACCEPTED' : ''},${conflict},"${link}"\n`;
+                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${status},${adminDecision.toUpperCase()},${conflict},"${link}"\n`;
                 });
 
-                // Add separator and accepted-only section
-                if (cutoff > 0) {
+                // Add separator and accepted-only section based on admin judgments
+                const acceptedPapers = scores.filter(p =>
+                    adminJudgments[p.id] === 'accepted' ||
+                    (!adminJudgments[p.id] && cutoff > 0 && scores.indexOf(p) < cutoff)
+                );
+
+                if (acceptedPapers.length > 0) {
                     csv += '\n\n--- ACCEPTED PAPERS ONLY ---\n';
-                    csv += 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Total_Score,PDF_Link\n';
-                    scores.slice(0, cutoff).forEach((p, i) => {
+                    csv += 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,PDF_Link\n';
+                    acceptedPapers.forEach((p, i) => {
                         const link = paperFiles[p.id]?.link || '';
                         const r1Name = p.details[0]?.reviewerName || '';
                         const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
                         const r2Name = p.details[1]?.reviewerName || '';
                         const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
-                        csv += `${i + 1},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}",${p.score || ''},"${link}"\n`;
+                        const pairLabel = getPairLabel(p.pairType);
+                        csv += `${i + 1},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},"${link}"\n`;
                     });
                 }
 
@@ -2221,6 +2490,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                 db.ref('assignments').remove();
                 db.ref('reviews').remove();
                 db.ref('paperFiles').remove();
+                db.ref('adminJudgments').remove();
                 showToast('All data cleared');
             }
 
