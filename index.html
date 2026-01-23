@@ -1005,20 +1005,8 @@
     </head>
 
     <body>
-        <!-- CU Boulder Branded Top Bar -->
-        <div class="cu-topbar">
-            <svg class="cu-logo" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Simplified CU Buffalo icon -->
-                <path d="M20 8c-6 0-12 4-14 10 2-4 7-6 12-6 3 0 6 1 8 3 2-4-2-7-6-7z" fill="#CFB87C" />
-                <path d="M6 20c0 8 6 14 14 14s14-6 14-14c0-5-3-10-7-12-3 5-10 6-14 4-4-2-7 4-7 8z" fill="#CFB87C" />
-                <circle cx="12" cy="22" r="2" fill="#000" />
-            </svg>
-            <span class="cu-topbar-text">UNIVERSITY OF COLORADO BOULDER</span>
-            <span class="cu-topbar-divider">|</span>
-            <span class="cu-topbar-text">LEEDS SCHOOL OF BUSINESS</span>
-        </div>
-
-        <div class="connection-status" id="connection-status">Connecting...</div>
+        <!-- Banner removed as requested -->
+        <div class="connection-status" id="connection-status" style="top: 10px; right: 10px;">Connecting...</div>
 
         <div class="container">
             <header>
@@ -1408,6 +1396,26 @@
                 }
             }
 
+            function migrateReviewerIdInReviews(oldId, newId) {
+                db.ref('reviews').once('value', snap => {
+                    const allReviews = snap.val() || {};
+                    const updates = {};
+                    let found = false;
+
+                    Object.entries(allReviews).forEach(([paperId, paperReviews]) => {
+                        if (paperReviews[oldId]) {
+                            updates[`reviews/${paperId}/${newId}`] = paperReviews[oldId];
+                            updates[`reviews/${paperId}/${oldId}`] = null;
+                            found = true;
+                        }
+                    });
+
+                    if (found) {
+                        db.ref().update(updates);
+                    }
+                });
+            }
+
             function setupDatabaseListeners() {
                 db.ref('papers').on('value', (snapshot) => {
                     papers = snapshot.val() ? Object.values(snapshot.val()) : [];
@@ -1419,7 +1427,46 @@
                 });
 
                 db.ref('reviewers').on('value', (snapshot) => {
-                    reviewers = snapshot.val() ? Object.values(snapshot.val()) : [];
+                    const rawReviewers = snapshot.val() || {};
+                    reviewers = Object.values(rawReviewers);
+
+                    // MIGRATION: Auto-convert old insecure IDs (R001, etc.) to Secure IDs if found
+                    let migrationUpdates = {};
+                    let hasMigration = false;
+
+                    reviewers.forEach(r => {
+                        if (r.id.startsWith('R') && !r.id.startsWith('REV-') && r.id.length <= 5) {
+                            // Generate new secure ID
+                            const newId = 'REV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                            const oldId = r.id;
+
+                            // 1. Move reviewer data to new ID
+                            migrationUpdates[`reviewers/${newId}`] = { ...r, id: newId };
+                            migrationUpdates[`reviewers/${oldId}`] = null; // Delete old
+
+                            // 2. Move assignments
+                            if (assignments[oldId]) {
+                                migrationUpdates[`assignments/${newId}`] = assignments[oldId];
+                                migrationUpdates[`assignments/${oldId}`] = null;
+                            }
+
+                            // 3. Move reviews (nested under paperId)
+                            // This is trickier as reviews are organized by paperId -> reviewerId
+                            // We will handle reviews migration in the 'reviews' listener or separately
+                            // For simplicity, we queue these ID mappings to handle reviews update
+                            migrateReviewerIdInReviews(oldId, newId);
+
+                            hasMigration = true;
+                        }
+                    });
+
+                    if (hasMigration) {
+                        console.log("Migrating insecure IDs...", migrationUpdates);
+                        db.ref().update(migrationUpdates);
+                        // Return early to let update propagate
+                        return;
+                    }
+
                     dataLoaded.reviewers = true;
                     renderReviewers();
                     renderReviewerWorkload();
