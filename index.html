@@ -1923,7 +1923,7 @@
                 container.innerHTML = `
                 <div class="table-wrapper">
                     <table>
-                        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Max</th><th>Expertise</th><th>Action</th></tr></thead>
+                        <thead><tr><th>Name</th><th>Email</th><th>Max</th><th>Expertise</th><th>Action</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
                     const info = getExpertiseInfo(r.name);
@@ -1934,7 +1934,6 @@
                         expertiseHtml = methodTag + keywordTags;
                     }
                     return `<tr>
-                                <td>${r.id}</td>
                                 <td>${r.name}</td>
                                 <td style="font-size:0.8rem">${r.email}</td>
                                 <td>${r.maxPapers || '∞'}</td>
