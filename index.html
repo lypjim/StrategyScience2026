@@ -1138,6 +1138,7 @@
 
                             <div style="display:flex; gap:8px;">
                                 <button class="btn-secondary btn-sm" onclick="performDemoReview()">🤖 Demo Review</button>
+                                <button class="btn-secondary btn-sm" onclick="applyDefaultJudgments(); renderResults(); showToast('Refreshed')">🔄 Apply & Refresh</button>
                                 <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
                             </div>
                         </div>
@@ -2193,7 +2194,13 @@ Strategy Science Conference 2026 Organizing Committee`;
 
             function applyDefaultJudgments() {
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
-                if (cutoff === 0) return;
+
+                // If cutoff is 0, clear all judgments
+                if (cutoff === 0) {
+                    adminJudgments = {};
+                    db.ref('adminJudgments').remove();
+                    return;
+                }
 
                 const scores = papers.map(p => ({ ...p, ...calcScore(p.id) }));
                 scores.sort((a, b) => {
@@ -2204,21 +2211,24 @@ Strategy Science Conference 2026 Organizing Committee`;
                     return b.priority - a.priority;
                 });
 
-                const updates = {};
+                // Build new judgments object from scratch
+                const newJudgments = {};
                 scores.forEach((p, i) => {
                     const rank = i + 1;
                     // Skip conflicts - they need manual review
-                    if (p.hasConflict) return;
-
-                    const decision = rank <= cutoff ? 'accepted' : 'rejected';
-                    updates[`adminJudgments/${p.id}`] = decision;
-                    // Also update local object immediately for UI refresh
-                    adminJudgments[p.id] = decision;
+                    if (p.hasConflict) {
+                        // Preserve existing judgment for conflicts if any
+                        if (adminJudgments[p.id]) {
+                            newJudgments[p.id] = adminJudgments[p.id];
+                        }
+                        return;
+                    }
+                    newJudgments[p.id] = rank <= cutoff ? 'accepted' : 'rejected';
                 });
 
-                if (Object.keys(updates).length > 0) {
-                    db.ref().update(updates);
-                }
+                // Replace entire object to ensure consistency
+                adminJudgments = newJudgments;
+                db.ref('adminJudgments').set(newJudgments);
             }
 
             function renderResults() {
