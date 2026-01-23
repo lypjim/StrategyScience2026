@@ -2361,11 +2361,11 @@ Strategy Science Conference 2026 Organizing Committee`;
                         'no + no': 85,             // Strong reject
                         'maybe-yes + yes': 70,     // Leaning accept
                         'no + maybe-no': 65,       // Leaning reject
+                        'maybe-no + yes': 60,
+                        'no + maybe-yes': 55,
                         'maybe-yes + maybe-yes': 50,  // Moderate accept
                         'maybe-no + maybe-no': 45,    // Moderate reject
-                        'maybe-no + maybe-yes': 40,   // Uncertain
-                        'maybe-no + yes': 60,
-                        'no + maybe-yes': 55
+                        'maybe-no + maybe-yes': 95    // Conflict (weak) - High priority
                     };
                     priority = pairPriority[pairType] || 30;
                 }
@@ -2378,7 +2378,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                     'yes + yes': 'Yes + Yes',
                     'maybe-yes + yes': 'Yes + Maybe Yes',
                     'maybe-yes + maybe-yes': 'Maybe Yes + Maybe Yes',
-                    'maybe-no + maybe-yes': 'Maybe Yes + Maybe No',
+                    'maybe-no + maybe-yes': 'Maybe Yes + Maybe No (Conflict)',
                     'maybe-no + maybe-no': 'Maybe No + Maybe No',
                     'no + maybe-no': 'No + Maybe No',
                     'no + no': 'No + No',
