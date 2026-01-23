@@ -1213,7 +1213,7 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-number" id="stat-avg-score">-</div>
-                            <div class="stat-label">Avg Score</div>
+                            <div class="stat-label">Conflicts</div>
                         </div>
                     </div>
 
@@ -2411,19 +2411,20 @@ Strategy Science Conference 2026 Organizing Committee`;
 
             function renderResults() {
                 const totalPapers = papers.length;
-                let reviewed = 0, pending = 0, totalScore = 0, scoredCount = 0;
+                let reviewed = 0, pending = 0, conflictCount = 0;
 
                 const scores = papers.map(p => {
                     const s = calcScore(p.id);
-                    if (s.count >= 2) { reviewed++; totalScore += s.score; scoredCount++; }
+                    if (s.count >= 2) reviewed++;
                     else pending++;
+                    if (s.hasConflict) conflictCount++; // Count conflicts
                     return { ...p, ...s };
                 });
 
                 document.getElementById('stat-total-papers').textContent = totalPapers;
                 document.getElementById('stat-reviewed').textContent = reviewed;
                 document.getElementById('stat-pending').textContent = pending;
-                document.getElementById('stat-avg-score').textContent = scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : '-';
+                document.getElementById('stat-avg-score').textContent = conflictCount; // Display conflicts
 
                 const container = document.getElementById('results-list');
                 if (!container) return;
@@ -2707,13 +2708,9 @@ Strategy Science Conference 2026 Organizing Committee`;
         <footer class="cu-footer">
             <div class="footer-content">
                 <div class="footer-logo">
-                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="50" cy="50" r="45" stroke="#CFB87C" stroke-width="3" fill="none" />
-                        <path d="M35 35c-8 0-16 5-18 13 3-5 9-8 16-8 4 0 8 1 11 4 2-5-3-9-9-9z" fill="#CFB87C" />
-                        <path d="M17 50c0 11 8 19 19 19s19-8 19-19c0-7-4-14-10-16-4 7-13 8-19 5-5-3-9 5-9 11z"
-                            fill="#CFB87C" />
-                        <circle cx="27" cy="53" r="2.5" fill="#000" />
-                    </svg>
+                    <!-- Updated to use valid Leeds logo -->
+                    <img src="leeds-left_orig.png" alt="Leeds School of Business"
+                        style="height: 50px; background: rgba(255,255,255,0.9); padding: 5px; border-radius: 4px;">
                 </div>
                 <div class="footer-text">
                     <p><strong>Strategy Science Conference 2026</strong></p>
