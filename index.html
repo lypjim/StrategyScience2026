@@ -1606,7 +1606,9 @@
             function getReviewersForPaper(paperId) {
                 const result = [];
                 Object.entries(assignments).forEach(([revId, pids]) => {
-                    if (pids && pids.includes(paperId)) result.push(revId);
+                    // Only include assignments if the reviewer actually exists (prevents ghost IDs)
+                    const isValid = reviewers.some(r => r.id === revId);
+                    if (isValid && pids && pids.includes(paperId)) result.push(revId);
                 });
                 return result;
             }
