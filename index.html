@@ -798,21 +798,16 @@
         }
 
         .info-btn {
-            background: var(--accent-light);
-            border: 1px solid var(--accent);
-            border-radius: 6px;
+            background: transparent;
+            border: none;
             cursor: pointer;
             font-size: 1rem;
-            color: var(--accent);
-            padding: 4px 8px;
-            margin-right: 8px;
-            transition: all 0.2s;
+            padding: 2px 4px;
+            transition: transform 0.2s;
         }
 
         .info-btn:hover {
-            background: var(--accent);
-            color: white;
-            transform: scale(1.1);
+            transform: scale(1.2);
         }
 
         .keyword-tag {
@@ -872,46 +867,78 @@
         }
 
         /* Pair Statistics */
-        .pair-stat {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px 16px;
-            min-width: 120px;
-            text-align: center;
+        /* Pie Chart */
+        .pie-container {
+            display: flex;
+            align-items: center;
+            gap: 24px;
         }
-        .pair-stat .count {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--accent);
+        .pie-chart {
+            position: relative;
+            width: 160px;
+            height: 160px;
         }
-        .pair-stat .label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
+        .pie-chart svg {
+            transform: rotate(-90deg);
         }
-        .chart-bar {
+        .pie-slice {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .pie-slice:hover {
+            opacity: 0.8;
+        }
+        .pie-legend {
             display: flex;
             flex-direction: column;
+            gap: 6px;
+        }
+        .legend-item {
+            display: flex;
             align-items: center;
-            min-width: 60px;
+            gap: 8px;
+            font-size: 0.85rem;
         }
-        .chart-bar-fill {
-            width: 40px;
-            border-radius: 4px 4px 0 0;
-            transition: height 0.3s ease;
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
         }
-        .chart-bar-label {
+        .legend-label {
+            color: var(--text-secondary);
+        }
+        .legend-count {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .pie-tooltip {
+            position: absolute;
+            background: var(--text-primary);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            z-index: 100;
+        }
+        .pie-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .pie-center-count {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .pie-center-label {
             font-size: 0.7rem;
             color: var(--text-secondary);
-            text-align: center;
-            margin-top: 4px;
-            max-width: 70px;
-        }
-        .chart-bar-count {
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -1157,11 +1184,8 @@
                     <!-- Review Pair Statistics -->
                     <div class="card">
                         <h2>Review Pair Statistics</h2>
-                        <div id="pair-stats" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-                            <!-- Statistics will be rendered here -->
-                        </div>
-                        <div id="pair-chart" style="height: 200px; display: flex; align-items: flex-end; gap: 8px; padding: 16px 0;">
-                            <!-- Bar chart will be rendered here -->
+                        <div id="pair-stats" class="pie-container">
+                            <!-- Pie chart will be rendered here -->
                         </div>
                     </div>
 
@@ -2280,47 +2304,113 @@ Strategy Science Conference 2026 Organizing Committee`;
                 });
 
                 const statsContainer = document.getElementById('pair-stats');
-                const chartContainer = document.getElementById('pair-chart');
-
-                if (!statsContainer || !chartContainer) return;
+                if (!statsContainer) return;
 
                 const pairs = Object.entries(pairCounts).sort((a, b) => b[1] - a[1]);
-                const maxCount = Math.max(...pairs.map(p => p[1]), 1);
+                const total = pairs.reduce((sum, [, count]) => sum + count, 0);
+
+                if (total === 0) {
+                    statsContainer.innerHTML = '<div style="color:var(--text-secondary)">No completed reviews yet</div>';
+                    return;
+                }
 
                 // Color mapping for pair types
                 const pairColors = {
                     'yes + yes': '#38a169',
                     'maybe-yes + yes': '#68d391',
                     'maybe-yes + maybe-yes': '#9ae6b4',
-                    'maybe-no + maybe-yes': '#faf089',
-                    'maybe-no + maybe-no': '#fed7aa',
-                    'no + maybe-no': '#feb2b2',
+                    'maybe-no + maybe-yes': '#ecc94b',
+                    'maybe-no + maybe-no': '#ed8936',
+                    'no + maybe-no': '#fc8181',
                     'no + no': '#e53e3e',
                     'no + yes': '#f59e0b',
                     'maybe-no + yes': '#fbd38d',
                     'no + maybe-yes': '#fdba74'
                 };
 
-                // Render stat cards
-                statsContainer.innerHTML = pairs.map(([type, count]) => `
-                    <div class="pair-stat">
-                        <div class="count">${count}</div>
-                        <div class="label">${getPairLabel(type)}</div>
-                    </div>
-                `).join('') || '<div style="color:var(--text-secondary)">No completed reviews yet</div>';
+                // Build SVG pie chart
+                const size = 160;
+                const radius = 70;
+                const center = size / 2;
+                let currentAngle = 0;
 
-                // Render bar chart
-                chartContainer.innerHTML = pairs.map(([type, count]) => {
-                    const height = Math.max((count / maxCount) * 150, 20);
+                const slices = pairs.map(([type, count]) => {
+                    const percentage = count / total;
+                    const angle = percentage * 360;
+                    const startAngle = currentAngle;
+                    const endAngle = currentAngle + angle;
+                    currentAngle = endAngle;
+
+                    // Calculate arc path
+                    const startRad = (startAngle * Math.PI) / 180;
+                    const endRad = (endAngle * Math.PI) / 180;
+                    const x1 = center + radius * Math.cos(startRad);
+                    const y1 = center + radius * Math.sin(startRad);
+                    const x2 = center + radius * Math.cos(endRad);
+                    const y2 = center + radius * Math.sin(endRad);
+                    const largeArc = angle > 180 ? 1 : 0;
+
                     const color = pairColors[type] || '#a0aec0';
+                    const label = getPairLabel(type);
+
+                    return {
+                        path: `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`,
+                        color,
+                        type,
+                        count,
+                        label,
+                        percentage: (percentage * 100).toFixed(1)
+                    };
+                });
+
+                // Build legend
+                const legend = pairs.map(([type, count]) => {
+                    const color = pairColors[type] || '#a0aec0';
+                    const label = getPairLabel(type);
+                    const pct = ((count / total) * 100).toFixed(0);
                     return `
-                        <div class="chart-bar">
-                            <div class="chart-bar-count">${count}</div>
-                            <div class="chart-bar-fill" style="height:${height}px;background:${color}"></div>
-                            <div class="chart-bar-label">${getPairLabel(type)}</div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background:${color}"></span>
+                            <span class="legend-count">${count}</span>
+                            <span class="legend-label">${label} (${pct}%)</span>
                         </div>
                     `;
-                }).join('') || '';
+                }).join('');
+
+                statsContainer.innerHTML = `
+                    <div class="pie-chart">
+                        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+                            ${slices.map((s, i) => `
+                                <path class="pie-slice" d="${s.path}" fill="${s.color}"
+                                    onmouseenter="showPieTooltip(event, '${s.label}: ${s.count} (${s.percentage}%)')"
+                                    onmouseleave="hidePieTooltip()"/>
+                            `).join('')}
+                        </svg>
+                        <div class="pie-center">
+                            <div class="pie-center-count">${total}</div>
+                            <div class="pie-center-label">reviewed</div>
+                        </div>
+                        <div id="pie-tooltip" class="pie-tooltip"></div>
+                    </div>
+                    <div class="pie-legend">${legend}</div>
+                `;
+            }
+
+            function showPieTooltip(event, text) {
+                const tooltip = document.getElementById('pie-tooltip');
+                if (tooltip) {
+                    tooltip.textContent = text;
+                    tooltip.style.opacity = '1';
+                    tooltip.style.left = (event.offsetX + 10) + 'px';
+                    tooltip.style.top = (event.offsetY - 30) + 'px';
+                }
+            }
+
+            function hidePieTooltip() {
+                const tooltip = document.getElementById('pie-tooltip');
+                if (tooltip) {
+                    tooltip.style.opacity = '0';
+                }
             }
 
             function renderResults() {
