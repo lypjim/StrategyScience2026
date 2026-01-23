@@ -1675,6 +1675,8 @@
                     const keywords = baseKeywords[idx];
                     const abstract = baseAbstracts[idx];
                     updates['papers/' + id] = { id, title, keywords, abstract };
+                    // Add sample PDF link for testing
+                    updates['paperFiles/' + id] = { link: 'https://www.dropbox.com/scl/fi/o2kks05gvexd0gajm4e07/Aggarwal-V.-A.-Hsu-D.-H.-2014-.-Entrepreneurial-exit-and-innovation.pdf?rlkey=r4nr92j1q77cevoh2mzasczzr&dl=0' };
                 }
 
                 db.ref().update(updates);
