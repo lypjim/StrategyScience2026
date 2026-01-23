@@ -1690,7 +1690,8 @@
                 const updates = {};
                 const startIdx = papers.length;
                 for (let i = 0; i < 200; i++) {
-                    const id = 'P' + String(startIdx + i + 1).padStart(3, '0');
+                    // Use 'D' prefix for Dummy/Demo data to avoid conflict with real 'P' papers
+                    const id = 'D' + String(startIdx + i + 1).padStart(3, '0');
                     const idx = i % baseTitles.length;
                     const title = `${baseTitles[idx]} - Sample ${i + 1}`;
                     const keywords = baseKeywords[idx];
@@ -1750,10 +1751,14 @@
                         const row = parseCSVLine(lines[i]);
                         if (row.length === 0) continue;
 
-                        // Always generate a NEW unique ID to ensure we APPEND (200 + import)
-                        // Ignore the ID in the CSV to prevent collisions/overwrites
-                        maxIdNum++;
-                        const id = 'P' + String(maxIdNum).padStart(3, '0');
+                        // Get ID from CSV if present (preserve external DB links)
+                        let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
+
+                        // Only generate new ID if missing
+                        if (!id) {
+                            maxIdNum++;
+                            id = 'P' + String(maxIdNum).padStart(3, '0');
+                        }
 
                         const title = row[titleIdx] ? row[titleIdx].trim() : 'TBD';
                         const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
