@@ -1583,8 +1583,20 @@
 
             // Listen for auth state
             firebase.auth().onAuthStateChanged(user => {
+                // IMPORTANT: If reviewerId is present in URL, ALWAYS show reviewer view
+                // regardless of admin login state
+                if (reviewerId) {
+                    document.getElementById('admin-login').classList.add('hidden');
+                    document.getElementById('admin-view').classList.add('hidden');
+                    document.getElementById('reviewer-view').classList.remove('hidden');
+                    // Remove sign out button if present (not needed for reviewers)
+                    const btn = document.getElementById('sign-out-btn');
+                    if (btn) btn.remove();
+                    return; // Exit early - reviewer view takes priority
+                }
+
                 if (user) {
-                    // Admin Logged In
+                    // Admin Logged In (and no reviewerId in URL)
                     document.getElementById('admin-login').classList.add('hidden');
                     document.getElementById('admin-view').classList.remove('hidden');
                     document.getElementById('mode-badge').textContent = 'Admin Mode';
@@ -1604,18 +1616,11 @@
                         header.appendChild(btn);
                     }
                 } else {
-                    // Logged Out
-                    if (reviewerId) {
-                        // If it's a valid reviewer link, DO NOT show login
-                        document.getElementById('admin-login').classList.add('hidden');
-                        document.getElementById('admin-view').classList.add('hidden');
-                        // Ensure reviewer view logic takes over (it's handled in init/listeners)
-                    } else {
-                        // Normal visitor -> Show Login
-                        document.getElementById('admin-login').classList.remove('hidden');
-                        document.getElementById('admin-view').classList.add('hidden');
-                        document.getElementById('mode-badge').textContent = 'Admin Login';
-                    }
+                    // Logged Out (and no reviewerId in URL)
+                    // Normal visitor -> Show Login
+                    document.getElementById('admin-login').classList.remove('hidden');
+                    document.getElementById('admin-view').classList.add('hidden');
+                    document.getElementById('mode-badge').textContent = 'Admin Login';
                     const btn = document.getElementById('sign-out-btn');
                     if (btn) btn.remove();
                 }
