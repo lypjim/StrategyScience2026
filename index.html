@@ -1580,6 +1580,9 @@
 
             // Listen for auth state
             firebase.auth().onAuthStateChanged(user => {
+                // If in reviewer mode, ignore auth state updates to UI
+                if (reviewerId) return;
+
                 if (user) {
                     // Admin Logged In
                     document.getElementById('admin-login').classList.add('hidden');
