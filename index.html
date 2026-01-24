@@ -36,27 +36,7 @@
             --header-border: #CFB87C;
         }
 
-        [data-theme="dark"] {
-            --bg-primary: #121212;
-            --bg-secondary: #1e1e1e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --accent: #d4c088;
-            --accent-dark: #A89458;
-            --accent-light: #2c2820;
-            /* Darker version of FDF8EC */
-            --cu-black: #ffffff;
-            /* Invert for headers */
-            --cu-gold: #CFB87C;
-            --success: #48bb78;
-            --success-bg: #1c3325;
-            --warning: #ed8936;
-            --warning-bg: #3d2c18;
-            --danger: #f56565;
-            --danger-bg: #3b1818;
-            --border: #333333;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        }
+
 
         * {
             margin: 0;
@@ -106,22 +86,7 @@
             margin-bottom: 8px;
         }
 
-        .dark-mode-toggle {
-            position: absolute;
-            top: 0;
-            right: 0;
-            padding: 8px;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: color 0.2s;
-        }
 
-        .dark-mode-toggle:hover {
-            color: var(--accent);
-        }
 
         .subtitle {
             color: var(--text-secondary);
@@ -490,23 +455,11 @@
             margin-bottom: 20px;
         }
 
-        /* Dark mode logo switching */
+        /* Header logo */
         .header-logo {
             max-width: 300px;
             height: auto;
             margin-bottom: 20px;
-        }
-
-        .header-logo-dark {
-            display: none;
-        }
-
-        [data-theme="dark"] .header-logo-light {
-            display: none;
-        }
-
-        [data-theme="dark"] .header-logo-dark {
-            display: inline-block;
         }
 
         /* Fix assignment card text visibility */
@@ -1075,10 +1028,7 @@
 
         <div class="container">
             <header>
-                <button class="dark-mode-toggle" id="dark-toggle-btn" onclick="toggleDarkMode()"
-                    title="Toggle Dark Mode">🌙</button>
-                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo header-logo-light">
-                <img src="leeds-dark-logo.png" alt="Leeds School of Business" class="header-logo header-logo-dark">
+                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo">
                 <h1>Strategy Science Conference 2026</h1>
                 <p class="subtitle">Paper Review Management System</p>
                 <p class="venue-info">Hosted at <strong>Leeds School of Business</strong> · Boulder, Colorado</p>
@@ -1470,37 +1420,7 @@
             document.getElementById('connection-status').textContent = 'Connected';
             document.getElementById('connection-status').className = 'connection-status connected';
 
-            // Dark Mode
-            function initDarkMode() {
-                // Check saved preference
-                const savedTheme = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    updateDarkIcon(true);
-                }
-            }
-
-            function toggleDarkMode() {
-                const current = document.documentElement.getAttribute('data-theme');
-                if (current === 'dark') {
-                    document.documentElement.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'light');
-                    updateDarkIcon(false);
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                    updateDarkIcon(true);
-                }
-            }
-
-            function updateDarkIcon(isDark) {
-                const btn = document.getElementById('dark-toggle-btn');
-                if (btn) btn.textContent = isDark ? '☀️' : '🌙';
-            }
-
-            initDarkMode();
 
             if (reviewerId) {
                 showReviewerView(reviewerId);
