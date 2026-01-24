@@ -1088,7 +1088,19 @@
                             Send Sign-In Link
                         </button>
                     </form>
-                    <p style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <!-- Resend section (shown after link sent) -->
+                    <div id="reviewer-resend-section" class="hidden" style="margin-top: 15px;">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+                            Didn't receive the email? Check your spam folder or
+                        </p>
+                        <button class="btn-secondary" onclick="resendMagicLink()" id="resend-link-btn">
+                            🔄 Resend Sign-In Link
+                        </button>
+                        <button class="btn-secondary btn-sm" style="margin-left: 8px;" onclick="resetReviewerLogin()">
+                            Try Different Email
+                        </button>
+                    </div>
+                    <p id="reviewer-login-hint" style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary);">
                         We'll send a secure link to your email. Click it to access your assigned papers.
                     </p>
                     <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
@@ -1795,12 +1807,14 @@
                         successDiv.innerHTML = `
                             <strong>✓ Sign-in link sent!</strong><br>
                             Check your email at <strong>${email}</strong> and click the link to sign in.
-                            <br><small style="color: var(--text-secondary);">You have ${assignedPapers.length} paper${assignedPapers.length > 1 ? 's' : ''} to review. Don't forget to check your spam folder.</small>
+                            <br><small style="color: var(--text-secondary);">You have ${assignedPapers.length} paper${assignedPapers.length > 1 ? 's' : ''} to review.</small>
                         `;
                         successDiv.classList.remove('hidden');
 
-                        // Hide the form
+                        // Hide the form and hint, show resend section
                         document.getElementById('reviewer-login-form').style.display = 'none';
+                        document.getElementById('reviewer-login-hint').style.display = 'none';
+                        document.getElementById('reviewer-resend-section').classList.remove('hidden');
                     })
                     .catch((error) => {
                         console.error('Send magic link error:', error);
@@ -1818,6 +1832,59 @@
                         sendBtn.disabled = false;
                         sendBtn.textContent = 'Send Sign-In Link';
                     });
+            }
+
+            // Resend magic link using stored email
+            function resendMagicLink() {
+                const email = localStorage.getItem('emailForSignIn');
+                if (!email) {
+                    showToast('No email found. Please enter your email again.');
+                    resetReviewerLogin();
+                    return;
+                }
+
+                const resendBtn = document.getElementById('resend-link-btn');
+                const successDiv = document.getElementById('reviewer-auth-success');
+                const errorDiv = document.getElementById('reviewer-auth-error');
+
+                resendBtn.disabled = true;
+                resendBtn.textContent = '🔄 Sending...';
+                errorDiv.classList.add('hidden');
+
+                const actionCodeSettings = {
+                    url: window.location.origin + window.location.pathname,
+                    handleCodeInApp: true
+                };
+
+                firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
+                    .then(() => {
+                        successDiv.innerHTML = `
+                            <strong>✓ Sign-in link resent!</strong><br>
+                            Check your email at <strong>${email}</strong> and click the link to sign in.
+                            <br><small style="color: var(--text-secondary);">Don't forget to check your spam folder.</small>
+                        `;
+                        showToast('Sign-in link resent!');
+                    })
+                    .catch((error) => {
+                        console.error('Resend magic link error:', error);
+                        errorDiv.textContent = 'Error resending: ' + error.message;
+                        errorDiv.classList.remove('hidden');
+                    })
+                    .finally(() => {
+                        resendBtn.disabled = false;
+                        resendBtn.textContent = '🔄 Resend Sign-In Link';
+                    });
+            }
+
+            // Reset reviewer login form to try different email
+            function resetReviewerLogin() {
+                document.getElementById('reviewer-login-form').style.display = 'block';
+                document.getElementById('reviewer-login-hint').style.display = 'block';
+                document.getElementById('reviewer-resend-section').classList.add('hidden');
+                document.getElementById('reviewer-auth-success').classList.add('hidden');
+                document.getElementById('reviewer-auth-error').classList.add('hidden');
+                document.getElementById('reviewer-login-email').value = '';
+                localStorage.removeItem('emailForSignIn');
             }
 
             // Find reviewer by email
