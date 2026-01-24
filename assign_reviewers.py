@@ -21,10 +21,10 @@ from typing import Optional
 # =====================
 INPUT_CSV = "papers_import.csv"
 OUTPUT_CSV = "assignments.csv"
-TEST_MODE = 5  # Set to None to process all papers, or a number to limit
+TEST_MODE = None  # Set to None to process all papers, or a number to limit
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen3:14b"  # Updated to Qwen3 14B with 128K context
+OLLAMA_MODEL = "qwen2.5:7b"  # Faster model for assignments
 
 # =====================
 # REVIEWER DATA
@@ -422,9 +422,18 @@ def main():
     print("PHASE 1: Extracting research methods")
     print("=" * 60)
 
+    import time
+    start_time = time.time()
     method_counts = defaultdict(int)
+    
     for i, paper in enumerate(papers):
-        print(f"[{i+1}/{len(papers)}] {paper.id}: {paper.title[:40]}...")
+        elapsed = time.time() - start_time
+        avg_time = elapsed / (i + 1) if i > 0 else 0
+        remaining = avg_time * (len(papers) - i - 1) if i > 0 else 0
+        
+        print(f"\n[{i+1}/{len(papers)}] {paper.id}: {paper.title[:40]}...")
+        print(f"    Elapsed: {elapsed/60:.1f} min | Est. remaining: {remaining/60:.1f} min")
+        
         paper.method = extract_method(paper)
         method_counts[paper.method] += 1
         print(f"    → Method: {paper.method}")
@@ -438,8 +447,15 @@ def main():
     print("PHASE 2: Matching papers to reviewers")
     print("=" * 60)
 
+    phase2_start = time.time()
     for i, paper in enumerate(papers):
-        print(f"[{i+1}/{len(papers)}] {paper.id}: Finding best reviewers...")
+        elapsed = time.time() - phase2_start
+        avg_time = elapsed / (i + 1) if i > 0 else 0
+        remaining = avg_time * (len(papers) - i - 1) if i > 0 else 0
+        
+        print(f"\n[{i+1}/{len(papers)}] {paper.id}: Finding best reviewers...")
+        print(f"    Elapsed: {elapsed/60:.1f} min | Est. remaining: {remaining/60:.1f} min")
+        
         eligible = get_eligible_reviewers(paper.method)
         print(f"    → {len(eligible)} eligible reviewers for {paper.method} paper")
 
@@ -449,6 +465,10 @@ def main():
         top3 = sorted(paper.reviewer_scores.items(), key=lambda x: x[1], reverse=True)[:3]
         for name, score in top3:
             print(f"    → {name}: {score}")
+        
+        # Batch save every 5 papers (save partial progress)
+        if (i + 1) % 5 == 0:
+            print(f"    💾 Checkpoint: Phase 2 at paper {i+1}")
 
     # Phase 3: Assignment with load balancing
     print("\n" + "=" * 60)
@@ -468,12 +488,14 @@ def main():
     save_assignments(assignments, papers, OUTPUT_CSV)
 
     # Summary
+    total_time = time.time() - start_time
     assigned_count = sum(1 for r in assignments.values() if len(r) == 2)
     partial_count = sum(1 for r in assignments.values() if len(r) == 1)
 
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
+    print(f"✓ Total time: {total_time/60:.1f} minutes")
     print(f"✓ Fully assigned (2 reviewers): {assigned_count} papers")
     if partial_count:
         print(f"⚠ Partially assigned (1 reviewer): {partial_count} papers")
