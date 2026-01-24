@@ -490,6 +490,35 @@
             margin-bottom: 20px;
         }
 
+        /* Dark mode logo switching */
+        .header-logo-dark {
+            display: none;
+        }
+
+        [data-theme="dark"] .header-logo-light {
+            display: none;
+        }
+
+        [data-theme="dark"] .header-logo-dark {
+            display: block;
+        }
+
+        /* Fix assignment card text visibility */
+        .assignment-paper {
+            color: var(--text-primary);
+        }
+
+        .assignment-paper.complete {
+            border-color: #38a169;
+            border-width: 2px;
+            background: var(--success-bg);
+            color: var(--text-primary);
+        }
+
+        .assignment-paper strong {
+            color: var(--text-primary);
+        }
+
         .paper-card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -1042,7 +1071,8 @@
             <header>
                 <button class="dark-mode-toggle" id="dark-toggle-btn" onclick="toggleDarkMode()"
                     title="Toggle Dark Mode">🌙</button>
-                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo">
+                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo header-logo-light">
+                <img src="leeds-dark-logo.png" alt="Leeds School of Business" class="header-logo header-logo-dark">
                 <h1>Strategy Science Conference 2026</h1>
                 <p class="subtitle">Paper Review Management System</p>
                 <p class="venue-info">Hosted at <strong>Leeds School of Business</strong> · Boulder, Colorado</p>
@@ -1195,14 +1225,15 @@
                         </p>
 
                         <div
-                            style="margin-bottom: 20px; padding: 16px; background: var(--accent-light); border-radius: 8px; border: 1px solid var(--accent);">
-                            <h3 style="font-size: 1rem; margin-bottom: 12px;">📁 Import Assignments from CSV</h3>
+                            style="margin-bottom: 20px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+                            <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--text-primary);">📁 Import
+                                Assignments from CSV</h3>
                             <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
                                 Upload a CSV with columns: <code>paper_id</code>, <code>reviewer_1</code>,
                                 <code>reviewer_2</code> (use reviewer names)
                             </p>
                             <input type="file" id="assignments-csv-input" accept=".csv" style="margin-bottom: 12px;">
-                            <button class="btn-primary btn-sm" onclick="importAssignmentsCSV()">Import
+                            <button class="btn-secondary btn-sm" onclick="importAssignmentsCSV()">Import
                                 Assignments</button>
                         </div>
 
