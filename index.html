@@ -1223,6 +1223,7 @@
                             <button class="btn-primary" onclick="addReviewer()">Add Reviewer</button>
                             <button class="btn-secondary" onclick="loadDefaultReviewers()">Load 17 Default
                                 Reviewers</button>
+                            <button class="btn-secondary" onclick="addTestReviewer()">🧪 Add Test Reviewer</button>
                         </div>
                     </div>
 
@@ -2302,6 +2303,19 @@
                 document.getElementById('reviewer-max').value = '';
                 document.getElementById('reviewer-expertise').value = '';
                 showToast('Reviewer added with Secure ID');
+            }
+
+            // Add a test reviewer (for development/testing)
+            function addTestReviewer() {
+                const id = 'REV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+                db.ref('reviewers/' + id).set({
+                    id,
+                    name: "Yupeng Liu (Test)",
+                    email: "yupeng.liu@colorado.edu",
+                    maxPapers: null,
+                    expertise: "Testing"
+                });
+                showToast('Test reviewer added: yupeng.liu@colorado.edu');
             }
 
             function loadDefaultReviewers() {
