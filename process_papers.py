@@ -220,13 +220,36 @@ def main():
     
     print(f"✓ Found {len(files)} PDF files\n")
     
+    # Helper to save papers to CSV
+    fieldnames = ['id', 'title', 'link', 'keywords', 'abstract', 'original_filename']
+    def save_papers(papers_list, is_final=False):
+        with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(papers_list)
+        if is_final:
+            print(f"\n✓ Final save: {len(papers_list)} papers to {OUTPUT_CSV}")
+        else:
+            print(f"       💾 Batch saved: {len(papers_list)} papers so far")
+    
     # Process each file
     papers = []
+    total_files = len(files)
+    import time
+    start_time = time.time()
+    
     for i, file_entry in enumerate(sorted(files, key=lambda x: x.name)):
         paper_id = f"P{str(i + 1).zfill(3)}"
         filename = file_entry.name
         
-        print(f"[{paper_id}] Processing {filename[:50]}...")
+        elapsed = time.time() - start_time
+        avg_time = elapsed / (i + 1) if i > 0 else 0
+        remaining = avg_time * (total_files - i - 1) if i > 0 else 0
+        
+        print(f"\n{'='*60}")
+        print(f"[{paper_id}] ({i+1}/{total_files}) Processing: {filename[:45]}...")
+        print(f"    Elapsed: {elapsed/60:.1f} min | Est. remaining: {remaining/60:.1f} min")
+        print(f"{'='*60}")
         
         # Download PDF
         tmp_path = None
@@ -235,34 +258,38 @@ def main():
                 _, response = dbx.files_download(file_entry.path_display)
                 tmp.write(response.content)
                 tmp_path = tmp.name
+            print(f"    ✓ Downloaded PDF")
         except Exception as e:
-            print(f"       ✗ Download failed: {e}")
+            print(f"    ✗ Download failed: {e}")
             continue
         
         # Get shareable link
         try:
             link = get_shared_link(dbx, file_entry.path_display)
-            print(f"       ✓ Link generated")
+            print(f"    ✓ Link generated")
         except Exception as e:
-            print(f"       ✗ Link failed: {e}")
+            print(f"    ✗ Link failed: {e}")
             link = ""
         
         # Extract text
         text = extract_text_from_pdf(tmp_path)
+        print(f"    ✓ Extracted {len(text)} chars from PDF")
         
         # Use LLM to extract everything
-        print(f"       ⏳ Extracting with LLM...")
+        print(f"    ⏳ Calling LLM for extraction...")
         info = extract_paper_info(text, filename)
         
         # Fallback title if LLM fails
         if not info['title']:
             info['title'] = filename.replace('.pdf', '').replace('.PDF', '')[:80]
         
-        print(f"       ✓ Title: {info['title'][:50]}...")
+        print(f"    ✓ Title: {info['title'][:50]}...")
         if info['abstract']:
-            print(f"       ✓ Abstract: {len(info['abstract'])} chars")
+            print(f"    ✓ Abstract: {len(info['abstract'])} chars (~{len(info['abstract'].split())} words)")
+        else:
+            print(f"    ⚠ No abstract extracted")
         if info['keywords']:
-            print(f"       ✓ Keywords: {info['keywords'][:50]}...")
+            print(f"    ✓ Keywords: {info['keywords'][:50]}...")
         
         # Clean up
         if tmp_path:
@@ -276,18 +303,19 @@ def main():
             'abstract': info['abstract'],
             'original_filename': filename
         })
+        
+        # Batch save every 5 papers
+        if len(papers) % 5 == 0:
+            save_papers(papers, is_final=False)
     
-    # Write CSV
-    print(f"\n📝 Writing {OUTPUT_CSV}...")
-    fieldnames = ['id', 'title', 'link', 'keywords', 'abstract', 'original_filename']
-    with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(papers)
+    # Final save
+    print(f"\n📝 Final save to {OUTPUT_CSV}...")
+    save_papers(papers, is_final=True)
     
-    print(f"✓ Saved {len(papers)} papers to {OUTPUT_CSV}")
+    total_time = time.time() - start_time
     print("\n" + "=" * 60)
-    print("Done! All fields extracted via LLM.")
+    print(f"Done! Processed {len(papers)} papers in {total_time/60:.1f} minutes")
+    print(f"Average: {total_time/len(papers):.1f} seconds per paper")
     print("=" * 60)
 
 
