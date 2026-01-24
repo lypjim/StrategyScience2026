@@ -11,7 +11,6 @@ Requires: Ollama running with llama3.1:8b (or qwen2.5:7b)
 """
 
 import csv
-import json
 import requests
 from collections import defaultdict
 from dataclasses import dataclass
@@ -22,9 +21,10 @@ from typing import Optional
 # =====================
 INPUT_CSV = "papers_import.csv"
 OUTPUT_CSV = "assignments.csv"
+TEST_MODE = 5  # Set to None to process all papers, or a number to limit
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.1:8b"  # or "qwen2.5:7b"
+OLLAMA_MODEL = "qwen3:14b"  # Updated to Qwen3 14B with 128K context
 
 # =====================
 # REVIEWER DATA
@@ -148,7 +148,7 @@ def extract_method(paper: Paper) -> str:
     prompt = f"""Analyze this academic paper and determine its PRIMARY research method.
 
 Title: {paper.title}
-Abstract: {paper.abstract[:1500] if paper.abstract else 'Not available'}
+Abstract: {paper.abstract[:3500] if paper.abstract else 'Not available'}
 Keywords: {paper.keywords}
 
 Classify as ONE of:
@@ -215,7 +215,7 @@ def rank_reviewers_for_paper(paper: Paper, eligible_reviewers: list) -> dict:
 
 PAPER:
 Title: {paper.title}
-Abstract: {paper.abstract[:1200] if paper.abstract else 'Not available'}
+Abstract: {paper.abstract[:3500] if paper.abstract else 'Not available'}
 Keywords: {paper.keywords}
 Method: {paper.method}
 
@@ -268,6 +268,12 @@ def calculate_capacity(num_papers: int, num_reviewers: int) -> int:
 def assign_reviewers(papers: list, default_capacity: int) -> dict:
     """
     Assign 2 reviewers to each paper using greedy algorithm with load balancing.
+
+    Key features to prevent one person reviewing all papers:
+    1. Hard capacity cap per reviewer
+    2. Load penalty: as reviewer gets more papers, their effective score decreases
+    3. Harder papers (fewer eligible reviewers) assigned first
+
     Returns: {paper_id: [reviewer1, reviewer2]}
     """
     assignments = {}
@@ -275,31 +281,43 @@ def assign_reviewers(papers: list, default_capacity: int) -> dict:
     reviewer_capacity = {name: default_capacity for name in REVIEWERS}
 
     # Sort papers by number of eligible reviewers (harder papers first)
+    # This ensures specialists get assigned to papers that need them
     papers_sorted = sorted(papers, key=lambda p: len(get_eligible_reviewers(p.method)))
 
     for paper in papers_sorted:
         assigned = []
 
-        # Get reviewers sorted by score for this paper
+        # Calculate effective score with load penalty
+        # Higher load = lower effective score, encouraging even distribution
+        def effective_score(reviewer, base_score):
+            load = reviewer_load[reviewer]
+            capacity = reviewer_capacity[reviewer]
+            # Penalty increases as load approaches capacity
+            load_penalty = (load / capacity) * 2  # Max penalty of 2 points
+            return base_score - load_penalty
+
+        # Get reviewers sorted by EFFECTIVE score (base score minus load penalty)
         scored_reviewers = sorted(
             paper.reviewer_scores.items(),
-            key=lambda x: (x[1], -reviewer_load[x[0]]),  # Higher score, lower load
+            key=lambda x: effective_score(x[0], x[1]),
             reverse=True
         )
 
-        for reviewer, score in scored_reviewers:
+        for reviewer, base_score in scored_reviewers:
             if len(assigned) >= 2:
                 break
 
-            # Check capacity
+            # Hard capacity cap - never exceed
             if reviewer_load[reviewer] < reviewer_capacity[reviewer]:
                 assigned.append(reviewer)
                 reviewer_load[reviewer] += 1
 
-        # Fallback: if couldn't assign 2, try any eligible reviewer
+        # Fallback: if couldn't assign 2, try any eligible reviewer with lowest load
         if len(assigned) < 2:
             eligible = get_eligible_reviewers(paper.method)
-            for reviewer in eligible:
+            # Sort by load (prefer less loaded reviewers)
+            eligible_sorted = sorted(eligible, key=lambda r: reviewer_load[r])
+            for reviewer in eligible_sorted:
                 if len(assigned) >= 2:
                     break
                 if reviewer not in assigned and reviewer_load[reviewer] < reviewer_capacity[reviewer]:
@@ -380,7 +398,14 @@ def main():
     print(f"\n📄 Loading papers from {INPUT_CSV}...")
     try:
         papers = load_papers(INPUT_CSV)
-        print(f"✓ Loaded {len(papers)} papers")
+        total_papers = len(papers)
+
+        # Apply test mode limit
+        if TEST_MODE:
+            papers = papers[:TEST_MODE]
+            print(f"✓ Loaded {total_papers} papers (TEST MODE: using first {len(papers)})")
+        else:
+            print(f"✓ Loaded {len(papers)} papers")
     except FileNotFoundError:
         print(f"✗ File not found: {INPUT_CSV}")
         print("  Run process_papers.py first to generate this file.")

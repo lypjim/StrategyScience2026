@@ -23,12 +23,12 @@ def extract_abstract_from_text(full_text):
             abstract = match.group(1).strip()
             # Clean up: remove excessive whitespace
             abstract = re.sub(r'\s+', ' ', abstract)
-            # Limit to reasonable length (abstracts are usually 150-300 words)
-            if 100 < len(abstract) < 3000:
-                return abstract[:2000]
+            # Limit to reasonable length (~500 words ≈ 3500 chars)
+            if 100 < len(abstract) < 5000:
+                return abstract[:3500]
 
     # Fallback: if no abstract found, take first chunk after title
     # Skip first 200 chars (usually title/author info)
-    fallback = full_text[200:1200]
+    fallback = full_text[200:3700]
     fallback = re.sub(r'\s+', ' ', fallback).strip()
     return fallback

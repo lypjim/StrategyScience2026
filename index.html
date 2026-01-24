@@ -1194,6 +1194,18 @@
                             workload.
                         </p>
 
+                        <div
+                            style="margin-bottom: 20px; padding: 16px; background: var(--accent-light); border-radius: 8px; border: 1px solid var(--accent);">
+                            <h3 style="font-size: 1rem; margin-bottom: 12px;">📁 Import Assignments from CSV</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                                Upload a CSV with columns: <code>paper_id</code>, <code>reviewer_1</code>,
+                                <code>reviewer_2</code> (use reviewer names)
+                            </p>
+                            <input type="file" id="assignments-csv-input" accept=".csv" style="margin-bottom: 12px;">
+                            <button class="btn-primary btn-sm" onclick="importAssignmentsCSV()">Import
+                                Assignments</button>
+                        </div>
+
                         <div class="filter-row">
                             <label>Filter:</label>
                             <select id="filter-assignment-status" onchange="renderAssignments()">
@@ -2247,6 +2259,137 @@
                     .catch(err => showToast('Error: ' + err.message));
             }
 
+            function importAssignmentsCSV() {
+                const fileInput = document.getElementById('assignments-csv-input');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    return showToast('Please select a CSV file first');
+                }
+
+                if (reviewers.length === 0) {
+                    return showToast('Please load reviewers first');
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const text = e.target.result;
+                    const lines = text.split('\n').filter(line => line.trim());
+
+                    if (lines.length < 2) {
+                        return showToast('CSV file is empty or has no data rows');
+                    }
+
+                    // Parse header
+                    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+                    const paperIdIdx = header.findIndex(h => h.includes('paper') && h.includes('id'));
+                    const rev1Idx = header.findIndex(h => h.includes('reviewer') && h.includes('1'));
+                    const rev2Idx = header.findIndex(h => h.includes('reviewer') && h.includes('2'));
+
+                    if (paperIdIdx === -1) {
+                        return showToast('CSV must have a "paper_id" column');
+                    }
+
+                    // Helper to find reviewer ID by name
+                    function findReviewerId(name) {
+                        if (!name || !name.trim()) return null;
+                        const cleanName = name.trim().toLowerCase();
+                        // Try exact match first
+                        let match = reviewers.find(r => r.name.toLowerCase() === cleanName);
+                        if (match) return match.id;
+                        // Try partial match (last name)
+                        match = reviewers.find(r => {
+                            const lastName = r.name.split(' ').pop().toLowerCase();
+                            return cleanName.includes(lastName) || lastName.includes(cleanName);
+                        });
+                        if (match) return match.id;
+                        // Try first name
+                        match = reviewers.find(r => {
+                            const firstName = r.name.split(' ')[0].toLowerCase();
+                            return cleanName.includes(firstName);
+                        });
+                        return match ? match.id : null;
+                    }
+
+                    // Build assignments object
+                    const newAssignments = {};
+                    let importedCount = 0;
+                    let skippedCount = 0;
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const row = parseCSVLine(lines[i]);
+                        if (row.length === 0) continue;
+
+                        const paperId = row[paperIdIdx]?.trim();
+                        if (!paperId) continue;
+
+                        // Check if paper exists
+                        const paperExists = papers.some(p => p.id === paperId);
+                        if (!paperExists) {
+                            console.log(`Skipping unknown paper: ${paperId}`);
+                            skippedCount++;
+                            continue;
+                        }
+
+                        const rev1Name = rev1Idx !== -1 ? row[rev1Idx]?.trim() : null;
+                        const rev2Name = rev2Idx !== -1 ? row[rev2Idx]?.trim() : null;
+
+                        const rev1Id = findReviewerId(rev1Name);
+                        const rev2Id = findReviewerId(rev2Name);
+
+                        if (rev1Id) {
+                            if (!newAssignments[rev1Id]) newAssignments[rev1Id] = [];
+                            if (!newAssignments[rev1Id].includes(paperId)) {
+                                newAssignments[rev1Id].push(paperId);
+                            }
+                        }
+                        if (rev2Id) {
+                            if (!newAssignments[rev2Id]) newAssignments[rev2Id] = [];
+                            if (!newAssignments[rev2Id].includes(paperId)) {
+                                newAssignments[rev2Id].push(paperId);
+                            }
+                        }
+
+                        if (rev1Id || rev2Id) importedCount++;
+                    }
+
+                    if (importedCount === 0) {
+                        return showToast('No valid assignments found in CSV');
+                    }
+
+                    // Merge with existing or replace?
+                    const shouldMerge = confirm(`Found ${importedCount} papers with assignments.\n\nClick OK to MERGE with existing assignments.\nClick Cancel to REPLACE all assignments.`);
+
+                    if (shouldMerge) {
+                        // Merge: add new assignments to existing
+                        Object.entries(newAssignments).forEach(([revId, paperIds]) => {
+                            const existing = assignments[revId] || [];
+                            const merged = [...new Set([...existing, ...paperIds])];
+                            newAssignments[revId] = merged;
+                        });
+                        // Keep existing reviewer assignments not in import
+                        Object.entries(assignments).forEach(([revId, paperIds]) => {
+                            if (!newAssignments[revId]) {
+                                newAssignments[revId] = paperIds;
+                            }
+                        });
+                    }
+
+                    db.ref('assignments').set(newAssignments)
+                        .then(() => {
+                            showToast(`Imported assignments for ${importedCount} papers` + (skippedCount > 0 ? ` (${skippedCount} skipped)` : ''));
+                            fileInput.value = '';
+                        })
+                        .catch(err => showToast('Error: ' + err.message));
+                };
+
+                reader.onerror = function () {
+                    showToast('Error reading file');
+                };
+
+                reader.readAsText(file);
+            }
+
             function renderReviewerWorkload() {
                 const container = document.getElementById('reviewer-workload');
                 if (!container) return;
@@ -2262,13 +2405,21 @@
                         <thead><tr><th>Reviewer</th><th>Expertise</th><th>Assigned</th><th>Capacity</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
+                    const info = getExpertiseInfo(r.name);
+                    let expertiseHtml = r.expertise || '-';
+                    if (info) {
+                        const methodTag = `<span class="method-tag">${info.method}</span>`;
+                        const keywordTags = info.keywords.slice(0, 3).map(k => `<span class="expertise-tag">${k}</span>`).join('');
+                        expertiseHtml = methodTag + keywordTags;
+                    }
+
                     const count = getReviewerPaperCount(r.id);
                     const max = r.maxPapers || 999;
                     const pct = Math.min(100, (count / max) * 100);
                     const full = r.maxPapers && count >= r.maxPapers;
                     return `<tr>
                                     <td>${r.name}</td>
-                                    <td style="font-size:0.8rem">${r.expertise || '-'}</td>
+                                    <td style="font-size:0.8rem;max-width:350px;">${expertiseHtml}</td>
                                     <td>${count}</td>
                                     <td style="width:120px">
                                         ${r.maxPapers ? `
