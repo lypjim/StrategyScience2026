@@ -12,6 +12,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
         :root {
@@ -32,6 +33,29 @@
             --danger-bg: #fff5f5;
             --border: #e2e2e2;
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --header-border: #CFB87C;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #d4c088;
+            --accent-dark: #A89458;
+            --accent-light: #2c2820;
+            /* Darker version of FDF8EC */
+            --cu-black: #ffffff;
+            /* Invert for headers */
+            --cu-gold: #CFB87C;
+            --success: #48bb78;
+            --success-bg: #1c3325;
+            --warning: #ed8936;
+            --warning-bg: #3d2c18;
+            --danger: #f56565;
+            --danger-bg: #3b1818;
+            --border: #333333;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         * {
@@ -80,6 +104,23 @@
             font-weight: 600;
             color: var(--cu-black);
             margin-bottom: 8px;
+        }
+
+        .dark-mode-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 8px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .dark-mode-toggle:hover {
+            color: var(--accent);
         }
 
         .subtitle {
@@ -999,6 +1040,8 @@
 
         <div class="container">
             <header>
+                <button class="dark-mode-toggle" id="dark-toggle-btn" onclick="toggleDarkMode()"
+                    title="Toggle Dark Mode">🌙</button>
                 <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo">
                 <h1>Strategy Science Conference 2026</h1>
                 <p class="subtitle">Paper Review Management System</p>
@@ -1011,16 +1054,25 @@
                 <div class="card">
                     <h2>🔐 Admin Login</h2>
                     <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                        Enter the admin password to access the management panel.
+                        Sign in to access the management panel.
                     </p>
+                    <div id="auth-error" class="alert alert-danger hidden"
+                        style="font-size: 0.9rem; margin-bottom: 15px;"></div>
                     <div class="form-group">
-                        <label>Admin Password</label>
-                        <input type="password" id="login-password" placeholder="Enter admin password"
+                        <label>Email</label>
+                        <input type="email" id="login-email" placeholder="admin@strategyscience.org">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" placeholder="Password"
                             onkeypress="if(event.key==='Enter')adminLogin()">
                     </div>
                     <button class="btn-primary" onclick="adminLogin()" style="width: 100%;">
                         Login
                     </button>
+                    <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-secondary);">
+                        Note: Enable "Email/Password" provider in Firebase Console.
+                    </p>
                 </div>
             </div>
 
@@ -1305,7 +1357,7 @@
                 databaseURL: "https://strategyscience2026-default-rtdb.firebaseio.com"
             };
 
-            const ADMIN_PASSWORD = "CUBoulder2026";
+            // const ADMIN_PASSWORD = "CUBoulder2026"; // REMOVED: Using Firebase Auth
 
             // =====================
             // TEST MODE - Set to false for production
@@ -1365,8 +1417,41 @@
             const reviewerId = urlParams.get('reviewer');
 
             // Init
+            // Init
             document.getElementById('connection-status').textContent = 'Connected';
             document.getElementById('connection-status').className = 'connection-status connected';
+
+            // Dark Mode
+            function initDarkMode() {
+                // Check saved preference
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    updateDarkIcon(true);
+                }
+            }
+
+            function toggleDarkMode() {
+                const current = document.documentElement.getAttribute('data-theme');
+                if (current === 'dark') {
+                    document.documentElement.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                    updateDarkIcon(false);
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    updateDarkIcon(true);
+                }
+            }
+
+            function updateDarkIcon(isDark) {
+                const btn = document.getElementById('dark-toggle-btn');
+                if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+            }
+
+            initDarkMode();
 
             if (reviewerId) {
                 showReviewerView(reviewerId);
@@ -1492,15 +1577,63 @@
             // =====================
             // AUTH & NAV
             // =====================
-            function adminLogin() {
-                if (document.getElementById('login-password').value === ADMIN_PASSWORD) {
+
+            // Listen for auth state
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    // Admin Logged In
                     document.getElementById('admin-login').classList.add('hidden');
                     document.getElementById('admin-view').classList.remove('hidden');
                     document.getElementById('mode-badge').textContent = 'Admin Mode';
                     setupTabNavigation();
+
+                    // Add Sign Out Button if not present
+                    if (!document.getElementById('sign-out-btn')) {
+                        const header = document.querySelector('header');
+                        const btn = document.createElement('button');
+                        btn.id = 'sign-out-btn';
+                        btn.innerText = 'Sign Out';
+                        btn.className = 'btn-secondary btn-sm';
+                        btn.style.position = 'absolute';
+                        btn.style.top = '10px';
+                        btn.style.left = '10px';
+                        btn.onclick = () => firebase.auth().signOut();
+                        header.appendChild(btn);
+                    }
                 } else {
-                    showToast('Incorrect password');
+                    // Logged Out
+                    if (!reviewerId) {
+                        document.getElementById('admin-login').classList.remove('hidden');
+                        document.getElementById('admin-view').classList.add('hidden');
+                        document.getElementById('mode-badge').textContent = 'Admin Login';
+                    }
+                    const btn = document.getElementById('sign-out-btn');
+                    if (btn) btn.remove();
                 }
+            });
+
+            function adminLogin() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorDiv = document.getElementById('auth-error');
+
+                errorDiv.classList.add('hidden');
+
+                if (!email || !password) {
+                    return showToast('Please enter email and password');
+                }
+
+                firebase.auth().signInWithEmailAndPassword(email, password)
+                    .catch((error) => {
+                        console.error("Auth Error", error);
+                        errorDiv.textContent = "Error: " + error.message;
+                        errorDiv.classList.remove('hidden');
+
+                        // Helpful hint for first time setup
+                        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-login-credentials') {
+                            errorDiv.innerHTML += '<br><strong>Tip:</strong> Create this user in Firebase Console > Authentication > Users.';
+                        }
+                    });
             }
 
             function setupTabNavigation() {
