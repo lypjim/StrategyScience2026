@@ -1049,65 +1049,6 @@
                 <span class="badge" id="mode-badge">Loading...</span>
             </header>
 
-            <!-- Login Selection Screen -->
-            <div id="login-selection" class="login-screen hidden">
-                <div class="card" style="text-align: center;">
-                    <h2>Welcome</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 24px;">
-                        Please select your role to continue.
-                    </p>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <button class="btn-primary" style="padding: 16px;" onclick="showReviewerLogin()">
-                            📝 I'm a Reviewer
-                        </button>
-                        <button class="btn-secondary" style="padding: 16px;" onclick="showAdminLogin()">
-                            🔐 Admin Login
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reviewer Login -->
-            <div id="reviewer-login" class="login-screen hidden">
-                <div class="card" style="text-align: center;">
-                    <h2>📝 Reviewer Sign In</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                        Enter your email to receive a secure sign-in link.
-                    </p>
-                    <div id="reviewer-auth-error" class="alert alert-danger hidden"
-                        style="font-size: 0.9rem; margin-bottom: 15px;"></div>
-                    <div id="reviewer-auth-success" class="alert alert-success hidden"
-                        style="font-size: 0.9rem; margin-bottom: 15px;"></div>
-                    <form id="reviewer-login-form" onsubmit="event.preventDefault(); sendReviewerMagicLink()">
-                        <div class="form-group">
-                            <label>Your Email</label>
-                            <input type="email" id="reviewer-login-email" placeholder="your.email@university.edu"
-                                autocomplete="email" required>
-                        </div>
-                        <button type="submit" class="btn-primary" style="width: 100%;" id="send-link-btn">
-                            Send Sign-In Link
-                        </button>
-                    </form>
-                    <!-- Resend section (shown after link sent) -->
-                    <div id="reviewer-resend-section" class="hidden" style="margin-top: 15px;">
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
-                            Didn't receive the email? Check your spam folder or
-                        </p>
-                        <button class="btn-secondary" onclick="resendMagicLink()" id="resend-link-btn">
-                            🔄 Resend Sign-In Link
-                        </button>
-                        <button class="btn-secondary btn-sm" style="margin-left: 8px;" onclick="resetReviewerLogin()">
-                            Try Different Email
-                        </button>
-                    </div>
-                    <p id="reviewer-login-hint" style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary);">
-                        We'll send a secure link to your email. Click it to access your assigned papers.
-                    </p>
-                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-                    <button class="btn-secondary btn-sm" onclick="showLoginSelection()">← Back</button>
-                </div>
-            </div>
-
             <!-- Admin Login -->
             <div id="admin-login" class="login-screen hidden">
                 <div class="card">
@@ -1117,26 +1058,21 @@
                     </p>
                     <div id="auth-error" class="alert alert-danger hidden"
                         style="font-size: 0.9rem; margin-bottom: 15px;"></div>
-                    <form onsubmit="event.preventDefault(); adminLogin()">
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="login-email" placeholder="admin@strategyscience.org"
-                                autocomplete="username">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" id="login-password" placeholder="Password"
-                                autocomplete="current-password">
-                        </div>
-                        <button type="submit" class="btn-primary" style="width: 100%;">
-                            Login
-                        </button>
-                    </form>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email" placeholder="admin@strategyscience.org">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" placeholder="Password"
+                            onkeypress="if(event.key==='Enter')adminLogin()">
+                    </div>
+                    <button class="btn-primary" onclick="adminLogin()" style="width: 100%;">
+                        Login
+                    </button>
                     <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-secondary);">
                         Note: Enable "Email/Password" provider in Firebase Console.
                     </p>
-                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-                    <button class="btn-secondary btn-sm" onclick="showLoginSelection()">← Back</button>
                 </div>
             </div>
 
@@ -1235,7 +1171,6 @@
                             <button class="btn-primary" onclick="addReviewer()">Add Reviewer</button>
                             <button class="btn-secondary" onclick="loadDefaultReviewers()">Load 17 Default
                                 Reviewers</button>
-                            <button class="btn-secondary" onclick="addTestReviewer()">🧪 Add Test Reviewer</button>
                         </div>
                     </div>
 
@@ -1518,8 +1453,12 @@
 
             initDarkMode();
 
-            // Check for magic link sign-in first
-            handleMagicLinkSignIn();
+            if (reviewerId) {
+                showReviewerView(reviewerId);
+            } else {
+                document.getElementById('admin-login').classList.remove('hidden');
+                document.getElementById('mode-badge').textContent = 'Admin Login';
+            }
 
             setupDatabaseListeners();
 
@@ -1527,10 +1466,8 @@
             // DATABASE
             // =====================
             function checkAndRenderReviewerView() {
-                // Use authenticated reviewer if available, otherwise fall back to URL param (legacy)
-                const rid = authenticatedReviewer?.id || reviewerId;
-                if (rid && dataLoaded.reviewers && dataLoaded.assignments && dataLoaded.papers && dataLoaded.reviews && dataLoaded.paperFiles) {
-                    renderReviewerPapers(rid);
+                if (reviewerId && dataLoaded.reviewers && dataLoaded.assignments && dataLoaded.papers && dataLoaded.reviews && dataLoaded.paperFiles) {
+                    renderReviewerPapers(reviewerId);
                 }
             }
 
@@ -1641,357 +1578,39 @@
             // AUTH & NAV
             // =====================
 
-            // Track authenticated reviewer (found by email)
-            let authenticatedReviewer = null;
-
-            // Hide all login/view screens
-            function hideAllScreens() {
-                document.getElementById('login-selection').classList.add('hidden');
-                document.getElementById('reviewer-login').classList.add('hidden');
-                document.getElementById('admin-login').classList.add('hidden');
-                document.getElementById('admin-view').classList.add('hidden');
-                document.getElementById('reviewer-view').classList.add('hidden');
-            }
-
-            // Show login selection screen
-            function showLoginSelection() {
-                hideAllScreens();
-                document.getElementById('login-selection').classList.remove('hidden');
-                document.getElementById('mode-badge').textContent = 'Welcome';
-            }
-
-            // Show reviewer login screen
-            function showReviewerLogin() {
-                hideAllScreens();
-                document.getElementById('reviewer-login').classList.remove('hidden');
-                document.getElementById('mode-badge').textContent = 'Reviewer Sign In';
-            }
-
-            // Show admin login screen
-            function showAdminLogin() {
-                hideAllScreens();
-                document.getElementById('admin-login').classList.remove('hidden');
-                document.getElementById('mode-badge').textContent = 'Admin Login';
-            }
-
-            // Show error when reviewer email not found after sign-in
-            function showReviewerLoginError(email) {
-                document.getElementById('reviewer-login').classList.remove('hidden');
-                document.getElementById('mode-badge').textContent = 'Access Denied';
-
-                // Reset form state
-                document.getElementById('reviewer-login-form').style.display = 'block';
-                document.getElementById('reviewer-auth-success').classList.add('hidden');
-
-                const errorDiv = document.getElementById('reviewer-auth-error');
-                errorDiv.innerHTML = `
-                    <strong>❌ Access Denied</strong><br><br>
-                    The email <strong>${email}</strong> is not registered as a reviewer for this conference.
-                    <br><br>
-                    This could happen if:
-                    <ul style="margin: 8px 0 0 20px; text-align: left;">
-                        <li>You signed in with a different email than expected</li>
-                        <li>Your reviewer registration uses a different email</li>
-                        <li>You haven't been added as a reviewer yet</li>
-                    </ul>
-                    <br>
-                    <small>Please sign out and try again with the correct email, or contact the organizers.</small>
-                `;
-                errorDiv.classList.remove('hidden');
-
-                // Add sign out button
-                addSignOutButton('Sign Out & Try Again');
-            }
-
-            // Handle magic link sign-in (called on page load)
-            function handleMagicLinkSignIn() {
-                // Check if this is a sign-in link
-                if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
-                    // Get the email from localStorage (saved when link was sent)
-                    let email = localStorage.getItem('emailForSignIn');
-
-                    if (!email) {
-                        // If email not in storage, prompt user
-                        email = window.prompt('Please enter your email for confirmation:');
-                    }
-
-                    if (email) {
-                        document.getElementById('mode-badge').textContent = 'Signing in...';
-
-                        firebase.auth().signInWithEmailLink(email, window.location.href)
-                            .then((result) => {
-                                // Clear the email from storage
-                                localStorage.removeItem('emailForSignIn');
-                                // Clean up the URL (remove sign-in parameters)
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                                showToast('Signed in successfully!');
-                            })
-                            .catch((error) => {
-                                console.error('Magic link sign-in error:', error);
-                                showToast('Sign-in failed: ' + error.message);
-                                showLoginSelection();
-                            });
-                    }
-                }
-            }
-
-            // Send magic link to reviewer
-            function sendReviewerMagicLink() {
-                const email = document.getElementById('reviewer-login-email').value.trim().toLowerCase();
-                const errorDiv = document.getElementById('reviewer-auth-error');
-                const successDiv = document.getElementById('reviewer-auth-success');
-                const sendBtn = document.getElementById('send-link-btn');
-
-                errorDiv.classList.add('hidden');
-                successDiv.classList.add('hidden');
-
-                if (!email) {
-                    errorDiv.textContent = 'Please enter your email address.';
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-
-                // Check if reviewers data is loaded
-                if (!dataLoaded.reviewers) {
-                    errorDiv.textContent = 'Loading reviewer data... Please try again in a moment.';
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-
-                // Validate email against reviewer list BEFORE sending magic link
-                const matchedReviewer = findReviewerByEmail(email);
-                if (!matchedReviewer) {
-                    errorDiv.innerHTML = `
-                        <strong>Email not found</strong><br>
-                        The email <strong>${email}</strong> is not registered as a reviewer for this conference.
-                        <br><br>Please check:
-                        <ul style="margin: 8px 0 0 20px; text-align: left;">
-                            <li>You entered the correct email address</li>
-                            <li>This is the email the organizers have on file for you</li>
-                        </ul>
-                        <br><small>If you believe this is an error, please contact the conference organizers.</small>
-                    `;
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-
-                // Check if reviewer has any papers assigned
-                const assignedPapers = assignments[matchedReviewer.id] || [];
-                if (assignedPapers.length === 0) {
-                    errorDiv.innerHTML = `
-                        <strong>No papers assigned</strong><br>
-                        Your email is registered, but you have no papers assigned for review yet.
-                        <br><small>Please contact the conference organizers if you expected to have assignments.</small>
-                    `;
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-
-                // Disable button while processing
-                sendBtn.disabled = true;
-                sendBtn.textContent = 'Sending...';
-
-                // Action code settings for the magic link
-                const actionCodeSettings = {
-                    url: window.location.origin + window.location.pathname,
-                    handleCodeInApp: true
-                };
-
-                firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
-                    .then(() => {
-                        // Save email to localStorage for when user returns
-                        localStorage.setItem('emailForSignIn', email);
-                        // Mark that this is a reviewer sign-in (not admin)
-                        localStorage.setItem('signInType', 'reviewer');
-
-                        successDiv.innerHTML = `
-                            <strong>✓ Sign-in link sent!</strong><br>
-                            Check your email at <strong>${email}</strong> and click the link to sign in.
-                            <br><small style="color: var(--text-secondary);">You have ${assignedPapers.length} paper${assignedPapers.length > 1 ? 's' : ''} to review.</small>
-                        `;
-                        successDiv.classList.remove('hidden');
-
-                        // Hide the form and hint, show resend section
-                        document.getElementById('reviewer-login-form').style.display = 'none';
-                        document.getElementById('reviewer-login-hint').style.display = 'none';
-                        document.getElementById('reviewer-resend-section').classList.remove('hidden');
-                    })
-                    .catch((error) => {
-                        console.error('Send magic link error:', error);
-
-                        if (error.code === 'auth/invalid-email') {
-                            errorDiv.textContent = 'Please enter a valid email address.';
-                        } else if (error.code === 'auth/operation-not-allowed') {
-                            errorDiv.innerHTML = 'Email link sign-in is not enabled.<br><strong>Admin:</strong> Enable "Email link (passwordless sign-in)" in Firebase Console > Authentication > Sign-in method.';
-                        } else {
-                            errorDiv.textContent = 'Error: ' + error.message;
-                        }
-                        errorDiv.classList.remove('hidden');
-                    })
-                    .finally(() => {
-                        sendBtn.disabled = false;
-                        sendBtn.textContent = 'Send Sign-In Link';
-                    });
-            }
-
-            // Resend magic link using stored email
-            function resendMagicLink() {
-                const email = localStorage.getItem('emailForSignIn');
-                if (!email) {
-                    showToast('No email found. Please enter your email again.');
-                    resetReviewerLogin();
-                    return;
-                }
-
-                const resendBtn = document.getElementById('resend-link-btn');
-                const successDiv = document.getElementById('reviewer-auth-success');
-                const errorDiv = document.getElementById('reviewer-auth-error');
-
-                resendBtn.disabled = true;
-                resendBtn.textContent = '🔄 Sending...';
-                errorDiv.classList.add('hidden');
-
-                const actionCodeSettings = {
-                    url: window.location.origin + window.location.pathname,
-                    handleCodeInApp: true
-                };
-
-                firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
-                    .then(() => {
-                        successDiv.innerHTML = `
-                            <strong>✓ Sign-in link resent!</strong><br>
-                            Check your email at <strong>${email}</strong> and click the link to sign in.
-                            <br><small style="color: var(--text-secondary);">Don't forget to check your spam folder.</small>
-                        `;
-                        showToast('Sign-in link resent!');
-                    })
-                    .catch((error) => {
-                        console.error('Resend magic link error:', error);
-                        errorDiv.textContent = 'Error resending: ' + error.message;
-                        errorDiv.classList.remove('hidden');
-                    })
-                    .finally(() => {
-                        resendBtn.disabled = false;
-                        resendBtn.textContent = '🔄 Resend Sign-In Link';
-                    });
-            }
-
-            // Reset reviewer login form to try different email
-            function resetReviewerLogin() {
-                document.getElementById('reviewer-login-form').style.display = 'block';
-                document.getElementById('reviewer-login-hint').style.display = 'block';
-                document.getElementById('reviewer-resend-section').classList.add('hidden');
-                document.getElementById('reviewer-auth-success').classList.add('hidden');
-                document.getElementById('reviewer-auth-error').classList.add('hidden');
-                document.getElementById('reviewer-login-email').value = '';
-                localStorage.removeItem('emailForSignIn');
-            }
-
-            // Find reviewer by email
-            function findReviewerByEmail(email) {
-                if (!email) return null;
-                const normalizedEmail = email.toLowerCase().trim();
-                return reviewers.find(r => r.email && r.email.toLowerCase().trim() === normalizedEmail);
-            }
-
             // Listen for auth state
             firebase.auth().onAuthStateChanged(user => {
-                // Remove any existing sign out button first
-                const existingBtn = document.getElementById('sign-out-btn');
-                if (existingBtn) existingBtn.remove();
-
                 if (user) {
-                    // User is signed in - determine if admin or reviewer
-                    const userEmail = user.email?.toLowerCase().trim();
+                    // Admin Logged In
+                    document.getElementById('admin-login').classList.add('hidden');
+                    document.getElementById('admin-view').classList.remove('hidden');
+                    document.getElementById('mode-badge').textContent = 'Admin Mode';
+                    setupTabNavigation();
 
-                    // Wait for reviewers data to load before checking
-                    const checkReviewer = () => {
-                        if (!dataLoaded.reviewers) {
-                            // Data not loaded yet, wait and retry
-                            setTimeout(checkReviewer, 100);
-                            return;
-                        }
-
-                        const reviewer = findReviewerByEmail(userEmail);
-
-                        if (reviewer) {
-                            // This is a reviewer - clear sign-in type flag
-                            localStorage.removeItem('signInType');
-
-                            authenticatedReviewer = reviewer;
-                            hideAllScreens();
-                            document.getElementById('reviewer-view').classList.remove('hidden');
-                            document.getElementById('mode-badge').textContent = 'Reviewer';
-
-                            // Add sign out button for reviewer
-                            addSignOutButton('Sign Out');
-
-                            // Render their papers
-                            showReviewerView(reviewer.id);
-                            if (dataLoaded.papers && dataLoaded.assignments && dataLoaded.reviews && dataLoaded.paperFiles) {
-                                renderReviewerPapers(reviewer.id);
-                            }
-                        } else {
-                            // Email not found in reviewer list
-                            // Check if they tried to sign in as a reviewer (magic link) or admin (password)
-                            const signInType = localStorage.getItem('signInType');
-                            localStorage.removeItem('signInType');
-
-                            if (signInType === 'reviewer') {
-                                // They used reviewer login but email not found - show error
-                                authenticatedReviewer = null;
-                                hideAllScreens();
-                                showReviewerLoginError(userEmail);
-                            } else {
-                                // Admin sign-in (email/password) - show admin view
-                                authenticatedReviewer = null;
-                                hideAllScreens();
-                                document.getElementById('admin-view').classList.remove('hidden');
-                                document.getElementById('mode-badge').textContent = 'Admin Mode';
-                                setupTabNavigation();
-                                addSignOutButton('Sign Out');
-                            }
-                        }
-                    };
-
-                    checkReviewer();
-                } else {
-                    // Not signed in
-                    authenticatedReviewer = null;
-
-                    // Check if there's a reviewerId in URL (legacy link support)
-                    if (reviewerId) {
-                        // Legacy link - prompt them to sign in with email
-                        showReviewerLogin();
-                        document.getElementById('reviewer-auth-error').innerHTML =
-                            '⚠️ For security, please sign in with your email to access your reviews.';
-                        document.getElementById('reviewer-auth-error').classList.remove('hidden');
-                    } else {
-                        // Show login selection
-                        showLoginSelection();
+                    // Add Sign Out Button if not present
+                    if (!document.getElementById('sign-out-btn')) {
+                        const header = document.querySelector('header');
+                        const btn = document.createElement('button');
+                        btn.id = 'sign-out-btn';
+                        btn.innerText = 'Sign Out';
+                        btn.className = 'btn-secondary btn-sm';
+                        btn.style.position = 'absolute';
+                        btn.style.top = '10px';
+                        btn.style.left = '10px';
+                        btn.onclick = () => firebase.auth().signOut();
+                        header.appendChild(btn);
                     }
+                } else {
+                    // Logged Out
+                    if (!reviewerId) {
+                        document.getElementById('admin-login').classList.remove('hidden');
+                        document.getElementById('admin-view').classList.add('hidden');
+                        document.getElementById('mode-badge').textContent = 'Admin Login';
+                    }
+                    const btn = document.getElementById('sign-out-btn');
+                    if (btn) btn.remove();
                 }
             });
-
-            // Helper to add sign out button
-            function addSignOutButton(text) {
-                if (document.getElementById('sign-out-btn')) return;
-
-                const header = document.querySelector('header');
-                const btn = document.createElement('button');
-                btn.id = 'sign-out-btn';
-                btn.innerText = text;
-                btn.className = 'btn-secondary btn-sm';
-                btn.style.position = 'absolute';
-                btn.style.top = '10px';
-                btn.style.left = '10px';
-                btn.onclick = () => {
-                    firebase.auth().signOut();
-                    authenticatedReviewer = null;
-                    showLoginSelection();
-                };
-                header.appendChild(btn);
-            }
 
             function adminLogin() {
                 const email = document.getElementById('login-email').value;
@@ -2372,19 +1991,6 @@
                 showToast('Reviewer added with Secure ID');
             }
 
-            // Add a test reviewer (for development/testing)
-            function addTestReviewer() {
-                const id = 'REV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-                db.ref('reviewers/' + id).set({
-                    id,
-                    name: "Yupeng Liu (Test)",
-                    email: "yupeng.liu@colorado.edu",
-                    maxPapers: null,
-                    expertise: "Testing"
-                });
-                showToast('Test reviewer added: yupeng.liu@colorado.edu');
-            }
-
             function loadDefaultReviewers() {
                 const list = [
                     { name: "Janet Lee Elsie Bercovitz", email: "Janet.Bercovitz@Colorado.EDU" },
@@ -2688,43 +2294,37 @@
                 const baseUrl = window.location.origin + window.location.pathname;
 
                 container.innerHTML = `
-                <div class="alert alert-info" style="margin-bottom:16px">
-                    <strong>🔐 Secure Sign-In:</strong> Reviewers now sign in using their email address.
-                    They will receive a magic link to verify their identity.
-                    ${TEST_MODE ? '<br><span style="color:var(--warning)">⚠️ TEST MODE: All emails will be sent to ' + TEST_EMAIL + '</span>' : ''}
+                <div class="alert ${TEST_MODE ? 'alert-warning' : 'alert-info'}" style="margin-bottom:16px">
+                    ${TEST_MODE ? '<strong>⚠️ TEST MODE:</strong> All emails will be sent to ' + TEST_EMAIL + ' for testing.' : '<strong>Tip:</strong> Click "Send Email" to open your email client with a pre-filled message.'}
                 </div>
-                <button class="btn-secondary" style="margin-bottom:16px" onclick="copyAllReviewerInfo()">📋 Copy All Info</button>
+                <button class="btn-secondary" style="margin-bottom:16px" onclick="copyAllLinks()">Copy All Links</button>
                 <button class="btn-primary" style="margin-bottom:16px;margin-left:8px" onclick="sendAllEmails()">📧 Send All Emails</button>
                 ${withAssignments.map(r => {
+                    const link = `${baseUrl}?reviewer=${r.id}`;
                     const count = (assignments[r.id] || []).length;
                     return `
-                        <div style="margin-bottom:12px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary)">
+                        <div style="margin-bottom:12px;padding:16px;border:1px solid var(--border);border-radius:8px;background:#fff">
                             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                                 <div>
-                                    <strong style="color:var(--text-primary)">${r.name}</strong>
-                                    <span style="color:var(--text-secondary);margin-left:8px">(${count} papers)</span>
+                                    <strong style="color:#1a1a1a">${r.name}</strong>
+                                    <span style="color:#666;margin-left:8px">(${count} papers)</span>
                                 </div>
                                 <div>
-                                    <button class="btn-primary btn-sm" onclick="sendEmail('${r.id}')">📧 Send Invite</button>
+                                    <button class="btn-secondary btn-sm" onclick="copyLink('${link}')">📋 Copy</button>
+                                    <button class="btn-primary btn-sm" style="margin-left:4px" onclick="sendEmail('${r.id}')">📧 Email</button>
                                 </div>
                             </div>
-                            <div style="margin-top:8px;font-size:0.85rem;color:var(--text-secondary)">
-                                Sign-in email: <strong style="color:var(--text-primary)">${r.email}</strong>
-                            </div>
+                            <div class="link-box" style="margin-top:10px;font-size:0.85rem">${link}</div>
                         </div>`;
                 }).join('')}`;
             }
 
-            function copyAllReviewerInfo() {
-                const baseUrl = window.location.origin + window.location.pathname;
-                const text = reviewers.filter(r => (assignments[r.id] || []).length > 0)
-                    .map(r => `${r.name}\nEmail: ${r.email}\nPapers: ${(assignments[r.id] || []).length}\nSite: ${baseUrl}`)
-                    .join('\n\n---\n\n');
-                navigator.clipboard.writeText(text);
-                showToast('All reviewer info copied');
+            function copyLink(link) {
+                navigator.clipboard.writeText(link);
+                showToast('Copied');
             }
 
-            function getEmailTemplate(reviewer, siteUrl, paperCount) {
+            function getEmailTemplate(reviewer, link, paperCount) {
                 const subject = `Strategy Science Conference 2026 - Paper Review Request`;
 
                 // Extract surname (last word of the name)
@@ -2735,25 +2335,18 @@
 
 Thank you for agreeing to review for the Strategy Science Conference 2026. Your expertise is invaluable to our selection process.
 
-You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} to review.
+You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} to review. Please use the secure link below to access your assigned papers and submit your evaluations:
 
-TO ACCESS YOUR PAPERS:
-1. Visit: ${siteUrl}
-2. Click "I'm a Reviewer"
-3. Enter your email: ${reviewer.email}
-4. Click "Send Sign-In Link"
-5. Check your inbox and click the secure link we send you
-6. You'll be signed in and can see your assigned papers
+${link}
 
 Review Guidelines:
 • This is a double-blind review - author information is not displayed
 • For each paper, please select one of the following recommendations:
    - Yes (Score: 4) - Strong accept
-   - Maybe Yes (Score: 3) - Weak accept
+   - Maybe Yes (Score: 3) - Weak accept  
    - Maybe No (Score: 2) - Weak reject
    - No (Score: 1) - Strong reject
 • You can change your decision at any time before the deadline
-• Your session will remain active - no need to sign in again on the same device
 
 If you have any questions or encounter any issues, please don't hesitate to reach out.
 
@@ -2769,10 +2362,11 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const reviewer = reviewers.find(r => r.id === reviewerId);
                 if (!reviewer) return showToast('Reviewer not found');
 
-                const siteUrl = window.location.origin + window.location.pathname;
+                const baseUrl = window.location.origin + window.location.pathname;
+                const link = `${baseUrl}?reviewer=${reviewer.id}`;
                 const paperCount = (assignments[reviewer.id] || []).length;
 
-                const { subject, body } = getEmailTemplate(reviewer, siteUrl, paperCount);
+                const { subject, body } = getEmailTemplate(reviewer, link, paperCount);
 
                 // In test mode, send to test email instead
                 const toEmail = TEST_MODE ? TEST_EMAIL : reviewer.email;
@@ -2806,6 +2400,15 @@ Strategy Science Conference 2026 Organizing Committee`;
                         sendEmail(r.id);
                     }, index * 500);
                 });
+            }
+
+            function copyAllLinks() {
+                const baseUrl = window.location.origin + window.location.pathname;
+                const text = reviewers.filter(r => (assignments[r.id] || []).length > 0)
+                    .map(r => `${r.name}\nEmail: ${r.email}\nPapers: ${(assignments[r.id] || []).join(', ')}\nLink: ${baseUrl}?reviewer=${r.id}`)
+                    .join('\n\n---\n\n');
+                navigator.clipboard.writeText(text);
+                showToast('All links copied');
             }
 
             // =====================
