@@ -1605,7 +1605,13 @@
                     }
                 } else {
                     // Logged Out
-                    if (!reviewerId) {
+                    if (reviewerId) {
+                        // If it's a valid reviewer link, DO NOT show login
+                        document.getElementById('admin-login').classList.add('hidden');
+                        document.getElementById('admin-view').classList.add('hidden');
+                        // Ensure reviewer view logic takes over (it's handled in init/listeners)
+                    } else {
+                        // Normal visitor -> Show Login
                         document.getElementById('admin-login').classList.remove('hidden');
                         document.getElementById('admin-view').classList.add('hidden');
                         document.getElementById('mode-badge').textContent = 'Admin Login';
