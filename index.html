@@ -490,17 +490,15 @@
             margin-bottom: 20px;
         }
 
-        /* Dark mode logo switching */
-        .header-logo-dark {
-            display: none;
+        /* Dark mode logo - invert colors using CSS filter */
+        .header-logo {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 20px;
         }
 
-        [data-theme="dark"] .header-logo-light {
-            display: none;
-        }
-
-        [data-theme="dark"] .header-logo-dark {
-            display: block;
+        [data-theme="dark"] .header-logo {
+            filter: invert(1) brightness(1.2);
         }
 
         /* Fix assignment card text visibility */
@@ -1071,8 +1069,7 @@
             <header>
                 <button class="dark-mode-toggle" id="dark-toggle-btn" onclick="toggleDarkMode()"
                     title="Toggle Dark Mode">🌙</button>
-                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo header-logo-light">
-                <img src="leeds-dark-logo.png" alt="Leeds School of Business" class="header-logo header-logo-dark">
+                <img src="leeds-left_orig.png" alt="Leeds School of Business" class="header-logo">
                 <h1>Strategy Science Conference 2026</h1>
                 <p class="subtitle">Paper Review Management System</p>
                 <p class="venue-info">Hosted at <strong>Leeds School of Business</strong> · Boulder, Colorado</p>

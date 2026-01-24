@@ -32,7 +32,7 @@ DROPBOX_FOLDER = "/StrategyScience2026"
 OUTPUT_CSV = "papers_import.csv"
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen2.5:7b"
+OLLAMA_MODEL = "qwen2.5:7b"  # Faster model, keeping improved prompt/parsing
 
 
 def extract_text_from_pdf(pdf_path: str, max_pages: int = 3) -> str:
@@ -68,7 +68,7 @@ def query_llm(prompt: str, max_tokens: int = 500) -> str:
                     "num_predict": max_tokens
                 }
             },
-            timeout=120
+            timeout=300  # Increased timeout for qwen3:14b
         )
         if response.status_code == 200:
             return response.json().get('response', '').strip()
@@ -93,20 +93,20 @@ IGNORE all metadata like:
 From the text below, extract:
 
 1. TITLE: The actual paper title in Title Case (not ALL CAPS, not journal name)
-2. ABSTRACT: The paper's abstract (the summary paragraph, 3-5 sentences)
+2. ABSTRACT: The paper's COMPLETE abstract exactly as written (usually 150-300 words, preserve the full text)
 3. KEYWORDS: 5-6 lowercase topic keywords describing what the paper is about
 
 Filename hint: {filename}
 
 Paper text:
-{text[:5000]}
+{text[:8000]}
 
 Respond in EXACTLY this format (no other text):
 TITLE: [Title In Title Case Like This]
-ABSTRACT: [abstract text here, 3-5 sentences]
+ABSTRACT: [complete abstract text, include ALL sentences]
 KEYWORDS: [keyword1, keyword2, keyword3, keyword4, keyword5]"""
 
-    response = query_llm(prompt, max_tokens=800)
+    response = query_llm(prompt, max_tokens=1500)  # Increased for full abstracts
     
     result = {
         'title': '',
@@ -117,15 +117,27 @@ KEYWORDS: [keyword1, keyword2, keyword3, keyword4, keyword5]"""
     if not response:
         return result
     
-    # Parse response
-    for line in response.split('\n'):
-        line = line.strip()
-        if line.upper().startswith('TITLE:'):
-            result['title'] = line[6:].strip()
-        elif line.upper().startswith('ABSTRACT:'):
-            result['abstract'] = line[9:].strip()
-        elif line.upper().startswith('KEYWORDS:'):
-            result['keywords'] = line[9:].strip()
+    # Parse response - handle multiline abstracts
+    lines = response.split('\n')
+    current_field = None
+    abstract_lines = []
+    
+    for line in lines:
+        line_stripped = line.strip()
+        if line_stripped.upper().startswith('TITLE:'):
+            result['title'] = line_stripped[6:].strip()
+            current_field = 'title'
+        elif line_stripped.upper().startswith('ABSTRACT:'):
+            abstract_lines.append(line_stripped[9:].strip())
+            current_field = 'abstract'
+        elif line_stripped.upper().startswith('KEYWORDS:'):
+            result['keywords'] = line_stripped[9:].strip()
+            current_field = 'keywords'
+        elif current_field == 'abstract' and line_stripped:
+            # Continue collecting abstract lines
+            abstract_lines.append(line_stripped)
+    
+    result['abstract'] = ' '.join(abstract_lines).strip()
     
     # Normalize formatting for consistency
     if result['title']:
