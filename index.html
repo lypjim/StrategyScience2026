@@ -1411,6 +1411,32 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const reviewerId = urlParams.get('reviewer');
+            const DEMO_MODE = urlParams.get('demo') === 'true';
+
+            // =====================
+            // ANONYMIZATION HELPERS (Demo Mode)
+            // =====================
+            // Consistent mapping for demo mode
+            const demoNameMap = {};
+            let demoCounter = 1;
+
+            function getDisplayName(name) {
+                if (!DEMO_MODE) return name;
+                if (!name) return "Unknown";
+
+                if (!demoNameMap[name]) {
+                    demoNameMap[name] = `Reviewer ${String.fromCharCode(64 + demoCounter)}`; // Reviewer A, B, C...
+                    demoCounter++;
+                }
+                return demoNameMap[name];
+            }
+
+            function getDisplayEmail(email) {
+                if (!DEMO_MODE) return email;
+                if (!email) return "";
+                const randomId = Math.random().toString(36).substring(2, 6);
+                return `reviewer_${randomId}@university.edu`;
+            }
 
             // Init
             // Init
@@ -2008,6 +2034,8 @@
                         <thead><tr><th>Name</th><th>Email</th><th>Max</th><th>Expertise</th><th>Action</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
+                    const displayName = getDisplayName(r.name);
+                    const displayEmail = getDisplayEmail(r.email);
                     const info = getExpertiseInfo(r.name);
                     let expertiseHtml = r.expertise || '-';
                     if (info) {
@@ -2016,8 +2044,8 @@
                         expertiseHtml = methodTag + keywordTags;
                     }
                     return `<tr>
-                                <td>${r.name}</td>
-                                <td style="font-size:0.8rem">${r.email}</td>
+                                <td>${displayName}</td>
+                                <td style="font-size:0.8rem">${displayEmail}</td>
                                 <td>${r.maxPapers || '∞'}</td>
                                 <td style="font-size:0.8rem;max-width:350px;">${expertiseHtml}</td>
                                 <td>
@@ -2092,7 +2120,8 @@
                                 <div style="margin-top:8px">
                                     ${assigned.map(rid => {
                         const rev = reviewers.find(r => r.id === rid);
-                        return `<span class="reviewer-tag">${rev?.name || rid}<span class="remove" onclick="unassign('${paper.id}','${rid}')">×</span></span>`;
+                        const displayName = rev ? getDisplayName(rev.name) : rid;
+                        return `<span class="reviewer-tag">${displayName}<span class="remove" onclick="unassign('${paper.id}','${rid}')">×</span></span>`;
                     }).join('')}
                                     ${!isComplete ? `<span style="color:var(--warning);font-size:0.8rem">Need ${2 - assigned.length} more</span>` : ''}
                                 </div>
@@ -2100,11 +2129,12 @@
                             <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
                                 <option value="">+ Add reviewer</option>
                                 ${reviewers.map(r => {
+                        const displayName = getDisplayName(r.name);
                         const alreadyAssigned = assigned.includes(r.id);
                         const atCapacity = r.maxPapers && getReviewerPaperCount(r.id) >= r.maxPapers;
                         const disabled = alreadyAssigned || atCapacity;
                         const status = alreadyAssigned ? ' [assigned]' : atCapacity ? ' [full]' : '';
-                        return `<option value="${r.id}" ${disabled ? 'disabled' : ''}>${r.name} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${status}</option>`;
+                        return `<option value="${r.id}" ${disabled ? 'disabled' : ''}>${displayName} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${status}</option>`;
                     }).join('')}
                             </select>
                         </div>
@@ -2359,6 +2389,7 @@
                         <thead><tr><th>Reviewer</th><th>Expertise</th><th>Assigned</th><th>Capacity</th></tr></thead>
                         <tbody>
                             ${reviewers.map(r => {
+                    const displayName = getDisplayName(r.name);
                     const info = getExpertiseInfo(r.name);
                     let expertiseHtml = r.expertise || '-';
                     if (info) {
@@ -2372,7 +2403,7 @@
                     const pct = Math.min(100, (count / max) * 100);
                     const full = r.maxPapers && count >= r.maxPapers;
                     return `<tr>
-                                    <td>${r.name}</td>
+                                    <td>${displayName}</td>
                                     <td style="font-size:0.8rem;max-width:350px;">${expertiseHtml}</td>
                                     <td>${count}</td>
                                     <td style="width:120px">
@@ -2408,13 +2439,14 @@
                 <button class="btn-secondary" style="margin-bottom:16px" onclick="copyAllLinks()">Copy All Links</button>
                 <button class="btn-primary" style="margin-bottom:16px;margin-left:8px" onclick="sendAllEmails()">📧 Send All Emails</button>
                 ${withAssignments.map(r => {
+                    const displayName = getDisplayName(r.name);
                     const link = `${baseUrl}?reviewer=${r.id}`;
                     const count = (assignments[r.id] || []).length;
                     return `
                         <div style="margin-bottom:12px;padding:16px;border:1px solid var(--border);border-radius:8px;background:#fff">
                             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                                 <div>
-                                    <strong style="color:#1a1a1a">${r.name}</strong>
+                                    <strong style="color:#1a1a1a">${displayName}</strong>
                                     <span style="color:#666;margin-left:8px">(${count} papers)</span>
                                 </div>
                                 <div>
@@ -2436,7 +2468,8 @@
                 const subject = `Strategy Science Conference 2026 - Paper Review Request`;
 
                 // Extract surname (last word of the name)
-                const nameParts = reviewer.name.trim().split(' ');
+                const reviewerName = getDisplayName(reviewer.name);
+                const nameParts = reviewerName.trim().split(' ');
                 const surname = nameParts[nameParts.length - 1];
 
                 const body = `Dear Professor ${surname},
@@ -2578,7 +2611,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                         decision: r.decision,
                         score: s,
                         reviewerId: revId,
-                        reviewerName: reviewer ? reviewer.name : revId
+                        reviewerName: reviewer ? getDisplayName(reviewer.name) : revId
                     });
                 });
 

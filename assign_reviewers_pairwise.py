@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Strategy Science Conference 2026 - TRUE PAIRWISE Reviewer Assignment
+Strategy Science Conference 2026 - TRUE PAIRWISE Reviewer Assignment V3
 
-PAIRWISE LLM MATCHING:
-1. For each paper, evaluate EACH eligible reviewer individually
-2. One LLM call per paper-reviewer pair for deep scoring
-3. Score 0-100 with reasoning
-4. Respects Firebase capacities
+IMPROVED PAIRWISE LLM MATCHING:
+- Abstract limit increased to ~600 words (4000 chars)
+- Added "Notable Publications" to reviewer profiles for better context
+- Stricter scoring prompt
 """
 
 import csv
@@ -31,29 +30,254 @@ OLLAMA_MODEL = "qwen2.5:7b"
 # Firebase Configuration
 FIREBASE_DB_URL = "https://strategyscience2026-default-rtdb.firebaseio.com"
 
-# Fallback reviewer expertise data
-FALLBACK_REVIEWERS = {
-    "Janet Bercovitz": {"method": "Quantitative", "keywords": ["Transaction Cost Economics", "Org. Learning", "Academic Entrepreneurship", "Tech Transfer"]},
-    "Janet Lee Elsie Bercovitz": {"method": "Quantitative", "keywords": ["Transaction Cost Economics", "Org. Learning", "Academic Entrepreneurship", "Tech Transfer"]},
-    "Danielle Bovenberg": {"method": "Qualitative", "keywords": ["Craft Knowledge", "Org. Theory", "Innovation", "Knowledge Diffusion"]},
-    "Mukund Chari": {"method": "Quantitative", "keywords": ["Transaction Cost Economics", "Agency Theory", "Intellectual Property", "Patent Systems"]},
-    "Ashton Hawk": {"method": "Quantitative", "keywords": ["Resource-Based View", "Dynamic Capabilities", "Investment Speed", "Political Capital"]},
-    "Ashton Lewis Hawk": {"method": "Quantitative", "keywords": ["Resource-Based View", "Dynamic Capabilities", "Investment Speed", "Political Capital"]},
-    "Sina Sokhan": {"method": "Quantitative", "keywords": ["Knowledge Recombination", "IP Theory", "Innovation Process", "Pharma Innovation"]},
-    "MJ Yang": {"method": "Quant/Mixed", "keywords": ["Complementarity Theory", "RBV", "CEO Strategy", "Tech Uniqueness"]},
-    "Kenneth Huang": {"method": "Quant/Mixed", "keywords": ["Institutional Theory", "Knowledge-Based View", "IP Strategy", "Innovation in China"]},
-    "Aldona Kapacinskaite": {"method": "Quantitative", "keywords": ["Resource-Based View", "Appropriability Theory", "Trade Secrets", "Platform Competition"]},
-    "Wesley Koo": {"method": "Quant/Mixed", "keywords": ["Platform Theory", "Institutional Theory", "Platform Governance", "Digital Entrepreneurship"]},
-    "Wesley W. Koo": {"method": "Quant/Mixed", "keywords": ["Platform Theory", "Institutional Theory", "Platform Governance", "Digital Entrepreneurship"]},
-    "Catherine Magelssen": {"method": "Quantitative", "keywords": ["Property Rights Theory", "TCE", "Multinational Strategy", "IP Governance"]},
-    "Anparasan Mahalingam": {"method": "Quantitative", "keywords": ["Platform Theory", "Org. Economics", "Digital Corporate Strategy", "Platform Governance"]},
-    "Francisco Morales": {"method": "Quantitative", "keywords": ["Strategic Human Capital", "Signaling Theory", "Human Capital", "Immigration"]},
-    "FJ Morales": {"method": "Quantitative", "keywords": ["Strategic Human Capital", "Signaling Theory", "Human Capital", "Immigration"]},
-    "Metin Sengul": {"method": "Quantitative", "keywords": ["Org. Design Theory", "Behavioral Theory", "Org. Design", "Multiunit Firms"]},
-    "Xiaoli Tang": {"method": "Quant/Mixed", "keywords": ["Institutional Theory", "Stakeholder Theory", "Accountable Secrecy", "Self-Regulation"]},
-    "Andy Wu": {"method": "Quant/Mixed", "keywords": ["Org. Design Theory", "Platform Theory", "Entrepreneurship", "Platform Ecosystems"]},
-    "Mingtao Xu": {"method": "Quantitative", "keywords": ["Property Rights Theory", "Org. Learning", "AI & Strategy", "Patent Litigation"]},
-    "Tony Tong": {"method": "Mixed", "keywords": ["Strategy", "Innovation", "International Business", "Real Options"]}
+# =====================
+# DETAILED REVIEWER PROFILES (from committee_research_summary.md)
+# =====================
+REVIEWER_PROFILES = {
+    "Janet Bercovitz": {
+        "method": "Quantitative",
+        "topics": ["Academic entrepreneurship", "Technology transfer", "University-industry relationships", "Knowledge worker mobility", "Industrial clusters", "Organizational change"],
+        "theories": ["Transaction Cost Economics", "Organizational Learning", "Social Learning", "Resource-Based View"],
+        "publications": [
+            "Entrepreneurial universities and technology transfer",
+            "Academic entrepreneurs: Organizational change at the individual level",
+            "Creating a cluster while building a firm",
+            "Complementarity and evolution of contractual provisions"
+        ],
+        "summary": "Studies academic entrepreneurship, university tech transfer, inter-organizational contracts, and knowledge-based economic development."
+    },
+    "Janet Lee Elsie Bercovitz": {
+        "method": "Quantitative",
+        "topics": ["Academic entrepreneurship", "Technology transfer", "University-industry relationships", "Knowledge worker mobility", "Industrial clusters", "Organizational change"],
+        "theories": ["Transaction Cost Economics", "Organizational Learning", "Social Learning", "Resource-Based View"],
+        "publications": [
+            "Entrepreneurial universities and technology transfer",
+            "Academic entrepreneurs: Organizational change at the individual level",
+            "Creating a cluster while building a firm",
+            "Complementarity and evolution of contractual provisions"
+        ],
+        "summary": "Studies academic entrepreneurship, university tech transfer, inter-organizational contracts, and knowledge-based economic development."
+    },
+    "Danielle Bovenberg": {
+        "method": "Qualitative",
+        "topics": ["Innovation in high-tech", "Knowledge diffusion", "Scientific support staff", "Craft knowledge", "Nanofabrication", "Core research facilities"],
+        "theories": ["Craft Knowledge Theory", "Structural Complexity", "Organizational Theory", "Occupational Sociology"],
+        "publications": [
+            "Craft Knowledge and the Advancement of Science",
+            "The Role of Scientific Support Occupations in Shared Research Facilities"
+        ],
+        "summary": "Qualitative researcher studying craft knowledge, technical intermediaries, and knowledge spillovers in technology industries. Uses ethnographic methods."
+    },
+    "Mukund Chari": {
+        "method": "Quantitative",
+        "topics": ["Intellectual property rights", "Patent systems", "Patent assertion entities", "Inventor behavior", "Patent quality", "Licensing"],
+        "theories": ["Transaction Cost Economics", "Agency Theory", "Professional Identity Theory"],
+        "publications": [
+            "The influence of patent assertion entities on inventor behavior",
+            "A Comparative Analysis of Patent Assertion Entities",
+            "The Quest For Expansive Intellectual Property Rights"
+        ],
+        "summary": "Examines IP management, patent intermediation, and how institutional factors influence innovation and inventor behavior."
+    },
+    "Ashton Hawk": {
+        "method": "Quantitative",
+        "topics": ["Investment speed", "Time compression diseconomies", "Political capital", "Alliance partner selection", "Entry timing", "Fast-mover advantages"],
+        "theories": ["Resource-Based View", "Dynamic Capabilities", "Time Compression Diseconomies", "Political Capital Theory"],
+        "publications": [
+            "The half-life of political capital",
+            "Time Compression (Dis)Economies: An empirical analysis",
+            "The right speed and its value",
+            "Fast-Mover Advantages: Speed Capabilities"
+        ],
+        "summary": "Studies temporal dynamics in strategy, investment speed, and how firms' capabilities affect competitive advantage over time."
+    },
+    "Ashton Lewis Hawk": {
+        "method": "Quantitative",
+        "topics": ["Investment speed", "Time compression diseconomies", "Political capital", "Alliance partner selection", "Entry timing", "Fast-mover advantages"],
+        "theories": ["Resource-Based View", "Dynamic Capabilities", "Time Compression Diseconomies", "Political Capital Theory"],
+        "publications": [
+            "The half-life of political capital",
+            "Time Compression (Dis)Economies: An empirical analysis",
+            "The right speed and its value",
+            "Fast-Mover Advantages: Speed Capabilities"
+        ],
+        "summary": "Studies temporal dynamics in strategy, investment speed, and how firms' capabilities affect competitive advantage over time."
+    },
+    "Sina Sokhan": {
+        "method": "Quantitative",
+        "topics": ["Innovation process", "Knowledge recombination", "IP rights and innovation", "Pharmaceutical innovation", "Antibiotic development", "Commercialization costs"],
+        "theories": ["Knowledge Recombination Theory", "Intellectual Property Theory", "Innovation Economics"],
+        "publications": [
+            "Innovation process and knowledge recombination",
+            "Intellectual property rights and innovation",
+            "Pharmaceutical innovation and antibiotic development"
+        ],
+        "summary": "Examines what enables, constrains, and causes innovation to fail. Focus on pharma innovation and how IP rights facilitate or impede knowledge recombination."
+    },
+    "MJ Yang": {
+        "method": "Quantitative/Mixed",
+        "topics": ["CEO strategic decision-making", "Technological uniqueness", "Industrial AI adoption", "Complementarities", "R&D capital", "Organizational design"],
+        "theories": ["Complementarity Theory", "Resource-Based View", "Dynamic Capabilities", "Organizational Economics"],
+        "publications": [
+            "How Do CEOs Make Strategy?",
+            "The Technological Uniqueness Paradox",
+            "Complementarity of Task Allocation and Performance Pay",
+            "Micro-Level Misallocation and Selection"
+        ],
+        "summary": "Examines drivers of firm performance gaps, strategy processes, technological positioning, and complementarities between organizational design and strategy."
+    },
+    "Kenneth Huang": {
+        "method": "Quantitative/Mixed",
+        "topics": ["IP strategy", "Innovation in China", "Patent trolls/NPEs", "State-owned enterprises", "Government policy and innovation", "Knowledge worker mobility", "Green innovation"],
+        "theories": ["Institutional Theory", "Knowledge-Based View", "Resource-Based View", "Innovation Economics"],
+        "publications": [
+            "Does Patent Strategy Shape the Long-run Supply of Public Knowledge?",
+            "Public Governance, Corporate Governance and Firm Innovation: SOEs",
+            "Escaping the Patent Trolls: NPE Litigation and Firm Innovation",
+            "Using Supervised Machine Learning for Large-scale Classification"
+        ],
+        "summary": "Studies IP strategy, innovation in emerging economies (especially China), institutions and government policy shaping innovation, uses machine learning methods."
+    },
+    "Aldona Kapacinskaite": {
+        "method": "Quantitative",
+        "topics": ["Trade secrets", "Appropriability", "Platform competition", "Resource redeployment", "Patent licensing", "Digital platforms", "Energy transition"],
+        "theories": ["Resource-Based View", "Appropriability Theory", "Platform Theory", "Competitive Strategy"],
+        "publications": [
+            "Keeping Invention Confidential",
+            "Competing with the platform: Complementor positioning",
+            "From Wells to Windmills: Resource Redeployment"
+        ],
+        "summary": "Examines organizational innovation, how appropriability regimes affect trade secret use, technology investments, and product innovation across energy and digital platforms."
+    },
+    "Wesley Koo": {
+        "method": "Quantitative/Mixed",
+        "topics": ["Platform governance", "Rural-urban divide", "Digital entrepreneurship", "Return migration", "Social ventures", "Algorithmic change"],
+        "theories": ["Platform Theory", "Institutional Theory", "Entrepreneurship Theory", "Digital Transformation"],
+        "publications": [
+            "Platform governance and the rural–urban divide",
+            "Take me home, country roads: Return migration",
+            "From margins to mainstream: The narrative dilemma",
+            "Innovation on wings: Nonstop flights and firm innovation"
+        ],
+        "summary": "Studies platform governance, digital entrepreneurship in rural contexts, and how technology affects marginalized populations."
+    },
+    "Wesley W. Koo": {
+        "method": "Quantitative/Mixed",
+        "topics": ["Platform governance", "Rural-urban divide", "Digital entrepreneurship", "Return migration", "Social ventures", "Algorithmic change"],
+        "theories": ["Platform Theory", "Institutional Theory", "Entrepreneurship Theory", "Digital Transformation"],
+        "publications": [
+            "Platform governance and the rural–urban divide",
+            "Take me home, country roads: Return migration",
+            "From margins to mainstream: The narrative dilemma",
+            "Innovation on wings: Nonstop flights and firm innovation"
+        ],
+        "summary": "Studies platform governance, digital entrepreneurship in rural contexts, and how technology affects marginalized populations."
+    },
+    "Catherine Magelssen": {
+        "method": "Quantitative",
+        "topics": ["Multinational firm strategy", "Property rights allocation", "Technology innovation", "Tax avoidance and IP", "Subsidiary governance", "Corporate philanthropy"],
+        "theories": ["Property Rights Theory", "Resource-Based View", "Transaction Cost Economics", "Internalization Theory"],
+        "publications": [
+            "Allocation of property rights and technological innovation within firms",
+            "Institutional Disruptions and the Philanthropy of Multinational Firms",
+            "The contractual governance of transactions within firms",
+            "Outsourcing and insourcing of organizational activities"
+        ],
+        "summary": "Examines how multinationals govern internal transactions and allocate IP ownership rights, using confidential intra-firm data."
+    },
+    "Anparasan Mahalingam": {
+        "method": "Quantitative",
+        "topics": ["Digital corporate strategy", "Platform governance", "Platform gatekeeping", "Firm boundaries", "Online lending", "Decision rights allocation"],
+        "theories": ["Platform Theory", "Organizational Economics", "Transaction Cost Economics", "Market Design"],
+        "publications": [
+            "Corporate Strategies of Digital Organizations",
+            "How Platform Gatekeeping Affects Complementors' Strategy",
+            "Decision Right Allocation and Platform Market Effectiveness"
+        ],
+        "summary": "Studies digitization's implications for corporate strategy, platform gatekeeping, decision rights, and market frictions in digital organizations."
+    },
+    "Francisco Morales": {
+        "method": "Quantitative",
+        "topics": ["Strategic human capital", "Skilled immigration", "Employee mobility", "International business", "Private equity in emerging markets", "Signaling"],
+        "theories": ["Strategic Human Capital Theory", "Signaling Theory", "Uppsala Model", "Social Network Theory"],
+        "publications": [
+            "Does Employing Skilled Immigrants Enhance Competitive Performance?",
+            "The impact of experience on the agglomeration of cross-border investments",
+            "Attracting Knowledge Workers to High-tech Ventures: A Signaling Perspective"
+        ],
+        "summary": "Examines innovation and strategic human capital, how firms benefit from managing talent globally, skilled immigration effects on competitive performance."
+    },
+    "FJ Morales": {
+        "method": "Quantitative",
+        "topics": ["Strategic human capital", "Skilled immigration", "Employee mobility", "International business", "Private equity in emerging markets", "Signaling"],
+        "theories": ["Strategic Human Capital Theory", "Signaling Theory", "Uppsala Model", "Social Network Theory"],
+        "publications": [
+            "Does Employing Skilled Immigrants Enhance Competitive Performance?",
+            "The impact of experience on the agglomeration of cross-border investments",
+            "Attracting Knowledge Workers to High-tech Ventures: A Signaling Perspective"
+        ],
+        "summary": "Examines innovation and strategic human capital, how firms benefit from managing talent globally, skilled immigration effects on competitive performance."
+    },
+    "Metin Sengul": {
+        "method": "Quantitative",
+        "topics": ["Organization design", "Multiunit-multimarket firms", "Cognitive drivers of design", "Dual-purpose companies", "Delegation and control", "Capital allocation"],
+        "theories": ["Organization Design Theory", "Behavioral Theory of the Firm", "Cognitive Theories", "Transaction Cost Economics"],
+        "publications": [
+            "Organization design: Current insights and future research directions",
+            "Ownership as a bundle of rights",
+            "A socio-cognitive explanation of organizational grouping decisions",
+            "The allocation of capital within firms"
+        ],
+        "summary": "Studies organization design in complex orgs, how design varies with competitive context and cognitive processes, dual-purpose companies balancing financial and social objectives."
+    },
+    "Xiaoli Tang": {
+        "method": "Quantitative/Mixed",
+        "topics": ["Accountable secrecy", "Transparency and disclosure", "Self-regulation", "Environmental disclosure", "Extractive industries", "Hydraulic fracturing"],
+        "theories": ["Institutional Theory", "Stakeholder Theory", "Innovation Theory", "Nonmarket Strategy"],
+        "publications": [
+            "Self-regulation, Corruption, and Competitiveness in Extractive Industries",
+            "Accountable Secrecy: Public Scrutiny, Market Power, and Safer Chemistry",
+            "Self-Regulation in Weak Institutional Environments",
+            "Seeing Through the Fog: Cognitive Capabilities and M&As"
+        ],
+        "summary": "Examines how corporations navigate conflicting stakeholder demands using 'accountable secrecy' - designing disclosure rules that balance safety with protecting know-how."
+    },
+    "Andy Wu": {
+        "method": "Quantitative/Mixed",
+        "topics": ["Entrepreneurship", "Innovation", "Platform ecosystems", "AI and data-driven learning", "Organizational design", "Entrepreneurial learning"],
+        "theories": ["Organizational Design Theory", "Platform Theory", "Entrepreneurship Theory", "Behavioral Theory"],
+        "publications": [
+            "The Gen AI Playbook for Organizations",
+            "Iterative Coordination and Innovation",
+            "Entrepreneurial Learning and Strategic Foresight",
+            "Artificial Intelligence, Data-Driven Learning, and the Decentralized Structure",
+            "Platform Diffusion at Temporary Gatherings"
+        ],
+        "summary": "Studies how managers compete and adapt to technology, platform ecosystems, AI-driven learning, iterative coordination, and knowledge production teams."
+    },
+    "Mingtao Xu": {
+        "method": "Quantitative",
+        "topics": ["AI and Strategy", "Machine learning and organizational learning", "Property rights", "Patent litigation", "Patent monetization", "Entrepreneurial financing", "GPT-enabled startups"],
+        "theories": ["Property Rights Theory", "Organizational Learning", "Organizational Economics", "Resource-Based View"],
+        "publications": [
+            "Substituting Human Decision-Making with Machine Learning",
+            "How Property Rights Matter to Firm Resource Investment",
+            "Property Rights and Firm Scope",
+            "Why DeepSeek Shouldn't Have Been a Surprise"
+        ],
+        "summary": "Studies how AI changes organizations, how property rights shape firm behavior, and patent litigation implications. Three streams: AI & Strategy, Property Rights, Patent Litigation."
+    },
+    "Tony Tong": {
+        "method": "Mixed",
+        "topics": ["Strategy", "Innovation", "International business", "Real options", "Firm scope", "Property rights"],
+        "theories": ["Real Options Theory", "Resource-Based View", "Organizational Economics"],
+        "publications": [
+            "Property Rights and Firm Scope",
+            "How Property Rights Matter to Firm Resource Investment",
+            "Review of Real Options Theory"
+        ],
+        "summary": "Broad expertise in strategy, innovation, and international business. Co-authored on property rights, firm scope, and patent litigation."
+    }
 }
 
 
@@ -72,51 +296,33 @@ class Reviewer:
     name: str
     email: str
     method: str
-    keywords: List[str]
+    profile: dict  # Full profile from REVIEWER_PROFILES
     max_papers: int
     
     @classmethod
     def from_firebase(cls, rid: str, data: dict) -> 'Reviewer':
         name = data.get('name', 'Unknown')
-        expertise = data.get('expertise', '')
         
-        # Parse or fallback
-        if expertise:
-            method, keywords = parse_expertise(expertise)
-        elif name in FALLBACK_REVIEWERS:
-            method = FALLBACK_REVIEWERS[name]['method']
-            keywords = FALLBACK_REVIEWERS[name]['keywords']
-        else:
-            method = "Mixed"
-            keywords = []
+        # Get detailed profile
+        profile = REVIEWER_PROFILES.get(name, {
+            "method": "Mixed",
+            "topics": [],
+            "theories": [],
+            "publications": [],
+            "summary": "General expertise"
+        })
         
         return cls(
             id=rid,
             name=name,
             email=data.get('email', ''),
-            method=method,
-            keywords=keywords,
+            method=profile.get('method', 'Mixed'),
+            profile=profile,
             max_papers=int(data.get('maxPapers', 0))
         )
 
 
-def parse_expertise(expertise: str) -> tuple:
-    method = "Mixed"
-    keywords = []
-    if '|' in expertise:
-        parts = expertise.split('|')
-        for part in parts:
-            part = part.strip()
-            if part.lower().startswith('method:'):
-                method = part[7:].strip()
-            elif part.lower().startswith('keywords:'):
-                keywords = [k.strip() for k in part[9:].split(',') if k.strip()]
-    else:
-        keywords = [k.strip() for k in expertise.split(',') if k.strip()]
-    return method, keywords
-
-
-def query_llm(prompt: str, max_tokens: int = 100) -> str:
+def query_llm(prompt: str, max_tokens: int = 150) -> str:
     """Query Ollama with prompt."""
     try:
         response = requests.post(
@@ -125,9 +331,9 @@ def query_llm(prompt: str, max_tokens: int = 100) -> str:
                 "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False,
-                "options": {"temperature": 0.1, "num_predict": max_tokens}
+                "options": {"temperature": 0.2, "num_predict": max_tokens}
             },
-            timeout=60
+            timeout=90
         )
         if response.status_code == 200:
             return response.json().get('response', '').strip()
@@ -138,46 +344,62 @@ def query_llm(prompt: str, max_tokens: int = 100) -> str:
 
 def score_paper_reviewer_pair(paper: Paper, reviewer: Reviewer) -> tuple:
     """
-    Score a single paper-reviewer pair using LLM.
+    Score a single paper-reviewer pair using LLM with detailed profiles.
     Returns (score: int 0-100, reason: str)
     """
-    prompt = f"""Rate how well this reviewer matches this paper. Score 0-100.
+    profile = reviewer.profile
+    topics = ", ".join(profile.get('topics', [])[:8])
+    theories = ", ".join(profile.get('theories', [])[:4])
+    publications = "\"" + "\", \"".join(profile.get('publications', [])[:3]) + "\""
+    summary = profile.get('summary', '')
+    
+    # Increase abstract limit to 4000 chars (approx 600 words)
+    abstract_text = paper.abstract[:4000] if paper.abstract else 'N/A'
+    
+    prompt = f"""You are matching a paper to a reviewer for an academic conference. Be STRICT and DIFFERENTIATED with scores.
 
 PAPER:
 Title: {paper.title}
-Abstract: {paper.abstract[:1500] if paper.abstract else 'N/A'}
 Keywords: {paper.keywords}
-Method: {paper.method or 'Unknown'}
+Abstract excerpt: {abstract_text}
 
-REVIEWER:
-Name: {reviewer.name}
+REVIEWER: {reviewer.name}
 Method: {reviewer.method}
-Expertise: {', '.join(reviewer.keywords)}
+Research Topics: {topics}
+Theoretical Frameworks: {theories}
+Notable Publications: {publications}
+Research Focus: {summary}
 
-Scoring criteria:
-- Topic overlap (keywords match)
-- Theory/framework alignment  
-- Methodology fit
+SCORING GUIDE (be strict!):
+- 90-100: PERFECT match - Paper's topic IS the reviewer's specialty area
+- 75-89: STRONG match - Significant overlap in topics AND theories
+- 60-74: MODERATE match - Some topic overlap OR theory alignment
+- 40-59: WEAK match - Tangential connection only
+- 20-39: POOR match - Little relevant expertise
+- 0-19: NO match - Completely different field
 
-RESPOND WITH ONLY: SCORE: [number 0-100] | REASON: [one sentence]"""
+Evaluate:
+1. Does the paper's TOPIC directly match reviewer's research areas and publications?
+2. Does the paper use THEORIES the reviewer has published on?
+3. Is the METHODOLOGY compatible?
 
-    response = query_llm(prompt, max_tokens=80)
+RESPOND EXACTLY: SCORE: [number] | REASON: [one specific sentence explaining why]"""
+
+    response = query_llm(prompt, max_tokens=150)
     
     # Parse score
-    score = 0
+    score = 50  # Default moderate
     reason = ""
     
     if 'SCORE:' in response.upper():
         try:
-            # Extract score
             score_match = re.search(r'SCORE:\s*(\d+)', response, re.IGNORECASE)
             if score_match:
                 score = min(100, max(0, int(score_match.group(1))))
             
-            # Extract reason
             reason_match = re.search(r'REASON:\s*(.+)', response, re.IGNORECASE)
             if reason_match:
-                reason = reason_match.group(1).strip()
+                reason = reason_match.group(1).strip()[:100]
         except:
             pass
     
@@ -195,10 +417,13 @@ def load_reviewers_from_firebase() -> Dict[str, Reviewer]:
         reviewers = {}
         for rid, rdata in data.items():
             reviewer = Reviewer.from_firebase(rid, rdata)
-            reviewers[rid] = reviewer
-            print(f"   ✓ {reviewer.name}: {reviewer.method} | Keywords: {len(reviewer.keywords)}")
+            topics_count = len(reviewer.profile.get('topics', []))
+            pubs_count = len(reviewer.profile.get('publications', []))
+            print(f"   ✓ {reviewer.name}: {reviewer.method} | Topics: {topics_count} | Pubs: {pubs_count}")
         
-        print(f"   ✓ Loaded {len(reviewers)} reviewers")
+            reviewers[rid] = reviewer
+        
+        print(f"   ✓ Loaded {len(reviewers)} reviewers with detailed profiles")
         return reviewers
     except Exception as e:
         print(f"   ✗ Error: {e}")
@@ -229,7 +454,7 @@ def method_matches(paper_method: str, reviewer_method: str) -> bool:
         return 'qualitative' in reviewer_method or 'mixed' in reviewer_method
     if paper_method == 'quantitative':
         return 'quantitative' in reviewer_method or 'mixed' in reviewer_method
-    return True  # Conceptual or unknown
+    return True
 
 
 def classify_method_simple(paper: Paper) -> str:
@@ -242,7 +467,7 @@ def classify_method_simple(paper: Paper) -> str:
     quant_count = sum(1 for w in quant_words if w in text)
     qual_count = sum(1 for w in qual_words if w in text)
     
-    if quant_count > 2 and quant_count > qual_count:
+    if quant_count > 2:
         return 'Quantitative'
     elif qual_count > 1:
         return 'Qualitative'
@@ -285,9 +510,10 @@ def save_assignments(assignments: Dict[str, List[str]], papers: List[Paper],
 
 def main():
     print("=" * 70)
-    print("Strategy Science 2026 - TRUE PAIRWISE LLM Reviewer Assignment")
+    print("Strategy Science 2026 - PAIRWISE LLM Assignment V3")
     print("=" * 70)
-    print(f"Model: {OLLAMA_MODEL} | One LLM call per paper-reviewer pair")
+    print("Using DETAILED profiles + PUBLICATIONS + LONG ABSTRACTS")
+    print(f"Model: {OLLAMA_MODEL}")
     
     start_time = time.time()
     
@@ -308,9 +534,8 @@ def main():
         print(f"   ✗ File not found: {INPUT_CSV}")
         return
     
-    # Estimate time
     total_pairs = len(papers) * len(reviewers)
-    print(f"\n⏱ Estimated: {total_pairs} LLM calls (~{total_pairs * 2 / 60:.1f} minutes)")
+    print(f"\n⏱ Estimated: {total_pairs} LLM calls (~{total_pairs * 3 / 60:.0f} minutes)")
     
     # Classify methods
     print("\n" + "=" * 70)
@@ -322,21 +547,24 @@ def main():
     
     # Pairwise scoring
     print("\n" + "=" * 70)
-    print("PHASE 2: PAIRWISE LLM Scoring (each paper × each reviewer)")
+    print("PHASE 2: PAIRWISE LLM Scoring (detailed profiles)")
     print("=" * 70)
     
     assignments = defaultdict(list)
     current_load = defaultdict(int)
-    scores_log = {}  # {paper_id: {reviewer_name: score}}
+    scores_log = {}
     
     for i, paper in enumerate(papers):
         paper_start = time.time()
         elapsed_total = time.time() - start_time
         
         print(f"\n[{i+1}/{len(papers)}] {paper.id}: {paper.title[:45]}...")
-        print(f"    Method: {paper.method}")
+        # Show actual abstract length being used
+        abstract_len = len(paper.abstract) if paper.abstract else 0
+        used_len = min(abstract_len, 4000)
+        print(f"    Abstract: {used_len} chars (Total: {abstract_len})")
         
-        # Get available reviewers (method match + capacity)
+        # Get available reviewers
         available = []
         for rid, reviewer in reviewers.items():
             if not method_matches(paper.method, reviewer.method):
@@ -345,24 +573,32 @@ def main():
                 continue
             available.append((rid, reviewer))
         
-        print(f"    Available reviewers: {len(available)}")
+        print(f"    Available: {len(available)} reviewers")
         
         if len(available) < 2:
             print(f"    ⚠ Not enough reviewers!")
             continue
         
-        # Score each available reviewer
+        # Score each reviewer
         pair_scores = {}
         for j, (rid, reviewer) in enumerate(available):
             score, reason = score_paper_reviewer_pair(paper, reviewer)
             pair_scores[rid] = score
-            print(f"      [{j+1}/{len(available)}] {reviewer.name}: {score}", end="")
+            
+            # Color code scores
+            if score >= 80:
+                indicator = "🟢"
+            elif score >= 60:
+                indicator = "🟡"
+            else:
+                indicator = "🔴"
+            
+            print(f"      [{j+1}/{len(available)}] {indicator} {reviewer.name}: {score}", end="")
             if reason:
-                print(f" - {reason[:40]}...")
+                print(f" - {reason[:45]}...")
             else:
                 print()
         
-        # Store scores
         scores_log[paper.id] = {reviewers[rid].name: s for rid, s in pair_scores.items()}
         
         # Assign top 2
@@ -377,27 +613,29 @@ def main():
         print()
         
         paper_time = time.time() - paper_start
-        print(f"    ⏱ Paper time: {paper_time:.1f}s | Total: {elapsed_total/60:.1f}min")
+        papers_remaining = len(papers) - i - 1
+        est_remaining = paper_time * papers_remaining / 60
+        print(f"    ⏱ {paper_time:.0f}s | Est. remaining: {est_remaining:.0f}min")
         
-        # Checkpoint every 5
+        # Checkpoint
         if (i + 1) % 5 == 0:
-            print(f"    💾 Checkpoint at paper {i+1}")
             save_assignments(assignments, papers, reviewers, scores_log, OUTPUT_CSV)
+            print(f"    💾 Saved checkpoint")
     
     # Final save
     print("\n" + "=" * 70)
-    print("PHASE 3: Saving results")
+    print("PHASE 3: Final Results")
     print("=" * 70)
     
     save_assignments(assignments, papers, reviewers, scores_log, OUTPUT_CSV)
     
     # Load distribution
     print("\nReviewer load distribution:")
-    for rid, reviewer in reviewers.items():
+    for rid, reviewer in sorted(reviewers.items(), key=lambda x: current_load.get(x[0], 0), reverse=True):
         load = current_load.get(rid, 0)
-        cap_str = str(reviewer.max_papers) if reviewer.max_papers > 0 else "∞"
-        bar = "█" * min(load, 10) + "░" * max(0, 10 - load)
-        print(f"   {reviewer.name:25} [{bar}] {load}/{cap_str}")
+        if load > 0:
+            bar = "█" * min(load, 10) + "░" * max(0, 10 - load)
+            print(f"   {reviewer.name:25} [{bar}] {load}")
     
     total_time = time.time() - start_time
     
@@ -405,9 +643,8 @@ def main():
     print("SUMMARY")
     print("=" * 70)
     print(f"✓ Total time: {total_time/60:.1f} minutes")
-    print(f"✓ Papers processed: {len(papers)}")
-    print(f"✓ LLM calls made: ~{len(papers) * len(reviewers)}")
-    print(f"✓ Output saved to: {OUTPUT_CSV}")
+    print(f"✓ Papers: {len(papers)} | LLM calls: ~{len(papers) * len(reviewers)}")
+    print(f"✓ Output: {OUTPUT_CSV}")
 
 
 if __name__ == "__main__":
