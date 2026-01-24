@@ -1661,6 +1661,35 @@
                 document.getElementById('mode-badge').textContent = 'Admin Login';
             }
 
+            // Show error when reviewer email not found after sign-in
+            function showReviewerLoginError(email) {
+                document.getElementById('reviewer-login').classList.remove('hidden');
+                document.getElementById('mode-badge').textContent = 'Access Denied';
+
+                // Reset form state
+                document.getElementById('reviewer-login-form').style.display = 'block';
+                document.getElementById('reviewer-auth-success').classList.add('hidden');
+
+                const errorDiv = document.getElementById('reviewer-auth-error');
+                errorDiv.innerHTML = `
+                    <strong>❌ Access Denied</strong><br><br>
+                    The email <strong>${email}</strong> is not registered as a reviewer for this conference.
+                    <br><br>
+                    This could happen if:
+                    <ul style="margin: 8px 0 0 20px; text-align: left;">
+                        <li>You signed in with a different email than expected</li>
+                        <li>Your reviewer registration uses a different email</li>
+                        <li>You haven't been added as a reviewer yet</li>
+                    </ul>
+                    <br>
+                    <small>Please sign out and try again with the correct email, or contact the organizers.</small>
+                `;
+                errorDiv.classList.remove('hidden');
+
+                // Add sign out button
+                addSignOutButton('Sign Out & Try Again');
+            }
+
             // Handle magic link sign-in (called on page load)
             function handleMagicLinkSignIn() {
                 // Check if this is a sign-in link
@@ -1709,6 +1738,42 @@
                     return;
                 }
 
+                // Check if reviewers data is loaded
+                if (!dataLoaded.reviewers) {
+                    errorDiv.textContent = 'Loading reviewer data... Please try again in a moment.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Validate email against reviewer list BEFORE sending magic link
+                const matchedReviewer = findReviewerByEmail(email);
+                if (!matchedReviewer) {
+                    errorDiv.innerHTML = `
+                        <strong>Email not found</strong><br>
+                        The email <strong>${email}</strong> is not registered as a reviewer for this conference.
+                        <br><br>Please check:
+                        <ul style="margin: 8px 0 0 20px; text-align: left;">
+                            <li>You entered the correct email address</li>
+                            <li>This is the email the organizers have on file for you</li>
+                        </ul>
+                        <br><small>If you believe this is an error, please contact the conference organizers.</small>
+                    `;
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                // Check if reviewer has any papers assigned
+                const assignedPapers = assignments[matchedReviewer.id] || [];
+                if (assignedPapers.length === 0) {
+                    errorDiv.innerHTML = `
+                        <strong>No papers assigned</strong><br>
+                        Your email is registered, but you have no papers assigned for review yet.
+                        <br><small>Please contact the conference organizers if you expected to have assignments.</small>
+                    `;
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
                 // Disable button while processing
                 sendBtn.disabled = true;
                 sendBtn.textContent = 'Sending...';
@@ -1723,11 +1788,13 @@
                     .then(() => {
                         // Save email to localStorage for when user returns
                         localStorage.setItem('emailForSignIn', email);
+                        // Mark that this is a reviewer sign-in (not admin)
+                        localStorage.setItem('signInType', 'reviewer');
 
                         successDiv.innerHTML = `
                             <strong>✓ Sign-in link sent!</strong><br>
                             Check your email at <strong>${email}</strong> and click the link to sign in.
-                            <br><small style="color: var(--text-secondary);">Don't forget to check your spam folder.</small>
+                            <br><small style="color: var(--text-secondary);">You have ${assignedPapers.length} paper${assignedPapers.length > 1 ? 's' : ''} to review. Don't forget to check your spam folder.</small>
                         `;
                         successDiv.classList.remove('hidden');
 
@@ -1780,7 +1847,9 @@
                         const reviewer = findReviewerByEmail(userEmail);
 
                         if (reviewer) {
-                            // This is a reviewer
+                            // This is a reviewer - clear sign-in type flag
+                            localStorage.removeItem('signInType');
+
                             authenticatedReviewer = reviewer;
                             hideAllScreens();
                             document.getElementById('reviewer-view').classList.remove('hidden');
@@ -1795,15 +1864,25 @@
                                 renderReviewerPapers(reviewer.id);
                             }
                         } else {
-                            // Not a reviewer - check if this might be an admin
-                            // Admins are authenticated via email/password, not magic link
-                            // If signed in but not a reviewer, show admin view
-                            authenticatedReviewer = null;
-                            hideAllScreens();
-                            document.getElementById('admin-view').classList.remove('hidden');
-                            document.getElementById('mode-badge').textContent = 'Admin Mode';
-                            setupTabNavigation();
-                            addSignOutButton('Sign Out');
+                            // Email not found in reviewer list
+                            // Check if they tried to sign in as a reviewer (magic link) or admin (password)
+                            const signInType = localStorage.getItem('signInType');
+                            localStorage.removeItem('signInType');
+
+                            if (signInType === 'reviewer') {
+                                // They used reviewer login but email not found - show error
+                                authenticatedReviewer = null;
+                                hideAllScreens();
+                                showReviewerLoginError(userEmail);
+                            } else {
+                                // Admin sign-in (email/password) - show admin view
+                                authenticatedReviewer = null;
+                                hideAllScreens();
+                                document.getElementById('admin-view').classList.remove('hidden');
+                                document.getElementById('mode-badge').textContent = 'Admin Mode';
+                                setupTabNavigation();
+                                addSignOutButton('Sign Out');
+                            }
                         }
                     };
 
