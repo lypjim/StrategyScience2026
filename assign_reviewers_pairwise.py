@@ -16,6 +16,7 @@ from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Set
 import time
+import math
 
 # =====================
 # CONFIGURATION
@@ -510,9 +511,10 @@ def save_assignments(assignments: Dict[str, List[str]], papers: List[Paper],
 
 def main():
     print("=" * 70)
-    print("Strategy Science 2026 - PAIRWISE LLM Assignment V3")
+    print("Strategy Science 2026 - PAIRWISE LLM Assignment V4 (Global Optimization)")
     print("=" * 70)
     print("Using DETAILED profiles + PUBLICATIONS + LONG ABSTRACTS")
+    print("GLOBAL OPTIMIZATION: Score ALL pairs first, then assign optimally")
     print(f"Model: {OLLAMA_MODEL}")
     
     start_time = time.time()
@@ -545,45 +547,40 @@ def main():
         paper.method = classify_method_simple(paper)
         print(f"   {paper.id}: {paper.method}")
     
-    # Pairwise scoring
+    # =========================================================================
+    # PHASE 2: Score ALL pairs (no assignments yet)
+    # =========================================================================
     print("\n" + "=" * 70)
-    print("PHASE 2: PAIRWISE LLM Scoring (detailed profiles)")
+    print("PHASE 2: Scoring ALL Paper-Reviewer Pairs")
     print("=" * 70)
     
-    assignments = defaultdict(list)
-    current_load = defaultdict(int)
-    scores_log = {}
+    # Store ALL scores: list of (paper_id, reviewer_id, score, reason)
+    all_scores = []
+    scores_log = {}  # For CSV export
     
     for i, paper in enumerate(papers):
         paper_start = time.time()
-        elapsed_total = time.time() - start_time
         
         print(f"\n[{i+1}/{len(papers)}] {paper.id}: {paper.title[:45]}...")
-        # Show actual abstract length being used
         abstract_len = len(paper.abstract) if paper.abstract else 0
         used_len = min(abstract_len, 4000)
         print(f"    Abstract: {used_len} chars (Total: {abstract_len})")
         
-        # Get available reviewers
-        available = []
+        # Get method-compatible reviewers
+        compatible = []
         for rid, reviewer in reviewers.items():
-            if not method_matches(paper.method, reviewer.method):
-                continue
-            if reviewer.max_papers > 0 and current_load[rid] >= reviewer.max_papers:
-                continue
-            available.append((rid, reviewer))
+            if method_matches(paper.method, reviewer.method):
+                compatible.append((rid, reviewer))
         
-        print(f"    Available: {len(available)} reviewers")
+        print(f"    Compatible: {len(compatible)} reviewers")
         
-        if len(available) < 2:
-            print(f"    ⚠ Not enough reviewers!")
-            continue
-        
-        # Score each reviewer
-        pair_scores = {}
-        for j, (rid, reviewer) in enumerate(available):
+        paper_scores = {}
+        for j, (rid, reviewer) in enumerate(compatible):
             score, reason = score_paper_reviewer_pair(paper, reviewer)
-            pair_scores[rid] = score
+            
+            # Store for global assignment
+            all_scores.append((paper.id, rid, score, reason))
+            paper_scores[reviewers[rid].name] = score
             
             # Color code scores
             if score >= 80:
@@ -593,38 +590,134 @@ def main():
             else:
                 indicator = "🔴"
             
-            print(f"      [{j+1}/{len(available)}] {indicator} {reviewer.name}: {score}", end="")
+            print(f"      [{j+1}/{len(compatible)}] {indicator} {reviewer.name}: {score}", end="")
             if reason:
                 print(f" - {reason[:45]}...")
             else:
                 print()
         
-        scores_log[paper.id] = {reviewers[rid].name: s for rid, s in pair_scores.items()}
-        
-        # Assign top 2
-        sorted_scores = sorted(pair_scores.items(), key=lambda x: x[1], reverse=True)
-        top_2 = sorted_scores[:2]
-        
-        print(f"    ✓ Assigned: ", end="")
-        for rid, score in top_2:
-            assignments[rid].append(paper.id)
-            current_load[rid] += 1
-            print(f"{reviewers[rid].name}({score}) ", end="")
-        print()
+        scores_log[paper.id] = paper_scores
         
         paper_time = time.time() - paper_start
         papers_remaining = len(papers) - i - 1
         est_remaining = paper_time * papers_remaining / 60
         print(f"    ⏱ {paper_time:.0f}s | Est. remaining: {est_remaining:.0f}min")
         
-        # Checkpoint
+        # Checkpoint scores (not assignments yet)
         if (i + 1) % 5 == 0:
-            save_assignments(assignments, papers, reviewers, scores_log, OUTPUT_CSV)
-            print(f"    💾 Saved checkpoint")
+            print(f"    💾 Scored {len(all_scores)} pairs so far")
     
-    # Final save
+    print(f"\n✓ Scoring complete: {len(all_scores)} total pairs scored")
+    
+    # =========================================================================
+    # PHASE 3: Global Optimal Assignment
+    # =========================================================================
     print("\n" + "=" * 70)
-    print("PHASE 3: Final Results")
+    print("PHASE 3: Global Optimal Assignment")
+    print("=" * 70)
+    
+    # Calculate target load
+    total_assignments_needed = len(papers) * 2
+    
+    # First, calculate the NATURAL target (as if no one had limits)
+    # Use CEILING to ensure we have enough capacity for all assignments
+    natural_target = max(1, math.ceil(total_assignments_needed / len(reviewers)))
+    
+    # Only consider maxPapers as a "limit" if it's BELOW the natural target
+    # (i.e., someone explicitly wants fewer papers than average)
+    truly_limited = []
+    effectively_unlimited = []
+    
+    for rid, r in reviewers.items():
+        if r.max_papers > 0 and r.max_papers < natural_target:
+            # This reviewer explicitly wants fewer papers
+            truly_limited.append((rid, r))
+        else:
+            # Either no limit, or limit is >= natural target (treat as unlimited)
+            effectively_unlimited.append((rid, r))
+    
+    # Calculate capacity used by truly limited reviewers
+    limited_capacity = sum(r.max_papers for _, r in truly_limited)
+    
+    # Remaining assignments for effectively unlimited reviewers
+    remaining_assignments = total_assignments_needed - limited_capacity
+    
+    if len(effectively_unlimited) > 0:
+        target_load = max(1, math.ceil(remaining_assignments / len(effectively_unlimited)))
+    else:
+        target_load = natural_target
+    
+    print(f"   Total assignments needed: {total_assignments_needed}")
+    print(f"   Natural target (all equal): {natural_target}")
+    print(f"   Truly limited reviewers (maxPapers < {natural_target}): {len(truly_limited)}")
+    print(f"   Effectively unlimited reviewers: {len(effectively_unlimited)}")
+    print(f"   Final target load: {target_load}")
+    
+    # Sort ALL scores by score descending (highest first)
+    all_scores.sort(key=lambda x: x[2], reverse=True)
+    
+    print(f"   Sorted {len(all_scores)} pairs by score (highest first)")
+    print(f"   Top 5 scores: {[(s[0], reviewers[s[1]].name, s[2]) for s in all_scores[:5]]}")
+    
+    # Track assignments
+    assignments = defaultdict(list)  # reviewer_id -> [paper_ids]
+    paper_reviewers = defaultdict(list)  # paper_id -> [reviewer_ids]
+    current_load = defaultdict(int)
+    
+    # Greedily assign from highest score
+    for paper_id, rid, score, reason in all_scores:
+        reviewer = reviewers[rid]
+        
+        # Check constraints
+        # 1. Paper already has 2 reviewers?
+        if len(paper_reviewers[paper_id]) >= 2:
+            continue
+        
+        # 2. This reviewer already assigned to this paper?
+        if rid in paper_reviewers[paper_id]:
+            continue
+        
+        # 3. Reviewer at capacity limit?
+        # Use maxPapers only if it's a TRUE limit (below natural target)
+        # Otherwise everyone uses target_load
+        if reviewer.max_papers > 0 and reviewer.max_papers < natural_target:
+            # Truly limited reviewer: use their explicit max
+            if current_load[rid] >= reviewer.max_papers:
+                continue
+        else:
+            # Effectively unlimited: use calculated target_load
+            if current_load[rid] >= target_load:
+                continue
+        
+        # Assign!
+        assignments[rid].append(paper_id)
+        paper_reviewers[paper_id].append(rid)
+        current_load[rid] += 1
+    
+    # Report assignments
+    print("\nAssignment Results:")
+    papers_with_2 = sum(1 for p in papers if len(paper_reviewers[p.id]) >= 2)
+    papers_with_1 = sum(1 for p in papers if len(paper_reviewers[p.id]) == 1)
+    papers_with_0 = sum(1 for p in papers if len(paper_reviewers[p.id]) == 0)
+    
+    print(f"   Papers with 2 reviewers: {papers_with_2}")
+    print(f"   Papers with 1 reviewer:  {papers_with_1}")
+    print(f"   Papers with 0 reviewers: {papers_with_0}")
+    
+    # Show detailed assignments
+    print("\nPaper Assignments:")
+    for paper in papers:
+        revs = paper_reviewers[paper.id]
+        rev_names = [reviewers[rid].name for rid in revs]
+        rev_scores = [s[2] for s in all_scores if s[0] == paper.id and s[1] in revs]
+        status = "✓" if len(revs) >= 2 else "⚠"
+        print(f"   {status} {paper.id}: {', '.join(rev_names)} (scores: {rev_scores})")
+    
+    # =========================================================================
+    # PHASE 4: Final Results
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("PHASE 4: Final Results")
     print("=" * 70)
     
     save_assignments(assignments, papers, reviewers, scores_log, OUTPUT_CSV)
@@ -645,7 +738,9 @@ def main():
     print(f"✓ Total time: {total_time/60:.1f} minutes")
     print(f"✓ Papers: {len(papers)} | LLM calls: ~{len(papers) * len(reviewers)}")
     print(f"✓ Output: {OUTPUT_CSV}")
+    print(f"✓ Algorithm: GLOBAL OPTIMIZATION (score all, then assign)")
 
 
 if __name__ == "__main__":
     main()
+
