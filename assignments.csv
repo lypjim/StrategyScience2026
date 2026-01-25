@@ -1,28 +1,28 @@
 paper_id,title,method,reviewer_1,reviewer_2,score_1,score_2
-P001,The Nature and Experience of Entrepreneurial Passion,Conceptual,Anparasan Mahalingam,FJ Morales,45,45
-P002,How Do Feelings Influence Effort? an Empirical Study of Entr,Conceptual,Ashton Lewis Hawk,Andy Wu,78,78
-P003,Competing Models of Entrepreneurial Intentions,Quantitative,Andy Wu,Kenneth Huang,78,75
-P004,Survival of the Fittest? Entrepreneurial Human Capital and t,Conceptual,Ashton Lewis Hawk,Andy Wu,78,78
-P005,Venturing for Others with Heart and Head: How Compassion Enc,Conceptual,Wesley W. Koo,Anparasan Mahalingam,78,45
-P006,Entrepreneurial Exits and Innovation,Conceptual,Janet Lee Elsie Bercovitz,Sina Sokhan,89,89
-P007,"Exploitation, Exploration, and Process Management: the Produ",Conceptual,Mingtao Xu,Andy Wu,78,78
-P008,Does Going Public Affect Innovation?,Conceptual,Janet Lee Elsie Bercovitz,Sina Sokhan,89,89
-P009,Why the Lean Start-Up Changes Everything,Conceptual,Aldona Kapacinskaite,Catherine Magelssen,45,0
-P010,The Art of Continuous Change,Conceptual,Metin Sengul,Ashton Lewis Hawk,78,78
-P011,Can You Gig It? an Empirical Examination of the Gig Economy ,Conceptual,Wesley W. Koo,Anparasan Mahalingam,78,78
-P012,"Who Leaves, Where To, and Why Worry? Employee Mobility, Entr",Conceptual,Janet Lee Elsie Bercovitz,Tony Tong,89,85
-P013,A Scientific Approach to Entrepreneurial Decision Making,Conceptual,Sina Sokhan,Mingtao Xu,75,75
+P001,The Nature and Experience of Entrepreneurial Passion,Conceptual,FJ Morales,Andy Wu,45,78
+P002,How Do Feelings Influence Effort? an Empirical Study of Entr,Conceptual,Andy Wu,Xiaoli Tang,78,0
+P003,Competing Models of Entrepreneurial Intentions,Quantitative,Andy Wu,Aldona Kapacinskaite,78,45
+P004,Survival of the Fittest? Entrepreneurial Human Capital and t,Conceptual,Janet Lee Elsie Bercovitz,Metin Sengul,89,78
+P005,Venturing for Others with Heart and Head: How Compassion Enc,Conceptual,Wesley W. Koo,Xiaoli Tang,78,45
+P006,Entrepreneurial Exits and Innovation,Conceptual,Sina Sokhan,Tony Tong,89,89
+P007,"Exploitation, Exploration, and Process Management: the Produ",Conceptual,Metin Sengul,Mingtao Xu,78,78
+P008,Does Going Public Affect Innovation?,Conceptual,Sina Sokhan,Mukund Chari,89,89
+P009,Why the Lean Start-Up Changes Everything,Conceptual,Aldona Kapacinskaite,Xiaoli Tang,0,0
+P010,The Art of Continuous Change,Conceptual,Ashton Lewis Hawk,Kenneth Huang,78,78
+P011,Can You Gig It? an Empirical Examination of the Gig Economy ,Conceptual,Wesley W. Koo,Mingtao Xu,78,78
+P012,"Who Leaves, Where To, and Why Worry? Employee Mobility, Entr",Conceptual,Janet Lee Elsie Bercovitz,FJ Morales,89,85
+P013,A Scientific Approach to Entrepreneurial Decision Making,Conceptual,Mingtao Xu,Ashton Lewis Hawk,75,78
 P014,"Customer Power, Strategic Investment, and the Failure of Lea",Conceptual,Tony Tong,MJ Yang,89,89
-P015,What Is a Patent Worth? Evidence From the U.S. Patent “Lotte,Conceptual,Janet Lee Elsie Bercovitz,Mingtao Xu,89,89
-P016,The Theory-Based View: Economic Actors as Theorists,Conceptual,MJ Yang,Metin Sengul,78,78
-P017,Theory-Based Decisions: Foundations and Introduction,Conceptual,Metin Sengul,FJ Morales,78,75
-P018,A Scientific Method for Startups,Conceptual,Ashton Lewis Hawk,Wesley W. Koo,78,78
-P019,The Financing of Innovation,Conceptual,MJ Yang,Kenneth Huang,78,78
-P020,Structural Inertia and Organizational Change,Conceptual,Anparasan Mahalingam,Danielle Bovenberg,65,75
-P021,Core Capabilities and Core Rigidities: a Paradox in Managing,Conceptual,Tony Tong,MJ Yang,85,78
-P022,"Mobility, Skills, and the Michigan Non-Compete Experiment",Conceptual,Kenneth Huang,FJ Morales,78,78
-P023,Firm Boundaries Matter: Evidence From Conglomerates and R&D ,Conceptual,Tony Tong,Metin Sengul,89,89
-P024,Prior Knowledge and the Discovery of Entrepreneurial Opportu,Conceptual,Sina Sokhan,Danielle Bovenberg,75,78
-P025,Screening Spinouts? How Noncompete Enforceability Affects th,Conceptual,Mingtao Xu,Kenneth Huang,78,78
-P026,Entrepreneurs as Scientists: a Pragmatist Alternative to the,Conceptual,FJ Morales,Danielle Bovenberg,45,78
-P027,Entrepreneurs as Scientists: a Pragmatist Approach to Produc,Conceptual,Wesley W. Koo,Danielle Bovenberg,75,75
+P015,What Is a Patent Worth? Evidence From the U.S. Patent “Lotte,Conceptual,Sina Sokhan,Tony Tong,89,89
+P016,The Theory-Based View: Economic Actors as Theorists,Conceptual,MJ Yang,Kenneth Huang,78,78
+P017,Theory-Based Decisions: Foundations and Introduction,Conceptual,FJ Morales,Anparasan Mahalingam,65,75
+P018,A Scientific Method for Startups,Conceptual,Wesley W. Koo,Anparasan Mahalingam,78,65
+P019,The Financing of Innovation,Conceptual,Ashton Lewis Hawk,Kenneth Huang,78,78
+P020,Structural Inertia and Organizational Change,Conceptual,Anparasan Mahalingam,Catherine Magelssen,78,45
+P021,Core Capabilities and Core Rigidities: a Paradox in Managing,Conceptual,MJ Yang,Danielle Bovenberg,78,78
+P022,"Mobility, Skills, and the Michigan Non-Compete Experiment",Conceptual,Mukund Chari,Danielle Bovenberg,78,78
+P023,Firm Boundaries Matter: Evidence From Conglomerates and R&D ,Conceptual,Metin Sengul,Catherine Magelssen,89,78
+P024,Prior Knowledge and the Discovery of Entrepreneurial Opportu,Conceptual,Danielle Bovenberg,Aldona Kapacinskaite,78,45
+P025,Screening Spinouts? How Noncompete Enforceability Affects th,Conceptual,Janet Lee Elsie Bercovitz,Catherine Magelssen,89,78
+P026,Entrepreneurs as Scientists: a Pragmatist Alternative to the,Conceptual,Mukund Chari,Catherine Magelssen,45,0
+P027,Entrepreneurs as Scientists: a Pragmatist Approach to Produc,Conceptual,Aldona Kapacinskaite,Xiaoli Tang,60,0

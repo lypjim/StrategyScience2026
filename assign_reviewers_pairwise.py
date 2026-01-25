@@ -664,35 +664,72 @@ def main():
     paper_reviewers = defaultdict(list)  # paper_id -> [reviewer_ids]
     current_load = defaultdict(int)
     
-    # Greedily assign from highest score
-    for paper_id, rid, score, reason in all_scores:
+    # Calculate minimum load (everyone should get at least this many)
+    minimum_load = total_assignments_needed // len(reviewers)  # floor
+    print(f"   Minimum load guarantee: {minimum_load}")
+    
+    # TWO-PHASE ASSIGNMENT:
+    # Phase 1: Ensure everyone gets at least minimum_load (prioritize under-loaded reviewers)
+    # Phase 2: Fill remaining slots with best matches
+    
+    def get_effective_limit(reviewer):
+        """Get the effective capacity limit for a reviewer."""
+        if reviewer.max_papers > 0 and reviewer.max_papers < natural_target:
+            return reviewer.max_papers
+        return target_load
+    
+    def try_assign(paper_id, rid, phase_name):
+        """Try to assign a paper to a reviewer. Returns True if successful."""
+        nonlocal current_load
         reviewer = reviewers[rid]
         
-        # Check constraints
-        # 1. Paper already has 2 reviewers?
+        # Paper already has 2 reviewers?
         if len(paper_reviewers[paper_id]) >= 2:
-            continue
+            return False
         
-        # 2. This reviewer already assigned to this paper?
+        # Reviewer already assigned to this paper?
         if rid in paper_reviewers[paper_id]:
-            continue
+            return False
         
-        # 3. Reviewer at capacity limit?
-        # Use maxPapers only if it's a TRUE limit (below natural target)
-        # Otherwise everyone uses target_load
-        if reviewer.max_papers > 0 and reviewer.max_papers < natural_target:
-            # Truly limited reviewer: use their explicit max
-            if current_load[rid] >= reviewer.max_papers:
-                continue
-        else:
-            # Effectively unlimited: use calculated target_load
-            if current_load[rid] >= target_load:
-                continue
+        # Reviewer at effective capacity?
+        if current_load[rid] >= get_effective_limit(reviewer):
+            return False
         
         # Assign!
         assignments[rid].append(paper_id)
         paper_reviewers[paper_id].append(rid)
         current_load[rid] += 1
+        return True
+    
+    # PHASE 1: Prioritize under-loaded reviewers
+    # Go through scores, but skip assignments to reviewers who already have minimum_load
+    # until all reviewers have at least minimum_load
+    print("\n   Phase 1: Ensuring minimum load for all reviewers...")
+    
+    for paper_id, rid, score, reason in all_scores:
+        reviewer = reviewers[rid]
+        
+        # Check if ALL reviewers have reached minimum_load
+        all_have_minimum = all(current_load[r] >= minimum_load for r in reviewers)
+        
+        # If not all have minimum, only assign to under-loaded reviewers
+        if not all_have_minimum:
+            if current_load[rid] >= minimum_load:
+                continue  # Skip this reviewer, they already have enough
+        
+        try_assign(paper_id, rid, "Phase 1")
+    
+    # PHASE 2: Fill remaining slots with best matches (greedy)
+    print("   Phase 2: Filling remaining slots...")
+    
+    for paper_id, rid, score, reason in all_scores:
+        try_assign(paper_id, rid, "Phase 2")
+    
+    # Check distribution
+    load_values = [current_load[rid] for rid in reviewers]
+    min_load_actual = min(load_values) if load_values else 0
+    max_load_actual = max(load_values) if load_values else 0
+    print(f"   Load range: {min_load_actual} - {max_load_actual}")
     
     # Report assignments
     print("\nAssignment Results:")
