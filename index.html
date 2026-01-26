@@ -1003,6 +1003,17 @@
                 <strong>ID:</strong> <span id="modal-id">P001</span>
             </div>
 
+            <div style="margin-bottom: 16px;">
+                <strong>ID:</strong> <span id="modal-id">P001</span>
+            </div>
+
+            <div id="modal-authors-section" style="margin-bottom: 16px;">
+                <h4 style="margin-bottom: 8px; color: var(--text-secondary);">Authors & Affiliations</h4>
+                <div id="modal-authors" style="font-size: 0.95rem; color: var(--text-primary);"></div>
+                <div id="modal-affiliations" style="font-size: 0.85rem; color: var(--text-secondary); margin-top:4px;">
+                </div>
+            </div>
+
             <div id="modal-keywords-section" style="margin-bottom: 16px;">
                 <h4 style="margin-bottom: 8px; color: var(--text-secondary);">Keywords</h4>
                 <div id="modal-keywords"></div>
@@ -1693,7 +1704,10 @@
                     const revs = getReviewersForPaper(p.id);
                     return `<tr>
                                     <td>${p.id}</td>
-                                    <td>${(p.title || 'TBD').substring(0, 40)}...</td>
+                                    <td>
+                                        <div style="font-weight:500">${(p.title || 'TBD').substring(0, 50)}...</div>
+                                        ${p.authors ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px">${p.authors.split(',')[0]} et al.</div>` : ''}
+                                    </td>
                                     <td>${paperFiles[p.id]?.link ? '<span class="status status-has-file">✓</span>' : '-'}</td>
                                     <td>${revs.length}/2</td>
                                     <td>
@@ -1835,6 +1849,8 @@
                     const linkIdx = header.indexOf('link');
                     const keywordIdx = header.indexOf('keywords');
                     const abstractIdx = header.indexOf('abstract');
+                    const authorsIdx = Math.max(header.indexOf('authors'), header.indexOf('author'));
+                    const affIdx = Math.max(header.indexOf('affiliations'), header.indexOf('affiliation'), header.indexOf('institution'));
 
                     if (titleIdx === -1) {
                         return showToast('CSV must have a "title" column');
@@ -1872,8 +1888,14 @@
                         const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
                         const keywords = keywordIdx !== -1 && row[keywordIdx] ? row[keywordIdx].trim() : '';
                         const abstract = abstractIdx !== -1 && row[abstractIdx] ? row[abstractIdx].trim() : '';
+                        const authors = authorsIdx !== -1 && row[authorsIdx] ? row[authorsIdx].trim() : '';
+                        const affiliations = affIdx !== -1 && row[affIdx] ? row[affIdx].trim() : '';
 
-                        updates['papers/' + id] = { id, title, keywords, abstract };
+                        const paperData = { id, title, keywords, abstract };
+                        if (authors) paperData.authors = authors;
+                        if (affiliations) paperData.affiliations = affiliations;
+
+                        updates['papers/' + id] = paperData;
                         if (link) {
                             updates['paperFiles/' + id] = { link };
                         }
@@ -1926,6 +1948,19 @@
 
                 document.getElementById('modal-title').textContent = paper.title || 'TBD';
                 document.getElementById('modal-id').textContent = paper.id;
+
+                document.getElementById('modal-id').textContent = paper.id;
+
+                // Authors & Affiliations
+                const authorsDiv = document.getElementById('modal-authors');
+                const affDiv = document.getElementById('modal-affiliations');
+                if (paper.authors) {
+                    authorsDiv.textContent = paper.authors;
+                    affDiv.textContent = paper.affiliations || '';
+                    document.getElementById('modal-authors-section').style.display = 'block';
+                } else {
+                    document.getElementById('modal-authors-section').style.display = 'none';
+                }
 
                 // Keywords
                 const kwContainer = document.getElementById('modal-keywords');

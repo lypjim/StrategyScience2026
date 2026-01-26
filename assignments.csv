@@ -1,28 +1,61 @@
-paper_id,title,method,reviewer_1,reviewer_2,score_1,score_2
-P001,The Nature and Experience of Entrepreneurial Passion,Conceptual,FJ Morales,Andy Wu,45,78
-P002,How Do Feelings Influence Effort? an Empirical Study of Entr,Conceptual,Andy Wu,Xiaoli Tang,78,0
-P003,Competing Models of Entrepreneurial Intentions,Quantitative,Andy Wu,Aldona Kapacinskaite,78,45
-P004,Survival of the Fittest? Entrepreneurial Human Capital and t,Conceptual,Janet Lee Elsie Bercovitz,Metin Sengul,89,78
-P005,Venturing for Others with Heart and Head: How Compassion Enc,Conceptual,Wesley W. Koo,Xiaoli Tang,78,45
-P006,Entrepreneurial Exits and Innovation,Conceptual,Sina Sokhan,Tony Tong,89,89
-P007,"Exploitation, Exploration, and Process Management: the Produ",Conceptual,Metin Sengul,Mingtao Xu,78,78
-P008,Does Going Public Affect Innovation?,Conceptual,Sina Sokhan,Mukund Chari,89,89
-P009,Why the Lean Start-Up Changes Everything,Conceptual,Aldona Kapacinskaite,Xiaoli Tang,0,0
-P010,The Art of Continuous Change,Conceptual,Ashton Lewis Hawk,Kenneth Huang,78,78
-P011,Can You Gig It? an Empirical Examination of the Gig Economy ,Conceptual,Wesley W. Koo,Mingtao Xu,78,78
-P012,"Who Leaves, Where To, and Why Worry? Employee Mobility, Entr",Conceptual,Janet Lee Elsie Bercovitz,FJ Morales,89,85
-P013,A Scientific Approach to Entrepreneurial Decision Making,Conceptual,Mingtao Xu,Ashton Lewis Hawk,75,78
-P014,"Customer Power, Strategic Investment, and the Failure of Lea",Conceptual,Tony Tong,MJ Yang,89,89
-P015,What Is a Patent Worth? Evidence From the U.S. Patent “Lotte,Conceptual,Sina Sokhan,Tony Tong,89,89
-P016,The Theory-Based View: Economic Actors as Theorists,Conceptual,MJ Yang,Kenneth Huang,78,78
-P017,Theory-Based Decisions: Foundations and Introduction,Conceptual,FJ Morales,Anparasan Mahalingam,65,75
-P018,A Scientific Method for Startups,Conceptual,Wesley W. Koo,Anparasan Mahalingam,78,65
-P019,The Financing of Innovation,Conceptual,Ashton Lewis Hawk,Kenneth Huang,78,78
-P020,Structural Inertia and Organizational Change,Conceptual,Anparasan Mahalingam,Catherine Magelssen,78,45
-P021,Core Capabilities and Core Rigidities: a Paradox in Managing,Conceptual,MJ Yang,Danielle Bovenberg,78,78
-P022,"Mobility, Skills, and the Michigan Non-Compete Experiment",Conceptual,Mukund Chari,Danielle Bovenberg,78,78
-P023,Firm Boundaries Matter: Evidence From Conglomerates and R&D ,Conceptual,Metin Sengul,Catherine Magelssen,89,78
-P024,Prior Knowledge and the Discovery of Entrepreneurial Opportu,Conceptual,Danielle Bovenberg,Aldona Kapacinskaite,78,45
-P025,Screening Spinouts? How Noncompete Enforceability Affects th,Conceptual,Janet Lee Elsie Bercovitz,Catherine Magelssen,89,78
-P026,Entrepreneurs as Scientists: a Pragmatist Alternative to the,Conceptual,Mukund Chari,Catherine Magelssen,45,0
-P027,Entrepreneurs as Scientists: a Pragmatist Approach to Produc,Conceptual,Aldona Kapacinskaite,Xiaoli Tang,60,0
+paper_id,title,method,reviewer_1,reviewer_2
+R_100jcb12KPNrplQ,Free to innovate? Intellectual property (in)validation and  ,Conceptual,Kenneth Huang,Sina Sokhan
+R_10tNBUVbXEYwifR,"When Rareness and Scarcity Interact: Complementary, Substitu",Conceptual,Metin Sengul,Aldona Kapacinskaite
+R_12rOoK4GDNpQmOi,Data Privacy Regulation and Innovation,Conceptual,Kenneth Huang,Sina Sokhan
+R_16hXk5pPcgzoHqC,Who Hires Whom? Entrepreneurial Backgrounds and Labor Market,Quantitative,Kenneth Huang,Mingtao Xu
+R_18Zd46zOZks73sZ,Market Responses to AI Statements in Creative Domains,Conceptual,Kenneth Huang,Mingtao Xu
+R_1EAFrKXVGzMuQvS,The Exclusive Nature of Private Solutions to Public Problems,Conceptual,Kenneth Huang,Mingtao Xu
+R_1HLC6XdAwqHNda9,Leading like Scientists,Conceptual,Kenneth Huang,Mingtao Xu
+R_1NDExTW0LdMEcYE,Accelerating Innovation through Complementary Human Capital:,Conceptual,FJ Morales,Ashton Lewis Hawk
+R_1PAvy2AZuq8hHuR,"Lean Thinking, Deep Impact? Early Exploration Strategies and",Conceptual,Tony Tong,Mingtao Xu
+R_1hQ16VquAQ2QOf7,Innovative sovereignty: California tribes use of the nonprof,Conceptual,Kenneth Huang,Mingtao Xu
+R_1qLx3zayZrLVSUx,Knowledge Protection and Modularity of Innovation Activities,Conceptual,Danielle Bovenberg,Tony Tong
+R_26lM7YicIAXpQO0,Time Tells: Unraveling the Temporal and Risk Dynamics of Ven,Conceptual,FJ Morales,Ashton Lewis Hawk
+R_2E9Y8wawcR69fjY,Social Investments and the Commodification of Community Conf,Conceptual,Catherine Magelssen,MJ Yang
+R_2IEr0XkGGPeUJNr,Moral Value Trade-offs and Decision Difficulty in Social Ent,Conceptual,Kenneth Huang,Mingtao Xu
+R_2LZHaUNn9QVYtQH,The Mean-Variance Innovation Tradeoff in AI-Augmented Evalua,Conceptual,Danielle Bovenberg,Sina Sokhan
+R_2LirCqtSar6sVFN,"Delegation, Attention Allocation, and Innovation in Entrepre",Conceptual,Tony Tong,Catherine Magelssen
+R_2QDIGVghvQigUUd,The Portability of Network Effects: How Platform Dependent E,Mixed,Wesley W. Koo,Andy Wu
+R_2fQ0dGnqCS11fHz,The Portability of Network Effects: How Platform Dependent E,Mixed,Anparasan Mahalingam,Wesley W. Koo
+R_38Sxo1vZdIfXR6s,Board Gender Quotas and Women's Entrepreneurship: The Critic,Conceptual,FJ Morales,Wesley W. Koo
+R_3Bi0HsPL4dNwZip,Performance as a Random Variable,Conceptual,FJ Morales,Andy Wu
+R_3NtGbh1R8CY5yjn,Democratizing Entrepreneurial Ecosystems: How Accessible AI ,Conceptual,FJ Morales,Andy Wu
+R_3OWmRX2XefhEB0d,Agglomeration Economy Dynamics and Demand Spillovers: Restau,Conceptual,Kenneth Huang,Mingtao Xu
+R_3RndgrhAQREX6il,The Strategic Foresight of LLMs,Conceptual,Kenneth Huang,FJ Morales
+R_3cY5yJVcMCxuiTJ,"Common Ownership, Firm Hiring and the Allocation of Human Ca",Conceptual,FJ Morales,Tony Tong
+R_3kNTV5GHIpitNlN,To Balance or Not To Balance: Resource-Contingent Performanc,Conceptual,Metin Sengul,Aldona Kapacinskaite
+R_3kXq6YgMqWIak1i,Competitive Surprise: How Unexpected Moves Shape Business Ri,Conceptual,Xiaoli Tang,Catherine Magelssen
+R_3lEw1lvqgleTueJ,Organizational Repression of Stakeholder Collective Action,Conceptual,Kenneth Huang,Xiaoli Tang
+R_3mmd0Ag0I9DHBSj,Shaping an industry's value proposition as a strategic respo,Mixed,Kenneth Huang,Mingtao Xu
+R_43StDMdJX5EBsFX,When Autonomy Backfires: Adverse Selection in Startup Recrui,Conceptual,FJ Morales,Andy Wu
+R_4iVF8GHBTeeTq7i,From Constraint to Capability: Sustainable Start-ups in Emer,Qualitative,Wesley W. Koo,Andy Wu
+R_55Sf2kigW75s2z9,"From Bits to Atoms: 3D Printing, Physical Validation, and Fi",Conceptual,Tony Tong,Metin Sengul
+R_5E6RBB51X4tquOZ,Endurance of chance? A longitudinal study of the U.S. land-g,Conceptual,Mukund Chari,Danielle Bovenberg
+R_5FznJ30xQI7rfjz,Executives’ Use of Social Media as an Information Channel: E,Conceptual,Anparasan Mahalingam,Wesley W. Koo
+R_5LjOkDLwDrtczDv,Escaping Stigma: Strategic Responses of Foreign Companies in,Conceptual,Kenneth Huang,Mingtao Xu
+R_5coLRuRusrgCPX4,ASSESSING INITIAL PUBLIC OFFERING (IPO) STRATEGIC GROWTH PIV,Conceptual,Metin Sengul,Andy Wu
+R_5nuUyoFh2JFXHKm,Team Composition Responses to Employee Mobility Threats,Conceptual,Danielle Bovenberg,FJ Morales
+R_5zpCJQGegT5pjk8,Nationalism Meets Entrepreneurship: Rise of Buy American Mov,Conceptual,Kenneth Huang,Mingtao Xu
+R_69soXk1kqiT11wC,Unlocking Digital Value: Efficiency as a Mechanism and CSR a,Conceptual,Kenneth Huang,Anparasan Mahalingam
+R_6eEPJQZaKPCXK2y,Codification Creep,Qualitative,Kenneth Huang,Andy Wu
+R_6jPKKMgZjecY2pr,The Governability of Strategy: Residual-Claim Ambiguity and ,Conceptual,Mukund Chari,Anparasan Mahalingam
+R_6s7znQGHgkmG1nK,"Mergers and Acquisitions (M&A), Inventor Turnover, and Netwo",Conceptual,Danielle Bovenberg,FJ Morales
+R_6w1PkZGHQwzxinf,"How to Solve Quiet Quitting: Social Media Narratives, Worker",Mixed,Kenneth Huang,Mingtao Xu
+R_78eqX0jMOwDIvTP,Limits to the Value of Entrepreneurial Experimentation? Star,Conceptual,Anparasan Mahalingam,Wesley W. Koo
+R_7DDdzEPdZIvHf3f,"Who Counts and Who Decides? Firms, Problems, and Stakeholder",Conceptual,Kenneth Huang,Xiaoli Tang
+R_7Ep50Lk2u7AjJW6,Other People’s Children: How Diversity Without Inclusion Imp,Conceptual,Kenneth Huang,Mingtao Xu
+R_7MSPZq3RUY4TJ83,Learning About Roads Not Taken,Conceptual,Danielle Bovenberg,Sina Sokhan
+R_7QEqe4EfrpeTd2T,"Social Exposure, Innovator-Consumer Homophily, and Inequalit",Conceptual,Kenneth Huang,Mingtao Xu
+R_7WPoy3T8G30uwsp,How Unique Is Enough? Startups’ Market Positioning Relative ,Conceptual,Danielle Bovenberg,Andy Wu
+R_7gU6YC7DQjB1Cr8,Lobbying the Court,Conceptual,Kenneth Huang,Mingtao Xu
+R_7thfcuz5hY6y3m5,Data Privacy Regulation and Innovation,Conceptual,Sina Sokhan,Xiaoli Tang
+R_80GwNdmLtZWHVDT,The Limits of Carbon Reporting,Conceptual,Kenneth Huang,Metin Sengul
+R_85LpESGOtnHwNrZ,Using Machine Learning to Estimate the Effect of General Par,Conceptual,Kenneth Huang,Mingtao Xu
+R_8OBpBSkR53iKKFu,DOES IMITATION HELP OR HARM PERFORMANCE? BOUNDARY CONDITIONS,Conceptual,Kenneth Huang,Tony Tong
+R_8PHWjldhDhy5Us4,Competitiveness Framing and VC Investment,Conceptual,FJ Morales,Ashton Lewis Hawk
+R_8QDMYay1ekwOnBz,Shaping interfirm relationships in intermediary markets: Evi,Conceptual,Danielle Bovenberg,Kenneth Huang
+R_8myJDM1aDS5MfRb,When Timing Matters for Bureaucratic Responsiveness: Evidenc,Conceptual,Kenneth Huang,Mingtao Xu
+R_8qEXr84NNCcjNmp,If you had only one shot: Scale and herding in innovation ex,Conceptual,Kenneth Huang,Mingtao Xu
+R_91YlKuPG1inHaU4,Does CEO Political Ideology Shape Advertising Spend Allocati,Conceptual,Kenneth Huang,Metin Sengul
+R_9n8IVT3C8wFhk7t,When Hostility Fuels Cooperation: National Animosity and Mul,Conceptual,FJ Morales,Catherine Magelssen
+R_9nfO5YEMcjZMdmp,Beyond Pecuniary Incentives: How Openness-Preserving IPR Sha,Conceptual,Danielle Bovenberg,Catherine Magelssen
