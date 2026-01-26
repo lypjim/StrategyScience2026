@@ -484,6 +484,8 @@
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 20px;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         .paper-card.reviewed {
@@ -510,54 +512,39 @@
         .paper-content {
             flex: 1;
             min-width: 0;
-            max-width: calc(100% - 180px);
+            width: 100%;
         }
 
         .nomination-box {
-            flex-shrink: 0;
-            max-width: 170px;
-            margin-left: 16px;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
         }
         
         .nomination-box label {
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
+            gap: 8px;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--accent-dark);
-            line-height: 1.3;
-            white-space: normal;
-            word-wrap: break-word;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
         }
         
         .nomination-box input[type="radio"] {
             flex-shrink: 0;
             margin: 0;
+            width: 18px;
+            height: 18px;
         }
         
         .nomination-text {
             display: inline-block;
             white-space: normal;
             word-wrap: break-word;
-            max-width: 140px;
-        }
-        
-        @media (max-width: 900px) {
-            .paper-content {
-                max-width: 100%;
-                width: 100%;
-            }
-            .nomination-box {
-                max-width: 100%;
-                margin-left: 0;
-                margin-top: 12px;
-                width: 100%;
-            }
-            .nomination-text {
-                max-width: 100%;
-            }
         }
 
         .nomination-badge {
@@ -3165,14 +3152,14 @@ Strategy Science Conference 2026 Organizing Committee`;
                              <div class="paper-content">
                                 <div class="paper-id">${paper.id}</div>
                                 <div class="paper-title">${paper.title || 'TBD'}</div>
-                             </div>
-                             <div class="nomination-box">
-                                <label>
-                                    <input type="radio" name="nomination" 
-                                           ${isNominated ? 'checked' : ''} 
-                                           onchange="submitNomination('${rid}', '${pid}')">
-                                    <span class="nomination-text">🏆 Nominate<br>Best Paper</span>
-                                </label>
+                                <div class="nomination-box">
+                                    <label>
+                                        <input type="radio" name="nomination" 
+                                               ${isNominated ? 'checked' : ''} 
+                                               onchange="submitNomination('${rid}', '${pid}')">
+                                        <span class="nomination-text">🏆 Nominate Best Paper</span>
+                                    </label>
+                                </div>
                              </div>
                         </div>
                         
