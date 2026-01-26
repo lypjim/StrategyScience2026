@@ -2332,6 +2332,20 @@
             }
 
 
+            function checkAllLoaded() {
+                if (Object.values(dataLoaded).every(Boolean)) {
+                    document.getElementById('loading').classList.add('hidden');
+                    if (!reviewerId) {
+                        try {
+                            renderReviewers();
+                            renderAssignments();
+                            renderReviewerWorkload();
+                        } catch (e) { console.error("Render error", e); }
+                    } else {
+                        renderReviewerPapers(reviewerId);
+                    }
+                }
+            }
 
             function importAssignmentsCSV() {
                 const fileInput = document.getElementById('assignments-csv-input');

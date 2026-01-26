@@ -24,7 +24,7 @@ import os
 INPUT_CSV = "papers_real.csv"
 OUTPUT_CSV = "assignments_real.csv"
 TEST_MODE = None  # None for all
-CANDIDATES_PER_PAPER = 6  # Score top 6 matches with LLM
+CANDIDATES_PER_PAPER = 4  # Score top 4 matches with LLM
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "qwen2.5:7b"
@@ -328,7 +328,7 @@ SCORING (0-100):
 
 Reply format: SCORE: [num] | REASON: ..."""
 
-    response = query_llm(prompt, max_tokens=100)
+    response = query_llm(prompt, max_tokens=50)
     score = 40
     reason = "Default"
     
@@ -341,19 +341,50 @@ Reply format: SCORE: [num] | REASON: ..."""
         except: pass
     return score, reason
 
+def classify_method_llm(paper: Paper) -> str:
+    text = paper.abstract[:1500] if paper.abstract else paper.title
+    prompt = f"""Classify the research method of this academic paper based on its abstract.
+    
+    Abstract: "{text}"
+    
+    Choose exactly one category:
+    1. Quantitative (Uses statistics, regression, large datasets, experiments, models)
+    2. Qualitative (Uses case studies, interviews, ethnography, grounded theory)
+    3. Conceptual (Theoretical, no empirical data, reviewing literature, identifying gaps)
+    4. Mixed (Explicitly combines BOTH quantitative validation AND qualitative case studies)
+    
+    Most papers are Quantitative or Conceptual. 'Mixed' is rare. 'Qualitative' is specific.
+    
+    Reply with JUST the category name (e.g. "Quantitative")."""
+    
+    response = query_llm(prompt, max_tokens=10)
+    response = response.strip().lower()
+    
+    if 'quantitative' in response: return 'Quantitative'
+    if 'qualitative' in response: return 'Qualitative'
+    if 'conceptual' in response: return 'Conceptual'
+    if 'mixed' in response: return 'Mixed'
+    
+    # Fallback to simple keyword check if LLM fails
+    if any(w in text.lower() for w in ['regression', 'data', 'sample', 'empirical']): return 'Quantitative'
+    return 'Conceptual' # Safe default for strategy
+
 def method_matches(paper_method: str, reviewer_method: str) -> bool:
     paper_method = (paper_method or '').lower()
     reviewer_method = (reviewer_method or '').lower()
+    
+    # Mixed reviewers can do anything
     if 'mixed' in reviewer_method: return True
-    if paper_method == 'qualitative' and 'quantitative' in reviewer_method: return False
-    if paper_method == 'quantitative' and 'qualitative' in reviewer_method: return False
-    return True
-
-def classify_method(paper: Paper) -> str:
-    text = f"{paper.title} {paper.abstract} {paper.keywords}".lower()
-    if any(w in text for w in ['regression', 'econometric', 'panel data', 'sample']): return 'Quantitative'
-    if any(w in text for w in ['case study', 'ethnograph', 'interview']): return 'Qualitative'
-    return 'Mixed'
+    
+    # Quantitative Reviewers
+    if 'quantitative' in reviewer_method:
+        return paper_method in ['quantitative', 'mixed'] # Can likely handle mixed if it has quant
+        
+    # Qualitative Reviewers
+    if 'qualitative' in reviewer_method:
+        return paper_method in ['qualitative', 'mixed', 'conceptual'] # Qual reviewers often good at Conceptual/Theory
+        
+    return True # Default safe match
 
 def save_output(assignments, papers, reviewers, scores, path):
     paper_map = {p.id: p for p in papers}
@@ -380,7 +411,10 @@ def main():
     print(f"Loaded {len(papers)} papers, {len(reviewers)} reviewers")
     
     # 1. Method Classification
-    for p in papers: p.method = classify_method(p)
+    print("\nPhase 1: LLM Method Classification...")
+    for i, p in enumerate(papers):
+        p.method = classify_method_llm(p)
+        print(f"   [{i+1}/{len(papers)}] {p.id}: {p.method}")
     
     # 2. Hybrid Scoring
     print("\nPhase 2: Hybrid Scoring (Keyword Filter -> LLM)")
