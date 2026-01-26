@@ -1394,14 +1394,6 @@
                 "Tony Tong": { method: "Mixed", keywords: ["Strategy", "Innovation", "International Business"] }
             };
 
-            // Nominations
-            db.ref('nominations').on('value', (snapshot) => {
-                nominations = snapshot.val() || {};
-                dataLoaded.nominations = true;
-                checkAllLoaded();
-                renderReviewers(); // Update Admin View (Badges)
-                if (reviewerId) renderReviewerPapers(reviewerId); // Update Reviewer View
-            });
             // Helper to get expertise info for a reviewer (method + keywords)
             function getExpertiseInfo(reviewerName) {
                 // Match by last name or full name
@@ -1425,7 +1417,7 @@
             let nominations = {}; // { reviewerId: paperId }
             let paperFiles = {};
 
-            let dataLoaded = { papers: false, reviewers: false, assignments: false, reviews: false, paperFiles: false };
+            let dataLoaded = { papers: false, reviewers: false, assignments: false, reviews: false, paperFiles: false, nominations: false };
 
             const urlParams = new URLSearchParams(window.location.search);
             const reviewerId = urlParams.get('reviewer');
@@ -1509,6 +1501,14 @@
                     renderAssignments();
                     renderResults();
                     checkAndRenderReviewerView();
+                });
+
+                db.ref('nominations').on('value', (snapshot) => {
+                    nominations = snapshot.val() || {};
+                    dataLoaded.nominations = true;
+                    checkAllLoaded();
+                    renderReviewers();
+                    if (reviewerId) renderReviewerPapers(reviewerId);
                 });
 
                 db.ref('reviewers').on('value', (snapshot) => {
