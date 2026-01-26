@@ -491,11 +491,51 @@
             border-color: var(--success);
         }
 
+        .paper-card.nominated-card {
+            border-color: var(--accent);
+            border-width: 2px;
+        }
+
+        .paper-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .paper-header > div:first-child {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .nomination-box {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .nomination-box label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--accent-dark);
+        }
+
+        .nomination-badge {
+            display: inline-block;
+            white-space: nowrap;
+        }
+
         .paper-title {
             font-family: 'Crimson Pro', serif;
             font-size: 1.2rem;
             font-weight: 500;
             margin-bottom: 8px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .paper-id {
@@ -1331,6 +1371,9 @@
                     <p style="font-size: 0.85rem; color: var(--accent); margin-top: 8px;">
                         ⚠️ Double-blind review: Author information is hidden.
                     </p>
+                    <div class="alert alert-info" style="margin-top: 16px; margin-bottom: 16px;">
+                        <strong>🏆 Best Paper Nomination:</strong> Please nominate <strong>one best paper</strong> from your assigned papers using the nomination option below each paper.
+                    </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="review-progress" style="width: 0%"></div>
                     </div>
@@ -1917,7 +1960,7 @@
                         for (let i = 1; i < lines.length; i++) {
                             const row = lines[i];
                             // Skip empty rows or rows with too few columns (less than 2 is suspicious)
-                            if (!row || row.length < 2 || (row.length === 1 && !row[0].trim())) continue;
+                            if (!row || row.length < 2 || (row.length === 1 && (!row[0] || !row[0].trim()))) continue;
 
                             let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
 
@@ -2922,13 +2965,14 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                 container.innerHTML = `
                 <table>
-                    <thead><tr><th>#</th><th></th><th>ID</th><th>Title</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th><th>Decision</th></tr></thead>
+                    <thead><tr><th>#</th><th></th><th>ID</th><th>Title</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th><th>Nominations</th><th>Decision</th></tr></thead>
                     <tbody>
                         ${filteredScores.map((p) => {
                     const originalRank = scores.findIndex(s => s.id === p.id) + 1;
                     const isCutoff = cutoff > 0 && originalRank === cutoff;
                     const aboveCutoff = cutoff > 0 && originalRank <= cutoff;
                     const conflictClass = p.hasConflict ? 'conflict-row' : '';
+                    const nomCount = Object.values(nominations).filter(n => n === p.id).length;
                     return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''} ${conflictClass}">
                                 <td><span class="rank rank-normal">${originalRank}</span></td>
                                 <td><button class="info-btn" onclick="showPaperDetails('${p.id}')">ℹ️</button></td>
@@ -2938,6 +2982,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                                 <td>${badge(p.details[1])}</td>
                                 <td><span class="score ${scoreClass(p.score)}">${p.score !== null ? p.score : '-'}</span></td>
                                 <td>${p.hasConflict ? '<span class="status" style="background:#fef3c7;color:#92400e">⚠ Conflict</span>' : (p.count >= 2 ? '<span class="status status-yes">Done</span>' : `<span class="status status-pending">${p.count}/2</span>`)}</td>
+                                <td>${nomCount > 0 ? `<span class="nomination-badge" style="background:#fff3cd;color:#856404;padding:2px 6px;border-radius:10px;font-size:0.75rem;border:1px solid #ffeeba">🏆 ${nomCount}</span>` : '-'}</td>
                                 <td>${getJudgmentSelect(p.id, originalRank)}</td>
                             </tr>`;
                 }).join('')}
@@ -2959,11 +3004,12 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
 
                 // Build CSV with all info including admin judgment
-                let csv = 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Status,Admin_Decision,Conflict,PDF_Link\n';
+                let csv = 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Status,Nominations,Admin_Decision,Conflict,PDF_Link\n';
                 scores.forEach((p, i) => {
                     const rank = i + 1;
                     const adminDecision = adminJudgments[p.id] || (cutoff > 0 ? (rank <= cutoff ? 'accepted' : 'rejected') : '');
                     const link = paperFiles[p.id]?.link || '';
+                    const nomCount = Object.values(nominations).filter(n => n === p.id).length;
 
                     const r1Name = p.details[0]?.reviewerName || '';
                     const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
@@ -2975,7 +3021,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                     const conflict = p.hasConflict ? 'YES' : '';
                     const pairLabel = getPairLabel(p.pairType);
 
-                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${status},${adminDecision.toUpperCase()},${conflict},"${link}"\n`;
+                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${status},${nomCount},${adminDecision.toUpperCase()},${conflict},"${link}"\n`;
                 });
 
                 // Add separator and accepted-only section based on admin judgments
@@ -3073,13 +3119,13 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                     return `
                     <div class="paper-card ${existing ? 'reviewed' : ''} ${isNominated ? 'nominated-card' : ''}">
-                        <div class="paper-header" style="display:flex;justify-content:space-between;align-items:start">
+                        <div class="paper-header">
                              <div>
                                 <div class="paper-id">${paper.id}</div>
                                 <div class="paper-title">${paper.title || 'TBD'}</div>
                              </div>
                              <div class="nomination-box">
-                                <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:0.9rem;font-weight:bold;color:var(--primary)">
+                                <label>
                                     <input type="radio" name="nomination" 
                                            ${isNominated ? 'checked' : ''} 
                                            onchange="submitNomination('${rid}', '${pid}')">
