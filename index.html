@@ -502,26 +502,62 @@
             align-items: start;
             gap: 16px;
             flex-wrap: wrap;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
-        .paper-header > div:first-child {
+        .paper-content {
             flex: 1;
             min-width: 0;
+            max-width: calc(100% - 180px);
         }
 
         .nomination-box {
             flex-shrink: 0;
-            white-space: nowrap;
+            max-width: 170px;
+            margin-left: 16px;
         }
-
+        
         .nomination-box label {
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
+            font-size: 0.85rem;
+            font-weight: 600;
             color: var(--accent-dark);
+            line-height: 1.3;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        .nomination-box input[type="radio"] {
+            flex-shrink: 0;
+            margin: 0;
+        }
+        
+        .nomination-text {
+            display: inline-block;
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: 140px;
+        }
+        
+        @media (max-width: 900px) {
+            .paper-content {
+                max-width: 100%;
+                width: 100%;
+            }
+            .nomination-box {
+                max-width: 100%;
+                margin-left: 0;
+                margin-top: 12px;
+                width: 100%;
+            }
+            .nomination-text {
+                max-width: 100%;
+            }
         }
 
         .nomination-badge {
@@ -1320,6 +1356,7 @@
                                     style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
                                     <option value="all">All Papers</option>
                                     <option value="conflicts">⚠️ Conflicts Only</option>
+                                    <option value="nominated">🏆 Nominated Papers</option>
                                     <option value="accepted">✓ Accepted</option>
                                     <option value="rejected">✗ Rejected</option>
                                     <option value="pending">Pending Decision</option>
@@ -2928,6 +2965,11 @@ Strategy Science Conference 2026 Organizing Committee`;
                 let filteredScores = scores;
                 if (filter === 'conflicts') {
                     filteredScores = scores.filter(p => p.hasConflict);
+                } else if (filter === 'nominated') {
+                    filteredScores = scores.filter(p => {
+                        const nomCount = Object.values(nominations).filter(n => n === p.id).length;
+                        return nomCount > 0;
+                    });
                 } else if (filter === 'accepted') {
                     filteredScores = scores.filter(p => adminJudgments[p.id] === 'accepted');
                 } else if (filter === 'rejected') {
@@ -3120,7 +3162,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                     return `
                     <div class="paper-card ${existing ? 'reviewed' : ''} ${isNominated ? 'nominated-card' : ''}">
                         <div class="paper-header">
-                             <div>
+                             <div class="paper-content">
                                 <div class="paper-id">${paper.id}</div>
                                 <div class="paper-title">${paper.title || 'TBD'}</div>
                              </div>
@@ -3129,7 +3171,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                                     <input type="radio" name="nomination" 
                                            ${isNominated ? 'checked' : ''} 
                                            onchange="submitNomination('${rid}', '${pid}')">
-                                    🏆 Nominate for Best Paper
+                                    <span class="nomination-text">🏆 Nominate<br>Best Paper</span>
                                 </label>
                              </div>
                         </div>
