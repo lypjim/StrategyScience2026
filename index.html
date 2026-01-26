@@ -1003,9 +1003,7 @@
                 <strong>ID:</strong> <span id="modal-id">P001</span>
             </div>
 
-            <div style="margin-bottom: 16px;">
-                <strong>ID:</strong> <span id="modal-id">P001</span>
-            </div>
+
 
             <div id="modal-authors-section" style="margin-bottom: 16px;">
                 <h4 style="margin-bottom: 8px; color: var(--text-secondary);">Authors & Affiliations</h4>
@@ -1396,6 +1394,14 @@
                 "Tony Tong": { method: "Mixed", keywords: ["Strategy", "Innovation", "International Business"] }
             };
 
+            // Nominations
+            db.ref('nominations').on('value', (snapshot) => {
+                nominations = snapshot.val() || {};
+                dataLoaded.nominations = true;
+                checkAllLoaded();
+                renderReviewers(); // Update Admin View (Badges)
+                if (reviewerId) renderReviewerPapers(reviewerId); // Update Reviewer View
+            });
             // Helper to get expertise info for a reviewer (method + keywords)
             function getExpertiseInfo(reviewerName) {
                 // Match by last name or full name
@@ -1416,6 +1422,7 @@
             let reviewers = [];
             let assignments = {};
             let reviews = {};
+            let nominations = {}; // { reviewerId: paperId }
             let paperFiles = {};
 
             let dataLoaded = { papers: false, reviewers: false, assignments: false, reviews: false, paperFiles: false };
@@ -1702,10 +1709,14 @@
                         <tbody>
                             ${papers.map(p => {
                     const revs = getReviewersForPaper(p.id);
+                    const nomCount = Object.values(nominations).filter(n => n === p.id).length;
                     return `<tr>
                                     <td>${p.id}</td>
                                     <td>
-                                        <div style="font-weight:500">${(p.title || 'TBD').substring(0, 50)}...</div>
+                                        <div style="font-weight:500">
+                                            ${(p.title || 'TBD').substring(0, 50)}...
+                                            ${nomCount > 0 ? `<span class="nomination-badge" style="background:#fff3cd;color:#856404;padding:2px 6px;border-radius:10px;font-size:0.75rem;margin-left:6px;border:1px solid #ffeeba">🏆 x${nomCount}</span>` : ''}
+                                        </div>
                                         ${p.authors ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px">${p.authors.split(',')[0]} et al.</div>` : ''}
                                     </td>
                                     <td>${paperFiles[p.id]?.link ? '<span class="status status-has-file">✓</span>' : '-'}</td>
@@ -1992,7 +2003,7 @@
                 document.getElementById('modal-title').textContent = paper.title || 'TBD';
                 document.getElementById('modal-id').textContent = paper.id;
 
-                document.getElementById('modal-id').textContent = paper.id;
+
 
                 // Authors & Affiliations
                 const authorsDiv = document.getElementById('modal-authors');
@@ -2077,7 +2088,7 @@
                     { name: "Wesley W. Koo", email: "wesley.koo@jhu.edu" },
                     { name: "Catherine Magelssen", email: "catherine.magelssen@moore.sc.edu" },
                     { name: "Anparasan Mahalingam", email: "amahalin@syr.edu" },
-                    { name: "FJ Morales", email: "fjmorales@uandes.cl" },
+                    { name: "Francisco Morales", email: "fjmorales@uandes.cl" },
                     { name: "Metin Sengul", email: "metin.sengul@mccombs.utexas.edu" },
                     { name: "Xiaoli Tang", email: "xtang1@bu.edu" },
                     { name: "Andy Wu", email: "awu@hbs.edu" },
@@ -2300,7 +2311,6 @@
                     showToast('No new assignments possible (check capacity)');
                 }
             }
-
             function unassign(paperId, revId) {
                 const current = assignments[revId] || [];
                 const updated = current.filter(id => id !== paperId);
@@ -2320,6 +2330,8 @@
                     })
                     .catch(err => showToast('Error: ' + err.message));
             }
+
+
 
             function importAssignmentsCSV() {
                 const fileInput = document.getElementById('assignments-csv-input');
@@ -2647,14 +2659,21 @@ Strategy Science Conference 2026 Organizing Committee`;
                 for (const [revId, assignedPapers] of Object.entries(assignments)) {
                     if (!assignedPapers) continue;
 
+                    let nominated = false;
                     assignedPapers.forEach(paperId => {
                         const randomDecision = decisions[Math.floor(Math.random() * decisions.length)];
                         updates[`reviews/${paperId}/${revId}`] = {
                             decision: randomDecision,
-                            timestamp: new Date().toISOString()
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
                         };
                         count++;
                     });
+
+                    // Randomly nominate one paper (50% chance)
+                    if (assignedPapers.length > 0 && Math.random() > 0.5) {
+                        const randomPaper = assignedPapers[Math.floor(Math.random() * assignedPapers.length)];
+                        updates[`nominations/${revId}`] = randomPaper;
+                    }
                 }
 
                 if (count === 0) {
@@ -3036,11 +3055,24 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                     const existing = reviews[pid]?.[rid];
                     const hasFile = paperFiles[pid]?.link;
+                    const isNominated = nominations[rid] === pid;
 
                     return `
-                    <div class="paper-card ${existing ? 'reviewed' : ''}">
-                        <div class="paper-id">${paper.id}</div>
-                        <div class="paper-title">${paper.title || 'TBD'}</div>
+                    <div class="paper-card ${existing ? 'reviewed' : ''} ${isNominated ? 'nominated-card' : ''}">
+                        <div class="paper-header" style="display:flex;justify-content:space-between;align-items:start">
+                             <div>
+                                <div class="paper-id">${paper.id}</div>
+                                <div class="paper-title">${paper.title || 'TBD'}</div>
+                             </div>
+                             <div class="nomination-box">
+                                <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:0.9rem;font-weight:bold;color:var(--primary)">
+                                    <input type="radio" name="nomination" 
+                                           ${isNominated ? 'checked' : ''} 
+                                           onchange="submitNomination('${rid}', '${pid}')">
+                                    🏆 Nominate for Best Paper
+                                </label>
+                             </div>
+                        </div>
                         
                         ${hasFile ? `<a href="${paperFiles[pid].link}" target="_blank" class="download-btn">📥 Download PDF</a>` : '<div class="alert alert-warning">PDF not available yet.</div>'}
                         
@@ -3075,12 +3107,23 @@ Strategy Science Conference 2026 Organizing Committee`;
             }
 
             function undoReview(rid, pid) {
-                if (!confirm('Change your review?')) return;
+                if (!confirm('Change your decision?')) return;
                 db.ref(`reviews/${pid}/${rid}`).remove();
             }
 
+            function submitNomination(rid, pid) {
+                // If already nominated this one? No toggle needed for radio, but good to confirm.
+                // Just set it.
+                db.ref(`nominations/${rid}`).set(pid);
+                showToast("🏆 Nomination Saved!");
+                // Re-render handled by listener
+            }
+
             function submitReview(rid, pid, decision) {
-                db.ref(`reviews/${pid}/${rid}`).set({ decision, timestamp: new Date().toISOString() });
+                db.ref(`reviews/${pid}/${rid}`).set({
+                    decision,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
                 showToast('Submitted: ' + SCORE_LABELS[decision]);
             }
         </script>
