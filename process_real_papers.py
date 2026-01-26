@@ -5,6 +5,7 @@ Merges Metadata (CSV) with Dropbox Files + ANONYMIZATION.
 
 1. Reads meta_cleaned.csv for Title, Abstract, Keywords, and AUTHORS/AFFILIATIONS.
    - Index by ResponseID for robust matching.
+   - DEDUPLICATION: Filters duplicates by (Name, Title), keeping ONLY the latest submission.
 2. Scans Dropbox for matching filenames (extracting ResponseID).
 3. Checks PDF Page 1 for Author Names using Robust Regex.
 4. If found -> Removes Page 1 (Anonymizes).
@@ -23,6 +24,7 @@ import dropbox
 from dropbox.exceptions import ApiError
 from dropbox.files import WriteMode
 import pypdf
+from datetime import datetime
 
 # =====================
 # CONFIGURATION
@@ -52,18 +54,12 @@ def upload_file(dbx, content_bytes, path):
     dbx.files_upload(content_bytes, path, mode=WriteMode('overwrite'))
 
 def check_and_anonymize(pdf_bytes, authors):
-    """
-    Checks if first page contains any author names using Regex.
-    If yes, removes first page.
-    Returns: (is_modified, new_pdf_bytes, reason)
-    """
     try:
         reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
         if len(reader.pages) < 1:
             return False, pdf_bytes, "Empty PDF"
 
         page1_text = reader.pages[0].extract_text()
-        # Clean text: keep case but remove excess whitespace/newlines
         page1_clean = re.sub(r'\s+', ' ', page1_text)
         
         found_match = False
@@ -71,51 +67,39 @@ def check_and_anonymize(pdf_bytes, authors):
 
         for auth in authors:
             if not auth or len(auth) < 4: continue 
-            
-            # Split Auth into First and Last
-            # "Jenny Kuan" -> First: J..., Last: Kuan
             parts = auth.split()
             if len(parts) >= 2:
                 last_name = parts[-1]
                 first_name_initial = parts[0][0]
-                
-                # Logic: Find Last Name. If found, look for First Initial or Name preceding it.
                 if re.search(rf"\b{re.escape(last_name)}\b", page1_clean, re.IGNORECASE):
-                    # Robust Pattern:
-                    # \b{Initial}[a-z]* (Starts with Initial)
-                    # (?:.{0,40})       (Up to 40 chars of anything - middle names, spaces)
-                    # \b{Last}\b        (Last Name)
                     pat = rf"\b{re.escape(first_name_initial)}[a-z]*\b(?:.{{0,50}})\b{re.escape(last_name)}\b"
-                    
                     if re.search(pat, page1_clean, re.IGNORECASE):
                          found_match = True
                          matched_name = auth
                          break
             else:
-                 # Single word name? Exact match only
                  if str(auth).lower() in page1_clean.lower():
                      found_match = True
                      matched_name = auth
                      break
             
         if found_match:
-            # Anonymize: Create new PDF without Page 1
             writer = pypdf.PdfWriter()
             for i in range(1, len(reader.pages)):
                 writer.add_page(reader.pages[i])
-            
             out_stream = io.BytesIO()
             writer.write(out_stream)
             return True, out_stream.getvalue(), f"Found author: {matched_name}"
-            
         return False, pdf_bytes, "Clean"
-
     except Exception as e:
         return False, pdf_bytes, f"Error reading PDF: {e}"
 
+def clean_title(title):
+    return re.sub(r'[^\w\s]', '', str(title).lower()).strip()
+
 def main():
     print("=" * 60)
-    print("Strategy Science '26 - Real Paper Processor (Matches by ResponseID)")
+    print("Strategy Science '26 - Real Paper Processor (DEDUPLICATED)")
     print("=" * 60)
 
     # 1. Load Metadata
@@ -126,12 +110,41 @@ def main():
         print(f"   ✗ Error reading metadata: {e}")
         return
 
+    # DEDUPLICATION LOGIC
+    # Group by (Name, Title) -> Keep Latest RecordedDate
+    print("\n🧹 Deduplicating submissions...")
+    
+    # Sort by Date Descending
+    df['RecordedDate'] = pd.to_datetime(df['RecordedDate'])
+    df = df.sort_values(by='RecordedDate', ascending=False)
+    
+    kept_rids = set()
+    seen = set()
+    duplicates_dropped = 0
+    
+    for _, row in df.iterrows():
+        rid = str(row.get('ResponseId', '')).strip()
+        name = str(row.get('Name', '')).strip().lower()
+        title = clean_title(row.get('Paper', ''))
+        
+        key = (name, title)
+        
+        if key in seen:
+            duplicates_dropped += 1
+            print(f"   - Dropped Duplicate: {row.get('Name')} | {row.get('Paper')[:30]}... ({row.get('RecordedDate')})")
+        else:
+            seen.add(key)
+            kept_rids.add(rid)
+
+    print(f"   ✓ Kept {len(kept_rids)} unique submissions. Dropped {duplicates_dropped} duplicates.")
+
     # Create Dictionary: ResponseID -> Row Data
     meta_by_id = {}
     
     for _, row in df.iterrows():
-        # Get Response ID (Key)
         rid = str(row.get('ResponseId', '')).strip()
+        if rid not in kept_rids: continue # SKIP dropped RIDs
+
         fname = str(row.get('Paper_Name', '')).strip()
         
         if rid:
@@ -150,16 +163,14 @@ def main():
             if pd.notna(row.get('Coauthor institution')): 
                 affiliations.append(str(row['Coauthor institution']).strip())
             
-            # 3. Coauthor 2 - tricky name logic
+            # 3. Coauthor 2
             c2_name = [c for c in df.columns if 'Coauthor 2' in c and 'email' not in c.lower() and 'institution' not in c.lower()]
             if c2_name: 
                  val = str(row.get(c2_name[0], '')).strip()
                  if val and val.lower() != 'nan': authors.append(val)
             
-            c2_aff = [c for c in df.columns if 'Coauthor 2' in c and 'institution' in c.lower()] # Note: 'Coauthor institution.1' often
-            if not c2_aff:
-                c2_aff = [c for c in df.columns if 'Coauthor institution.1' in c] # direct check
-            
+            c2_aff = [c for c in df.columns if 'Coauthor 2' in c and 'institution' in c.lower()]
+            if not c2_aff: c2_aff = [c for c in df.columns if 'Coauthor institution.1' in c]
             if c2_aff:
                  val = str(row.get(c2_aff[0], '')).strip()
                  if val and val.lower() != 'nan': affiliations.append(val)
@@ -175,7 +186,6 @@ def main():
                  val = str(row.get(c3_aff[0], '')).strip()
                  if val and val.lower() != 'nan': affiliations.append(val)
 
-            # Deduplicate affiliations
             unique_aff = []
             seen_aff = set()
             for aff in affiliations:
@@ -188,13 +198,11 @@ def main():
                 'abstract': str(row.get('Abstract', '')).strip(),
                 'keywords': str(row.get('Keywords', '')).strip(),
                 'clean_filename_hint': fname,
-                'authors_list': authors, # List for anonymization
-                'authors_str': ", ".join(authors), # String for CSV
-                'affiliations_str': "; ".join(unique_aff) # String for CSV
+                'authors_list': authors,
+                'authors_str': ", ".join(authors),
+                'affiliations_str': "; ".join(unique_aff)
             }
             
-    print(f"   ✓ Indexed {len(meta_by_id)} metadata entries by ResponseId")
-
     # 2. Connect Dropbox
     print("\n📁 Connecting to Dropbox...")
     try:
@@ -207,34 +215,38 @@ def main():
     
     print(f"   ✓ Found {len(files)} PDF files")
 
-    # 3. Match and Process
+    # 3. Match and Process (ONLY KEPT RIDs)
     papers = []
-    print("\n🔄 Processing papers...")
+    print("\n🔄 Processing papers (Filtering Duplicates)...")
     
-    total_files = len(files)
+    files_to_process = []
+    for f in files:
+         match = re.search(r"(R_[A-Za-z0-9]+)", f.name)
+         rid = match.group(1) if match else None
+         if rid and rid in kept_rids:
+             files_to_process.append(f)
+         else:
+             # Logic for files matching 'Paper_Name' if RID missing?
+             # For now, stick to RID strict match which is safest
+             pass
     
-    for i, file_entry in enumerate(sorted(files, key=lambda x: x.name)):
+    files_to_process.sort(key=lambda x: x.name)
+    total_files = len(files_to_process)
+    
+    print(f"   ✓ Processing {total_files} unique papers out of {len(files)} files.")
+
+    for i, file_entry in enumerate(files_to_process):
         filename = file_entry.name
-        
-        # Match Logic: Extract ResponseID from filename?
         match = re.search(r"(R_[A-Za-z0-9]+)", filename)
         rid_found = match.group(1) if match else None
         
-        meta = None
-        if rid_found and rid_found in meta_by_id:
-            meta = meta_by_id[rid_found]
-            status_icon = "✓"
-        else:
-             meta = {
-                 'title': filename, 'abstract': '', 'keywords': '', 
-                 'authors_list': [], 'authors_str': '', 'affiliations_str': ''
-             }
-             status_icon = "⚠"
+        meta = meta_by_id.get(rid_found)
+        if not meta: continue # Should not happen given filtered list
 
         paper_id = f"P{str(i + 1).zfill(3)}"
-        print(f"   [{i+1}/{total_files}] {paper_id} {status_icon} ({rid_found}) {filename[:20]}...", end='', flush=True)
+        print(f"   [{i+1}/{total_files}] {paper_id} ({rid_found}) {filename[:20]}...", end='', flush=True)
 
-        # Download content
+        # Download
         try:
             _, res = dbx.files_download(file_entry.path_display)
             pdf_bytes = res.content
@@ -243,7 +255,7 @@ def main():
             papers.append({
                 'id': paper_id,
                 'title': meta['title'],
-                'link': "", # Failed
+                'link': "", 
                 'keywords': meta['keywords'],
                 'abstract': meta['abstract'],
                 'authors': meta['authors_str'],
@@ -253,11 +265,10 @@ def main():
             })
             continue
 
-        # Anonymize Check
+        # Anonymize
         is_mod, new_bytes, reason = check_and_anonymize(pdf_bytes, meta['authors_list'])
         
-        final_path = file_entry.path_display # Default to original
-        
+        final_path = file_entry.path_display
         if is_mod:
             print(f" -> ✂️  ANONYMIZED ({reason})", end='', flush=True)
             anon_filename = f"Anonymized_{paper_id}_{filename}"
@@ -271,7 +282,7 @@ def main():
         else:
             print(f" -> Clean ({reason})", end='', flush=True)
 
-        # Generate Link
+        # Link
         link = get_shared_link(dbx, final_path)
         print(" -> Linked")
 
@@ -295,7 +306,7 @@ def main():
         writer.writerows(papers)
 
     print(f"\n{'='*60}")
-    print(f"Done! Processed {len(papers)} papers. CSV Saved.")
+    print(f"Done! Cleaned csv saved to {OUTPUT_CSV}")
     print(f"{'='*60}")
 
 if __name__ == "__main__":

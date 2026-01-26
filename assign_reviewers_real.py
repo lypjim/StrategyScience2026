@@ -224,16 +224,47 @@ class Reviewer:
         
         return cls(id=rid, name=name, method=profile.get('method', 'Mixed'), profile=profile, keyword_set=kw_set)
 
+def load_reviewers_local() -> Dict[str, Reviewer]:
+    reviewers = {}
+    print(f"   (Using local profiles for {len(REVIEWER_PROFILES)} reviewers)")
+    for name, profile in REVIEWER_PROFILES.items():
+        # Generate a deterministic ID based on name hash or just use name as ID for internal logic?
+        # The system expects secure IDs (REV-XXX).
+        # We can try to fetch from Firebase if possible, OR just generate fresh ones.
+        # But we need consistent IDs if we want to import them?
+        # Actually, let's just use the Name as the Key for assignments if we can't get IDs.
+        # But index.html expects IDs.
+        
+        # fallback: Generate a consistent ID hash
+        # rid = "REV-" + "".join([c for c in name if c.isalnum()]).upper()[:8]
+        # Better: we need valid IDs. 
+        # Since Firebase is empty, we must assume the User will Reload Reviewers in UI.
+        # The CSV import uses NAMES to map to IDs. So the specific ID here doesn't matter for the CSV output!
+        # The CSV output has 'reviewer_1', 'reviewer_2' as NAMES.
+        
+        rid = "REV-" + str(abs(hash(name)) % 100000)
+        
+        # Build keyword set
+        kw_set = set()
+        for t in profile.get('topics', []):
+            for w in t.lower().split():
+                if len(w) > 3: kw_set.add(w)
+        for t in profile.get('theories', []):
+             for w in t.lower().split():
+                if len(w) > 3: kw_set.add(w)
+                
+        reviewers[rid] = Reviewer(
+            id=rid,
+            name=name,
+            method=profile.get('method', 'Mixed'),
+            profile=profile,
+            keyword_set=kw_set
+        )
+    return reviewers
+
 def load_reviewers_from_firebase() -> Dict[str, Reviewer]:
-    try:
-        response = requests.get(f"{FIREBASE_DB_URL}/reviewers.json", timeout=30)
-        data = response.json() or {}
-        reviewers = {}
-        for rid, rdata in data.items():
-            reviewers[rid] = Reviewer.from_firebase(rid, rdata)
-        return reviewers
-    except:
-        return {}
+    # fallback to local
+    return load_reviewers_local()
 
 def load_papers(csv_path: str) -> List[Paper]:
     papers = []

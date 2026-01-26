@@ -1826,6 +1826,7 @@
             }
 
             function importFromCSV() {
+                console.log("Import CSV clicked");
                 const fileInput = document.getElementById('csv-file-input');
                 const file = fileInput.files[0];
 
@@ -1835,81 +1836,85 @@
 
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    const text = e.target.result;
-                    const lines = text.split('\n').filter(line => line.trim());
+                    try {
+                        console.log("File read complete");
+                        const text = e.target.result;
+                        const lines = text.split('\n').filter(line => line.trim());
 
-                    if (lines.length < 2) {
-                        return showToast('CSV file is empty or has no data rows');
-                    }
-
-                    // Parse header
-                    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
-                    const idIdx = header.indexOf('id');
-                    const titleIdx = header.indexOf('title');
-                    const linkIdx = header.indexOf('link');
-                    const keywordIdx = header.indexOf('keywords');
-                    const abstractIdx = header.indexOf('abstract');
-                    const authorsIdx = Math.max(header.indexOf('authors'), header.indexOf('author'));
-                    const affIdx = Math.max(header.indexOf('affiliations'), header.indexOf('affiliation'), header.indexOf('institution'));
-
-                    if (titleIdx === -1) {
-                        return showToast('CSV must have a "title" column');
-                    }
-
-                    // Parse data rows
-                    const updates = {};
-                    let count = 0;
-
-                    // Calculate start index for new IDs to avoid collision
-                    // Find max ID number currently in use (e.g. from P200 -> 200)
-                    let maxIdNum = 0;
-                    papers.forEach(p => {
-                        const match = p.id.match(/^P(\d+)$/);
-                        if (match) {
-                            const num = parseInt(match[1]);
-                            if (num > maxIdNum) maxIdNum = num;
-                        }
-                    });
-
-                    for (let i = 1; i < lines.length; i++) {
-                        const row = parseCSVLine(lines[i]);
-                        if (row.length === 0) continue;
-
-                        // Get ID from CSV if present (preserve external DB links)
-                        let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
-
-                        // Only generate new ID if missing
-                        if (!id) {
-                            maxIdNum++;
-                            id = 'P' + String(maxIdNum).padStart(3, '0');
+                        if (lines.length < 2) {
+                            return showToast('CSV file is empty or has no data rows');
                         }
 
-                        const title = row[titleIdx] ? row[titleIdx].trim() : 'TBD';
-                        const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
-                        const keywords = keywordIdx !== -1 && row[keywordIdx] ? row[keywordIdx].trim() : '';
-                        const abstract = abstractIdx !== -1 && row[abstractIdx] ? row[abstractIdx].trim() : '';
-                        const authors = authorsIdx !== -1 && row[authorsIdx] ? row[authorsIdx].trim() : '';
-                        const affiliations = affIdx !== -1 && row[affIdx] ? row[affIdx].trim() : '';
+                        // Parse header
+                        const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+                        console.log("Header:", header);
+                        
+                        const idIdx = header.indexOf('id');
+                        const titleIdx = header.indexOf('title');
+                        const linkIdx = header.indexOf('link');
+                        const keywordIdx = header.indexOf('keywords');
+                        const abstractIdx = header.indexOf('abstract');
+                        const authorsIdx = Math.max(header.indexOf('authors'), header.indexOf('author'));
+                        const affIdx = Math.max(header.indexOf('affiliations'), header.indexOf('affiliation'), header.indexOf('institution'));
 
-                        const paperData = { id, title, keywords, abstract };
-                        if (authors) paperData.authors = authors;
-                        if (affiliations) paperData.affiliations = affiliations;
-
-                        updates['papers/' + id] = paperData;
-                        if (link) {
-                            updates['paperFiles/' + id] = { link };
+                        if (titleIdx === -1) {
+                            return showToast('CSV must have a "title" column');
                         }
-                        count++;
-                    }
 
-                    if (count === 0) {
-                        return showToast('No valid papers found in CSV');
-                    }
+                        // Parse data rows
+                        const updates = {};
+                        let count = 0;
+                        let maxIdNum = 0;
+                        
+                        // Find max ID
+                        papers.forEach(p => {
+                            const match = p.id.match(/^P(\d+)$/);
+                            if (match) {
+                                const num = parseInt(match[1]);
+                                if (num > maxIdNum) maxIdNum = num;
+                            }
+                        });
 
-                    // Use update to merge, not overwrite
-                    db.ref().update(updates);
-                    showToast(`Imported ${count} papers from CSV`);
-                    fileInput.value = ''; // Reset file input
+                        for (let i = 1; i < lines.length; i++) {
+                            const row = parseCSVLine(lines[i]);
+                            if (row.length === 0) continue;
+
+                            let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
+
+                            if (!id) {
+                                maxIdNum++;
+                                id = 'P' + String(maxIdNum).padStart(3, '0');
+                            }
+
+                            const title = row[titleIdx] ? row[titleIdx].trim() : 'TBD';
+                            const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
+                            const keywords = keywordIdx !== -1 && row[keywordIdx] ? row[keywordIdx].trim() : '';
+                            const abstract = abstractIdx !== -1 && row[abstractIdx] ? row[abstractIdx].trim() : '';
+                            const authors = authorsIdx !== -1 && row[authorsIdx] ? row[authorsIdx].trim() : '';
+                            const affiliations = affIdx !== -1 && row[affIdx] ? row[affIdx].trim() : '';
+
+                            const paperData = { id, title, keywords, abstract };
+                            if (authors) paperData.authors = authors;
+                            if (affiliations) paperData.affiliations = affiliations;
+
+                            updates['papers/' + id] = paperData;
+                            if (link) {
+                                updates['paperFiles/' + id] = { link };
+                            }
+                            count++;
+                        }
+
+                        if (count === 0) {
+                            return showToast('No valid papers found in CSV');
+                        }
+
+                        db.ref().update(updates);
+                        showToast(`Imported ${count} papers`);
+                        fileInput.value = '';
+                    } catch (err) {
+                        console.error("Import Error", err);
+                        showToast("Error parsing CSV: " + err.message);
+                    }
                 };
 
                 reader.onerror = function () {
