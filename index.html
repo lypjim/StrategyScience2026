@@ -1838,14 +1838,18 @@
                 reader.onload = function (e) {
                     try {
                         console.log("File read complete");
-                        const text = e.target.result;
+                        let text = e.target.result;
+                        // Strip BOM if present
+                        if (text.charCodeAt(0) === 0xFEFF) {
+                            text = text.slice(1);
+                        }
 
                         // Robust CSV Parsing to handle newlines inside quotes
                         function parseCSV(str) {
                             const arr = [];
                             let quote = false;
                             let col = 0, row = 0;
-                            
+
                             for (let c = 0; c < str.length; c++) {
                                 let cc = str[c], nc = str[c + 1];
                                 arr[row] = arr[row] || [];
@@ -1870,9 +1874,9 @@
                         }
 
                         // Parse header
-                        const header = lines[0].map(h => h.toLowerCase().trim());
+                        const header = lines[0].map(h => h.toLowerCase().trim().replace(/^"|"$/g, ''));
                         console.log("Header:", header);
-                        
+
                         const idIdx = header.indexOf('id');
                         const titleIdx = header.indexOf('title');
                         const linkIdx = header.indexOf('link');
@@ -1889,7 +1893,7 @@
                         const updates = {};
                         let count = 0;
                         let maxIdNum = 0;
-                        
+
                         // Find max ID
                         papers.forEach(p => {
                             const match = p.id.match(/^P(\d+)$/);
@@ -1900,17 +1904,27 @@
                         });
 
                         for (let i = 1; i < lines.length; i++) {
-                            const row = parseCSVLine(lines[i]);
-                            if (row.length === 0) continue;
+                            const row = lines[i];
+                            // Skip empty rows or rows with too few columns (less than 2 is suspicious)
+                            if (!row || row.length < 2 || (row.length === 1 && !row[0].trim())) continue;
 
                             let id = idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : null;
+
+                            // Safety Check: ID shouldn't be an abstract (long text)
+                            if (id && (id.length > 20 || id.includes(' '))) {
+                                console.warn("Invalid ID detected (too long/spaces), generating new one:", id.substring(0, 30));
+                                id = null;
+                            }
 
                             if (!id) {
                                 maxIdNum++;
                                 id = 'P' + String(maxIdNum).padStart(3, '0');
                             }
 
-                            const title = row[titleIdx] ? row[titleIdx].trim() : 'TBD';
+                            const title = titleIdx !== -1 && row[titleIdx] ? row[titleIdx].trim() : 'TBD';
+                            if (title === 'TBD' && row.length > 1) {
+                                // Simple row validation failed?
+                            }
                             const link = linkIdx !== -1 && row[linkIdx] ? row[linkIdx].trim() : '';
                             const keywords = keywordIdx !== -1 && row[keywordIdx] ? row[keywordIdx].trim() : '';
                             const abstract = abstractIdx !== -1 && row[abstractIdx] ? row[abstractIdx].trim() : '';
