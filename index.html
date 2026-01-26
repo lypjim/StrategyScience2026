@@ -54,7 +54,8 @@
 
 
         .container {
-            max-width: 1100px;
+            /* Wider canvas for all tabs (incl. Results table) */
+            max-width: min(1600px, 96vw);
             margin: 0 auto;
             padding: 40px 20px;
         }
@@ -3200,7 +3201,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                             <div class="nomination-question-text">Do you nominate this paper for Best Paper?</div>
                             <div class="nomination-actions">
                                 <button class="btn-secondary btn-sm ${isNominated ? 'nom-yes-active' : ''}" onclick="setNomination('${rid}','${pid}', true)">Yes</button>
-                                <button class="btn-secondary btn-sm ${!isNominated ? 'nom-no-active' : ''}" onclick="setNomination('${rid}','${pid}', false)">No</button>
+                                <button class="btn-secondary btn-sm" onclick="setNomination('${rid}','${pid}', false)">No</button>
                             </div>
                         </div>
                     `;
@@ -3254,7 +3255,13 @@ Strategy Science Conference 2026 Organizing Committee`;
 
             function setNomination(rid, pid, isYes) {
                 if (isYes) {
-                    // Single nomination per reviewer: setting this replaces any previous nomination.
+                    // Single nomination per reviewer.
+                    // If they already nominated a different paper, prompt before replacing.
+                    const existing = nominations[rid];
+                    if (existing && existing !== pid) {
+                        const ok = confirm(`You already nominated ${existing} for Best Paper.\n\nReplace it with ${pid}?`);
+                        if (!ok) return;
+                    }
                     db.ref(`nominations/${rid}`).set(pid);
                     showToast("Nomination saved");
                     return;
