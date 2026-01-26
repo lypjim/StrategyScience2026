@@ -552,6 +552,45 @@
             white-space: nowrap;
         }
 
+        .cell-ellipsis {
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nomination-question {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nomination-question-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .nomination-actions {
+            display: inline-flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nom-yes-active {
+            background: var(--accent-light);
+            border: 1px solid var(--cu-gold);
+        }
+
+        .nom-no-active {
+            opacity: 0.8;
+        }
+
         .paper-title {
             font-family: 'Crimson Pro', serif;
             font-size: 1.2rem;
@@ -2994,7 +3033,7 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                 container.innerHTML = `
                 <table>
-                    <thead><tr><th>#</th><th></th><th>ID</th><th>Title</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th><th>Nominations</th><th>Decision</th></tr></thead>
+                    <thead><tr><th>#</th><th></th><th>ID</th><th>Title</th><th>Authors</th><th>Institution</th><th>R1</th><th>R2</th><th>Score</th><th>Status</th><th>Nominations</th><th>Decision</th></tr></thead>
                     <tbody>
                         ${filteredScores.map((p) => {
                     const originalRank = scores.findIndex(s => s.id === p.id) + 1;
@@ -3002,16 +3041,22 @@ Strategy Science Conference 2026 Organizing Committee`;
                     const aboveCutoff = cutoff > 0 && originalRank <= cutoff;
                     const conflictClass = p.hasConflict ? 'conflict-row' : '';
                     const nomCount = Object.values(nominations).filter(n => n === p.id).length;
+                    const authors = (p.authors || '').toString();
+                    const affiliations = (p.affiliations || '').toString();
+                    const authorsShort = authors ? (authors.length > 28 ? authors.substring(0, 28) + '…' : authors) : '-';
+                    const affShort = affiliations ? (affiliations.length > 28 ? affiliations.substring(0, 28) + '…' : affiliations) : '-';
                     return `<tr class="${isCutoff ? 'cutoff-row' : ''} ${aboveCutoff ? 'above-cutoff' : ''} ${conflictClass}">
                                 <td><span class="rank rank-normal">${originalRank}</span></td>
                                 <td><button class="info-btn" onclick="showPaperDetails('${p.id}')">ℹ️</button></td>
                                 <td>${p.id}</td>
                                 <td>${(p.title || 'TBD').substring(0, 30)}...</td>
+                                <td class="cell-ellipsis" title="${authors.replace(/"/g, '&quot;')}">${authorsShort}</td>
+                                <td class="cell-ellipsis" title="${affiliations.replace(/"/g, '&quot;')}">${affShort}</td>
                                 <td>${badge(p.details[0])}</td>
                                 <td>${badge(p.details[1])}</td>
                                 <td><span class="score ${scoreClass(p.score)}">${p.score !== null ? p.score : '-'}</span></td>
                                 <td>${p.hasConflict ? '<span class="status" style="background:#fef3c7;color:#92400e">⚠ Conflict</span>' : (p.count >= 2 ? '<span class="status status-yes">Done</span>' : `<span class="status status-pending">${p.count}/2</span>`)}</td>
-                                <td>${nomCount > 0 ? `<span class="nomination-badge" style="background:#fff3cd;color:#856404;padding:2px 6px;border-radius:10px;font-size:0.75rem;border:1px solid #ffeeba">🏆 ${nomCount}</span>` : '-'}</td>
+                                <td>${nomCount > 0 ? nomCount : '-'}</td>
                                 <td>${getJudgmentSelect(p.id, originalRank)}</td>
                             </tr>`;
                 }).join('')}
@@ -3033,12 +3078,14 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
 
                 // Build CSV with all info including admin judgment
-                let csv = 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Status,Nominations,Admin_Decision,Conflict,PDF_Link\n';
+                let csv = 'Rank,ID,Title,Authors,Institution,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Status,Nominations,Admin_Decision,Conflict,PDF_Link\n';
                 scores.forEach((p, i) => {
                     const rank = i + 1;
                     const adminDecision = adminJudgments[p.id] || (cutoff > 0 ? (rank <= cutoff ? 'accepted' : 'rejected') : '');
                     const link = paperFiles[p.id]?.link || '';
                     const nomCount = Object.values(nominations).filter(n => n === p.id).length;
+                    const authors = (p.authors || '').toString().replace(/"/g, '""');
+                    const affiliations = (p.affiliations || '').toString().replace(/"/g, '""');
 
                     const r1Name = p.details[0]?.reviewerName || '';
                     const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
@@ -3050,7 +3097,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                     const conflict = p.hasConflict ? 'YES' : '';
                     const pairLabel = getPairLabel(p.pairType);
 
-                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${status},${nomCount},${adminDecision.toUpperCase()},${conflict},"${link}"\n`;
+                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${authors}","${affiliations}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${status},${nomCount},${adminDecision.toUpperCase()},${conflict},"${link}"\n`;
                 });
 
                 // Add separator and accepted-only section based on admin judgments
@@ -3061,15 +3108,18 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                 if (acceptedPapers.length > 0) {
                     csv += '\n\n--- ACCEPTED PAPERS ONLY ---\n';
-                    csv += 'Rank,ID,Title,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,PDF_Link\n';
+                    csv += 'Rank,ID,Title,Authors,Institution,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Nominations,PDF_Link\n';
                     acceptedPapers.forEach((p, i) => {
                         const link = paperFiles[p.id]?.link || '';
+                        const nomCount = Object.values(nominations).filter(n => n === p.id).length;
+                        const authors = (p.authors || '').toString().replace(/"/g, '""');
+                        const affiliations = (p.affiliations || '').toString().replace(/"/g, '""');
                         const r1Name = p.details[0]?.reviewerName || '';
                         const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
                         const r2Name = p.details[1]?.reviewerName || '';
                         const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
                         const pairLabel = getPairLabel(p.pairType);
-                        csv += `${i + 1},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},"${link}"\n`;
+                        csv += `${i + 1},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${authors}","${affiliations}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${nomCount},"${link}"\n`;
                     });
                 }
 
@@ -3145,6 +3195,15 @@ Strategy Science Conference 2026 Organizing Committee`;
                     const existing = reviews[pid]?.[rid];
                     const hasFile = paperFiles[pid]?.link;
                     const isNominated = nominations[rid] === pid;
+                    const nominationUi = `
+                        <div class="nomination-question">
+                            <div class="nomination-question-text">Do you nominate this paper for Best Paper?</div>
+                            <div class="nomination-actions">
+                                <button class="btn-secondary btn-sm ${isNominated ? 'nom-yes-active' : ''}" onclick="setNomination('${rid}','${pid}', true)">Yes</button>
+                                <button class="btn-secondary btn-sm ${!isNominated ? 'nom-no-active' : ''}" onclick="setNomination('${rid}','${pid}', false)">No</button>
+                            </div>
+                        </div>
+                    `;
 
                     return `
                     <div class="paper-card ${existing ? 'reviewed' : ''} ${isNominated ? 'nominated-card' : ''}">
@@ -3152,14 +3211,6 @@ Strategy Science Conference 2026 Organizing Committee`;
                              <div class="paper-content">
                                 <div class="paper-id">${paper.id}</div>
                                 <div class="paper-title">${paper.title || 'TBD'}</div>
-                                <div class="nomination-box">
-                                    <label>
-                                        <input type="radio" name="nomination" 
-                                               ${isNominated ? 'checked' : ''} 
-                                               onchange="submitNomination('${rid}', '${pid}')">
-                                        <span class="nomination-text">🏆 Nominate Best Paper</span>
-                                    </label>
-                                </div>
                              </div>
                         </div>
                         
@@ -3191,6 +3242,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                                 </div>
                             </div>
                         `}
+                        ${nominationUi}
                     </div>`;
                 }).join('');
             }
@@ -3200,12 +3252,18 @@ Strategy Science Conference 2026 Organizing Committee`;
                 db.ref(`reviews/${pid}/${rid}`).remove();
             }
 
-            function submitNomination(rid, pid) {
-                // If already nominated this one? No toggle needed for radio, but good to confirm.
-                // Just set it.
-                db.ref(`nominations/${rid}`).set(pid);
-                showToast("🏆 Nomination Saved!");
-                // Re-render handled by listener
+            function setNomination(rid, pid, isYes) {
+                if (isYes) {
+                    // Single nomination per reviewer: setting this replaces any previous nomination.
+                    db.ref(`nominations/${rid}`).set(pid);
+                    showToast("Nomination saved");
+                    return;
+                }
+                // "No" clears nomination only if this paper is currently nominated.
+                if (nominations[rid] === pid) {
+                    db.ref(`nominations/${rid}`).remove();
+                    showToast("Nomination cleared");
+                }
             }
 
             function submitReview(rid, pid, decision) {
