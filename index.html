@@ -13,6 +13,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <!-- SheetJS for XLSX export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -521,7 +523,7 @@
             padding-top: 8px;
             border-top: 1px solid var(--border);
         }
-        
+
         .nomination-box label {
             cursor: pointer;
             display: flex;
@@ -534,14 +536,14 @@
             margin: 0;
             padding: 0;
         }
-        
+
         .nomination-box input[type="radio"] {
             flex-shrink: 0;
             margin: 0;
             width: 18px;
             height: 18px;
         }
-        
+
         .nomination-text {
             display: inline-block;
             white-space: normal;
@@ -1087,6 +1089,12 @@
             color: #1e6636;
         }
 
+        .judgment-select.waitlisted {
+            background: #fef3c7;
+            border-color: #d69e2e;
+            color: #975a16;
+        }
+
         .judgment-select.rejected {
             background: #fed7d7;
             border-color: #e53e3e;
@@ -1385,6 +1393,7 @@
                                     <option value="conflicts">⚠️ Conflicts Only</option>
                                     <option value="nominated">🏆 Nominated Papers</option>
                                     <option value="accepted">✓ Accepted</option>
+                                    <option value="waitlisted">⏳ Waitlisted</option>
                                     <option value="rejected">✗ Rejected</option>
                                     <option value="pending">Pending Decision</option>
                                 </select>
@@ -1396,6 +1405,7 @@
                                     style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
                                     <option value="score">By Score</option>
                                     <option value="accepted-first">Accepted First</option>
+                                    <option value="waitlisted-first">Waitlisted First</option>
                                     <option value="rejected-first">Rejected First</option>
                                 </select>
                             </div>
@@ -1406,7 +1416,7 @@
                                 <button class="btn-secondary btn-sm"
                                     onclick="applyDefaultJudgments(); renderResults(); showToast('Refreshed')">🔄 Apply
                                     & Refresh</button>
-                                <button class="btn-secondary btn-sm" onclick="exportResults()">Export CSV</button>
+                                <button class="btn-secondary btn-sm" onclick="exportResults()">Export XLSX</button>
                             </div>
                         </div>
 
@@ -1436,7 +1446,8 @@
                         ⚠️ Double-blind review: Author information is hidden.
                     </p>
                     <div class="alert alert-info" style="margin-top: 16px; margin-bottom: 16px;">
-                        <strong>🏆 Best Paper Nomination:</strong> Please nominate <strong>one best paper</strong> from your assigned papers using the nomination option below each paper.
+                        <strong>🏆 Best Paper Nomination:</strong> Please nominate <strong>one best paper</strong> from
+                        your assigned papers using the nomination option below each paper.
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="review-progress" style="width: 0%"></div>
@@ -2966,6 +2977,17 @@ Strategy Science Conference 2026 Organizing Committee`;
                         if (b.score === null) return -1;
                         return b.score - a.score;
                     });
+                } else if (sortOrder === 'waitlisted-first') {
+                    scores.sort((a, b) => {
+                        const aWaitlisted = adminJudgments[a.id] === 'waitlisted' ? 1 : 0;
+                        const bWaitlisted = adminJudgments[b.id] === 'waitlisted' ? 1 : 0;
+                        if (bWaitlisted !== aWaitlisted) return bWaitlisted - aWaitlisted;
+                        // Secondary sort by score
+                        if (a.score === null && b.score === null) return 0;
+                        if (a.score === null) return 1;
+                        if (b.score === null) return -1;
+                        return b.score - a.score;
+                    });
                 } else if (sortOrder === 'rejected-first') {
                     scores.sort((a, b) => {
                         const aRejected = adminJudgments[a.id] === 'rejected' ? 1 : 0;
@@ -2999,6 +3021,8 @@ Strategy Science Conference 2026 Organizing Committee`;
                     });
                 } else if (filter === 'accepted') {
                     filteredScores = scores.filter(p => adminJudgments[p.id] === 'accepted');
+                } else if (filter === 'waitlisted') {
+                    filteredScores = scores.filter(p => adminJudgments[p.id] === 'waitlisted');
                 } else if (filter === 'rejected') {
                     filteredScores = scores.filter(p => adminJudgments[p.id] === 'rejected');
                 } else if (filter === 'pending') {
@@ -3022,11 +3046,12 @@ Strategy Science Conference 2026 Organizing Committee`;
                     const current = adminJudgments[paperId] || '';
                     const defaultVal = cutoff > 0 && rank <= cutoff ? 'accepted' : (cutoff > 0 ? 'rejected' : '');
                     const val = current || defaultVal;
-                    const cls = val === 'accepted' ? 'accepted' : (val === 'rejected' ? 'rejected' : '');
+                    const cls = val === 'accepted' ? 'accepted' : (val === 'waitlisted' ? 'waitlisted' : (val === 'rejected' ? 'rejected' : ''));
                     return `
                         <select class="judgment-select ${cls}" onchange="setAdminJudgment('${paperId}', this.value)">
                             <option value="" ${!val ? 'selected' : ''}>--</option>
                             <option value="accepted" ${val === 'accepted' ? 'selected' : ''}>✓ Accept</option>
+                            <option value="waitlisted" ${val === 'waitlisted' ? 'selected' : ''}>⏳ Waitlist</option>
                             <option value="rejected" ${val === 'rejected' ? 'selected' : ''}>✗ Reject</option>
                         </select>
                     `;
@@ -3078,58 +3103,92 @@ Strategy Science Conference 2026 Organizing Committee`;
 
                 const cutoff = parseInt(document.getElementById('cutoff-number')?.value) || 0;
 
-                // Build CSV with all info including admin judgment
-                let csv = 'Rank,ID,Title,Authors,Institution,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Status,Nominations,Admin_Decision,Conflict,PDF_Link\n';
-                scores.forEach((p, i) => {
-                    const rank = i + 1;
-                    const adminDecision = adminJudgments[p.id] || (cutoff > 0 ? (rank <= cutoff ? 'accepted' : 'rejected') : '');
+                // Helper to build row data for a paper
+                const buildRow = (p, rank) => {
+                    const adminDecision = adminJudgments[p.id] || '';
                     const link = paperFiles[p.id]?.link || '';
                     const nomCount = Object.values(nominations).filter(n => n === p.id).length;
-                    const authors = (p.authors || '').toString().replace(/"/g, '""');
-                    const affiliations = (p.affiliations || '').toString().replace(/"/g, '""');
-
                     const r1Name = p.details[0]?.reviewerName || '';
                     const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
-
                     const r2Name = p.details[1]?.reviewerName || '';
                     const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
-
                     const status = p.count >= 2 ? 'Complete' : `${p.count}/2`;
                     const conflict = p.hasConflict ? 'YES' : '';
                     const pairLabel = getPairLabel(p.pairType);
 
-                    csv += `${rank},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${authors}","${affiliations}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${status},${nomCount},${adminDecision.toUpperCase()},${conflict},"${link}"\n`;
-                });
+                    return {
+                        'Rank': rank,
+                        'Paper ID': p.id,
+                        'Title': p.title || 'TBD',
+                        'Authors': p.authors || '',
+                        'Institution': p.affiliations || '',
+                        'R1 Name': r1Name,
+                        'R1 Decision': r1Dec,
+                        'R2 Name': r2Name,
+                        'R2 Decision': r2Dec,
+                        'Pair Type': pairLabel,
+                        'Total Score': p.score !== null ? p.score : '',
+                        'Status': status,
+                        'Nominations': nomCount,
+                        'Admin Decision': adminDecision.toUpperCase(),
+                        'Conflict': conflict,
+                        'PDF Link': link
+                    };
+                };
 
-                // Add separator and accepted-only section based on admin judgments
+                // Build all papers data with ranks
+                const allPapersData = scores.map((p, i) => buildRow(p, i + 1));
+
+                // Filter papers by decision
                 const acceptedPapers = scores.filter(p =>
                     adminJudgments[p.id] === 'accepted' ||
                     (!adminJudgments[p.id] && cutoff > 0 && scores.indexOf(p) < cutoff)
                 );
+                const waitlistedPapers = scores.filter(p => adminJudgments[p.id] === 'waitlisted');
+                const rejectedPapers = scores.filter(p => adminJudgments[p.id] === 'rejected');
 
-                if (acceptedPapers.length > 0) {
-                    csv += '\n\n--- ACCEPTED PAPERS ONLY ---\n';
-                    csv += 'Rank,ID,Title,Authors,Institution,R1_Name,R1_Decision,R2_Name,R2_Decision,Pair_Type,Total_Score,Nominations,PDF_Link\n';
-                    acceptedPapers.forEach((p, i) => {
-                        const link = paperFiles[p.id]?.link || '';
-                        const nomCount = Object.values(nominations).filter(n => n === p.id).length;
-                        const authors = (p.authors || '').toString().replace(/"/g, '""');
-                        const affiliations = (p.affiliations || '').toString().replace(/"/g, '""');
-                        const r1Name = p.details[0]?.reviewerName || '';
-                        const r1Dec = p.details[0] ? SCORE_LABELS[p.details[0].decision] : 'Pending';
-                        const r2Name = p.details[1]?.reviewerName || '';
-                        const r2Dec = p.details[1] ? SCORE_LABELS[p.details[1].decision] : 'Pending';
-                        const pairLabel = getPairLabel(p.pairType);
-                        csv += `${i + 1},"${p.id}","${(p.title || 'TBD').replace(/"/g, '""')}","${authors}","${affiliations}","${r1Name}","${r1Dec}","${r2Name}","${r2Dec}","${pairLabel}",${p.score || ''},${nomCount},"${link}"\n`;
-                    });
+                // Build sheet data for each category
+                const acceptedData = acceptedPapers.map((p, i) => buildRow(p, i + 1));
+                const waitlistedData = waitlistedPapers.map((p, i) => buildRow(p, i + 1));
+                const rejectedData = rejectedPapers.map((p, i) => buildRow(p, i + 1));
+
+                // Create workbook with SheetJS
+                const wb = XLSX.utils.book_new();
+
+                // Add All Papers sheet
+                const wsAll = XLSX.utils.json_to_sheet(allPapersData);
+                XLSX.utils.book_append_sheet(wb, wsAll, 'All Papers');
+
+                // Add Accepted sheet
+                if (acceptedData.length > 0) {
+                    const wsAccepted = XLSX.utils.json_to_sheet(acceptedData);
+                    XLSX.utils.book_append_sheet(wb, wsAccepted, 'Accepted');
+                } else {
+                    const wsAccepted = XLSX.utils.json_to_sheet([{ 'Note': 'No accepted papers' }]);
+                    XLSX.utils.book_append_sheet(wb, wsAccepted, 'Accepted');
                 }
 
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'results.csv';
-                a.click();
-                showToast('Exported');
+                // Add Waitlisted sheet
+                if (waitlistedData.length > 0) {
+                    const wsWaitlisted = XLSX.utils.json_to_sheet(waitlistedData);
+                    XLSX.utils.book_append_sheet(wb, wsWaitlisted, 'Waitlisted');
+                } else {
+                    const wsWaitlisted = XLSX.utils.json_to_sheet([{ 'Note': 'No waitlisted papers' }]);
+                    XLSX.utils.book_append_sheet(wb, wsWaitlisted, 'Waitlisted');
+                }
+
+                // Add Rejected sheet
+                if (rejectedData.length > 0) {
+                    const wsRejected = XLSX.utils.json_to_sheet(rejectedData);
+                    XLSX.utils.book_append_sheet(wb, wsRejected, 'Rejected');
+                } else {
+                    const wsRejected = XLSX.utils.json_to_sheet([{ 'Note': 'No rejected papers' }]);
+                    XLSX.utils.book_append_sheet(wb, wsRejected, 'Rejected');
+                }
+
+                // Download the file
+                XLSX.writeFile(wb, 'review_results.xlsx');
+                showToast('Exported XLSX with 4 sheets: All Papers, Accepted, Waitlisted, Rejected');
             }
 
             function clearAllData() {
@@ -3141,6 +3200,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                 db.ref('reviews').remove();
                 db.ref('paperFiles').remove();
                 db.ref('adminJudgments').remove();
+                db.ref('nominations').remove();
                 showToast('All data cleared');
             }
 
