@@ -3258,7 +3258,9 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const nominationDisplay = document.getElementById('nominated-paper-id');
                 if (nominationDisplay) {
                     if (nominatedPaperId && assigned.includes(nominatedPaperId)) {
-                        nominationDisplay.textContent = nominatedPaperId;
+                        const nominatedPaper = papers.find(p => p.id === nominatedPaperId);
+                        const titlePreview = nominatedPaper && nominatedPaper.title ? nominatedPaper.title.substring(0, 35) + (nominatedPaper.title.length > 35 ? '...' : '') : '';
+                        nominationDisplay.innerHTML = `<strong>${nominatedPaperId}</strong> - ${titlePreview}`;
                         nominationDisplay.style.color = 'var(--success)';
                     } else {
                         nominationDisplay.textContent = 'None selected';
@@ -3353,14 +3355,43 @@ Strategy Science Conference 2026 Organizing Committee`;
                         if (!ok) return;
                     }
                     db.ref(`nominations/${rid}`).set(pid);
+                    // Immediately update local state and display
+                    nominations[rid] = pid;
+                    updateNominationDisplay(rid);
                     showToast("Nomination saved");
                     return;
                 }
                 // "No" clears nomination only if this paper is currently nominated.
                 if (nominations[rid] === pid) {
                     db.ref(`nominations/${rid}`).remove();
+                    // Immediately update local state and display
+                    delete nominations[rid];
+                    updateNominationDisplay(rid);
                     showToast("Nomination cleared");
                 }
+            }
+
+            // Helper function to update nomination display
+            function updateNominationDisplay(rid) {
+                const nominationDisplay = document.getElementById('nominated-paper-id');
+                if (!nominationDisplay) return;
+
+                const nominatedPaperId = nominations[rid];
+                const assigned = assignments[rid] || [];
+
+                if (nominatedPaperId && assigned.includes(nominatedPaperId)) {
+                    // Find paper title
+                    const paper = papers.find(p => p.id === nominatedPaperId);
+                    const titlePreview = paper && paper.title ? paper.title.substring(0, 35) + (paper.title.length > 35 ? '...' : '') : '';
+                    nominationDisplay.innerHTML = `<strong>${nominatedPaperId}</strong> - ${titlePreview}`;
+                    nominationDisplay.style.color = 'var(--success)';
+                } else {
+                    nominationDisplay.textContent = 'None selected';
+                    nominationDisplay.style.color = 'var(--text-secondary)';
+                }
+
+                // Also update the nomination buttons styling
+                renderReviewerPapers(rid);
             }
 
             function submitReview(rid, pid, decision) {
