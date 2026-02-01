@@ -1442,12 +1442,22 @@
                     <h2>Welcome, <span id="reviewer-name-display"></span></h2>
                     <p style="color: var(--text-secondary);">You have <span id="reviewer-paper-count">0</span> papers to
                         review.</p>
+                    <div class="alert alert-warning" style="margin-top: 16px; margin-bottom: 12px;">
+                        <strong>📅 Review Deadline: February 20, 2026</strong><br>
+                        <span style="font-size: 0.9rem;">Thank you for contributing to the Strategy Science Conference!
+                            Your expertise is invaluable to the review process.</span>
+                    </div>
                     <p style="font-size: 0.85rem; color: var(--accent); margin-top: 8px;">
                         ⚠️ Double-blind review: Author information is hidden.
                     </p>
                     <div class="alert alert-info" style="margin-top: 16px; margin-bottom: 16px;">
                         <strong>🏆 Best Paper Nomination:</strong> Please nominate <strong>one best paper</strong> from
                         your assigned papers using the nomination option below each paper.
+                        <div id="current-nomination-display"
+                            style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(207,184,124,0.3);">
+                            <strong>Your current nomination:</strong> <span id="nominated-paper-id"
+                                style="font-weight: 600; color: var(--cu-gold);">None selected</span>
+                        </div>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="review-progress" style="width: 0%"></div>
@@ -2705,6 +2715,8 @@ You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} to review
 
 ${link}
 
+⏰ DEADLINE: February 20, 2026
+
 Review Guidelines:
 • This is a double-blind review - author information is not displayed
 • For each paper, please select one of the following recommendations:
@@ -2713,6 +2725,7 @@ Review Guidelines:
    - Maybe No (Score: 2) - Weak reject
    - No (Score: 1) - Strong reject
 • You can change your decision at any time before the deadline
+• Please nominate ONE paper for Best Paper Award from your assigned papers
 
 If you have any questions or encounter any issues, please don't hesitate to reach out.
 
@@ -3239,6 +3252,19 @@ Strategy Science Conference 2026 Organizing Committee`;
                 const done = assigned.filter(pid => reviews[pid]?.[rid]).length;
                 document.getElementById('completed-count').textContent = done;
                 document.getElementById('review-progress').style.width = assigned.length > 0 ? `${(done / assigned.length) * 100}%` : '0%';
+
+                // Update nomination display
+                const nominatedPaperId = nominations[rid];
+                const nominationDisplay = document.getElementById('nominated-paper-id');
+                if (nominationDisplay) {
+                    if (nominatedPaperId && assigned.includes(nominatedPaperId)) {
+                        nominationDisplay.textContent = nominatedPaperId;
+                        nominationDisplay.style.color = 'var(--success)';
+                    } else {
+                        nominationDisplay.textContent = 'None selected';
+                        nominationDisplay.style.color = 'var(--text-secondary)';
+                    }
+                }
 
                 if (done === assigned.length && assigned.length > 0) {
                     document.getElementById('all-done-card').classList.remove('hidden');
