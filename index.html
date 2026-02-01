@@ -2013,6 +2013,7 @@
                         const abstractIdx = header.indexOf('abstract');
                         const authorsIdx = Math.max(header.indexOf('authors'), header.indexOf('author'));
                         const affIdx = Math.max(header.indexOf('affiliations'), header.indexOf('affiliation'), header.indexOf('institution'));
+                        const originalIdIdx = header.indexOf('original_id');
 
                         if (titleIdx === -1) {
                             return showToast('CSV must have a "title" column');
@@ -2059,10 +2060,12 @@
                             const abstract = abstractIdx !== -1 && row[abstractIdx] ? row[abstractIdx].trim() : '';
                             const authors = authorsIdx !== -1 && row[authorsIdx] ? row[authorsIdx].trim() : '';
                             const affiliations = affIdx !== -1 && row[affIdx] ? row[affIdx].trim() : '';
+                            const originalId = originalIdIdx !== -1 && row[originalIdIdx] ? row[originalIdIdx].trim() : '';
 
                             const paperData = { id, title, keywords, abstract };
                             if (authors) paperData.authors = authors;
                             if (affiliations) paperData.affiliations = affiliations;
+                            if (originalId) paperData.originalId = originalId;
 
                             updates['papers/' + id] = paperData;
                             if (link) {
@@ -3119,6 +3122,7 @@ Strategy Science Conference 2026 Organizing Committee`;
                     return {
                         'Rank': rank,
                         'Paper ID': p.id,
+                        'Original ID': p.originalId || '',
                         'Title': p.title || 'TBD',
                         'Authors': p.authors || '',
                         'Institution': p.affiliations || '',
