@@ -1519,7 +1519,9 @@
                 "Xiaoli Tang": { method: "Quant/Mixed", keywords: ["Institutional Theory", "Stakeholder Theory", "Accountable Secrecy", "Self-Regulation"] },
                 "Andy Wu": { method: "Quant/Mixed", keywords: ["Org. Design Theory", "Platform Theory", "Entrepreneurship", "Platform Ecosystems"] },
                 "Mingtao Xu": { method: "Quantitative", keywords: ["Property Rights Theory", "Org. Learning", "AI & Strategy", "Patent Litigation"] },
-                "Tony Tong": { method: "Mixed", keywords: ["Strategy", "Innovation", "International Business"] }
+                "Tony Tong": { method: "Mixed", keywords: ["Strategy", "Innovation", "International Business"] },
+                "Yuchen Zhang": { method: "Quant/Mixed", keywords: ["Knowledge-Based View", "Platform Theory", "Platform Governance", "Vertical Integration"] },
+                "Ethan Poskanzer": { method: "Quant/Mixed", keywords: ["Social Network Theory", "Entrepreneurship Theory", "Innovation & Inclusivity", "Entrepreneurial Networks"] }
             };
 
             // Helper to get expertise info for a reviewer (method + keywords)
@@ -2224,7 +2226,9 @@
                     { name: "Xiaoli Tang", email: "xtang1@bu.edu" },
                     { name: "Andy Wu", email: "awu@hbs.edu" },
                     { name: "Mingtao Xu", email: "xumt@sem.tsinghua.edu.cn" },
-                    { name: "Tony Tong", email: "tony.tong@colorado.edu" }
+                    { name: "Tony Tong", email: "tony.tong@colorado.edu" },
+                    { name: "Yuchen Zhang", email: "yzhang54@tulane.edu" },
+                    { name: "Ethan Poskanzer", email: "Ethan.Poskanzer@Colorado.edu" }
                 ];
 
                 const updates = {};
@@ -2234,7 +2238,7 @@
                     updates[id] = { id, ...r, maxPapers: null, expertise: null };
                 });
                 db.ref('reviewers').set(updates);
-                showToast('Loaded 17 reviewers');
+                showToast('Loaded 19 reviewers');
             }
 
             function renderReviewers() {
@@ -2709,26 +2713,26 @@
 
                 const body = `Dear Professor ${surname},
 
-Thank you for serving on the Program Committee of the Strategy Science Conference 2026.
+Thank you for serving on the Scientific Committee of the 2026 Strategy Science Conference. We appreciate your time and expertise in helping us select high-quality papers for the conference.
 
-You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} for review. Please access your review portal using the link below:
+You have been assigned ${paperCount} papers for review. Please access your personal review portal using the link below:
 
 ${link}
 
 We kindly ask that you complete your reviews by February 20, 2026.
 
 For each paper, please provide a recommendation using the following scale:
-  - Yes: Strong accept
-  - Maybe Yes: Weak accept
-  - Maybe No: Weak reject
-  - No: Strong reject
+ - Yes: Strong accept
+ - Maybe Yes: Weak accept
+ - Maybe No: Weak reject
+ - No: Strong reject
 
-All submissions are double-blind; author identities have been removed. You may also nominate one paper from your assigned set for the Best Paper Award.
+Additionally, you may nominate one paper from your assigned set for the Best Paper Award.
 
-Should you have any questions, please feel free to contact us.
+Should you have any questions or encounter any issues with the portal, please feel free to contact us.
 
 Best regards,
-Strategy Science Conference 2026 Program Committee`;
+The 2026 Strategy Science Conference Organizing Committee`;
 
                 return { subject, body };
             }
