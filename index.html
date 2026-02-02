@@ -1193,7 +1193,7 @@
                     <div class="card">
                         <h2>Add Paper</h2>
                         <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                            Add papers with PDF links. Author info is hidden from reviewers (double-blind).
+                            Add papers with PDF links. Author info is hidden from reviewers.
                         </p>
 
                         <div class="form-row">
@@ -1344,7 +1344,7 @@
                     <div class="card">
                         <h2>Reviewer Links</h2>
                         <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                            Share these unique links with each reviewer. Double-blind: no author info shown.
+                            Share these unique links with each reviewer. No author info shown.
                         </p>
                         <div id="reviewer-links">
                             <div class="empty-state">
@@ -1448,7 +1448,7 @@
                             Your expertise is invaluable to the review process.</span>
                     </div>
                     <p style="font-size: 0.85rem; color: var(--accent); margin-top: 8px;">
-                        ⚠️ Double-blind review: Author information is hidden.
+                        ⚠️ Author information is hidden.
                     </p>
                     <div class="alert alert-info" style="margin-top: 16px; margin-bottom: 16px;">
                         <strong>🏆 Best Paper Nomination:</strong> Please nominate <strong>one best paper</strong> from
@@ -2235,7 +2235,14 @@
                 list.forEach((r, i) => {
                     // Use secure REV- IDs directly to avoid migration loop
                     const id = 'REV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-                    updates[id] = { id, ...r, maxPapers: null, expertise: null };
+
+                    // Set max papers limit for specific reviewers
+                    let maxPapers = null;
+                    if (r.name === "Janet Lee Elsie Bercovitz" || r.name === "Ethan Poskanzer") {
+                        maxPapers = 10;
+                    }
+
+                    updates[id] = { id, ...r, maxPapers: maxPapers, expertise: null };
                 });
                 db.ref('reviewers').set(updates);
                 showToast('Loaded 19 reviewers');
