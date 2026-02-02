@@ -1495,7 +1495,7 @@
             // =====================
             // TEST MODE - Set to false for production
             // =====================
-            const TEST_MODE = true;
+            const TEST_MODE = false;
             const TEST_EMAIL = "yupengjim@gmail.com";
 
             const SCORE_MAP = { 'no': 1, 'maybe-no': 2, 'maybe-yes': 3, 'yes': 4 };
@@ -2700,7 +2700,7 @@
             }
 
             function getEmailTemplate(reviewer, link, paperCount) {
-                const subject = `Strategy Science Conference 2026 - Paper Review Request`;
+                const subject = `Strategy Science Conference 2026 - Review Assignment`;
 
                 // Extract surname (last word of the name)
                 const reviewerName = getDisplayName(reviewer.name);
@@ -2709,30 +2709,26 @@
 
                 const body = `Dear Professor ${surname},
 
-Thank you for agreeing to review for the Strategy Science Conference 2026. Your expertise is invaluable to our selection process.
+Thank you for serving on the Program Committee of the Strategy Science Conference 2026.
 
-You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} to review. Please use the secure link below to access your assigned papers and submit your evaluations:
+You have been assigned ${paperCount} paper${paperCount > 1 ? 's' : ''} for review. Please access your review portal using the link below:
 
 ${link}
 
-⏰ DEADLINE: February 20, 2026
+We kindly ask that you complete your reviews by February 20, 2026.
 
-Review Guidelines:
-• This is a double-blind review - author information is not displayed
-• For each paper, please select one of the following recommendations:
-   - Yes (Score: 4) - Strong accept
-   - Maybe Yes (Score: 3) - Weak accept  
-   - Maybe No (Score: 2) - Weak reject
-   - No (Score: 1) - Strong reject
-• You can change your decision at any time before the deadline
-• Please nominate ONE paper for Best Paper Award from your assigned papers
+For each paper, please provide a recommendation using the following scale:
+  - Yes: Strong accept
+  - Maybe Yes: Weak accept
+  - Maybe No: Weak reject
+  - No: Strong reject
 
-If you have any questions or encounter any issues, please don't hesitate to reach out.
+All submissions are double-blind; author identities have been removed. You may also nominate one paper from your assigned set for the Best Paper Award.
 
-Thank you for your contribution to the conference!
+Should you have any questions, please feel free to contact us.
 
 Best regards,
-Strategy Science Conference 2026 Organizing Committee`;
+Strategy Science Conference 2026 Program Committee`;
 
                 return { subject, body };
             }
