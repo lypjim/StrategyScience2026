@@ -2683,7 +2683,7 @@
                     ${TEST_MODE ? '<strong>⚠️ TEST MODE:</strong> All emails will be sent to ' + TEST_EMAIL + ' for testing.' : '<strong>Tip:</strong> Click "Send Email" to open your email client with a pre-filled message.'}
                 </div>
                 <button class="btn-secondary" style="margin-bottom:16px" onclick="copyAllLinks()">Copy All Links</button>
-                <button class="btn-primary" style="margin-bottom:16px;margin-left:8px" onclick="sendAllEmails()">📧 Send All Emails</button>
+
                 ${withAssignments.map(r => {
                     const displayName = getDisplayName(r.name);
                     const link = `${baseUrl}?reviewer=${r.id}`;
@@ -2772,26 +2772,7 @@ On behalf of the 2026 SSC Organizing Committee`;
                 }
             }
 
-            function sendAllEmails() {
-                const withAssignments = reviewers.filter(r => (assignments[r.id] || []).length > 0);
 
-                if (withAssignments.length === 0) {
-                    return showToast('No reviewers with assignments');
-                }
-
-                if (TEST_MODE) {
-                    alert(`TEST MODE: This will open ${withAssignments.length} email window(s), all addressed to ${TEST_EMAIL}.\n\nIn production mode, emails would be sent to actual reviewer addresses.`);
-                } else {
-                    if (!confirm(`This will open ${withAssignments.length} email windows. Continue?`)) return;
-                }
-
-                // Open emails with a small delay to prevent browser blocking
-                withAssignments.forEach((r, index) => {
-                    setTimeout(() => {
-                        sendEmail(r.id);
-                    }, index * 500);
-                });
-            }
 
             function copyAllLinks() {
                 const baseUrl = window.location.origin + window.location.pathname;
