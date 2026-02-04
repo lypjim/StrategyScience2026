@@ -2422,24 +2422,36 @@
                     return showToast(`Cannot find reviewers: ${name1} or ${name2}`);
                 }
 
-                // 先清除该paper的现有分配
-                const currentReviewers = getReviewersForPaper(paperId);
-                const updates = {};
+                if (!confirm(`Assign ${name1} & ${name2} to ${paperId}?\nThis will remove any existing reviewers.`)) return;
 
+                // 使用中间状态对象来模拟更新，防止读写由于异步或覆盖产生冲突
+                const tempState = {}; // rid -> list of papers
+                const getList = (rid) => tempState[rid] !== undefined ? tempState[rid] : (assignments[rid] || []);
+                const setList = (rid, list) => tempState[rid] = list;
+
+                // 1. 先从所有当前reviewer列表中清除该paper
+                const currentReviewers = getReviewersForPaper(paperId);
                 currentReviewers.forEach(rid => {
-                    const list = assignments[rid] || [];
+                    const list = getList(rid);
                     const updated = list.filter(pid => pid !== paperId);
-                    updates['assignments/' + rid] = updated.length > 0 ? updated : null;
+                    setList(rid, updated);
                 });
 
-                // 添加新的分配
-                const list1 = [...(assignments[rev1.id] || [])];
-                if (!list1.includes(paperId)) list1.push(paperId);
-                updates['assignments/' + rev1.id] = list1;
+                // 2. 再给这两个新reviewer添加该paper
+                [rev1, rev2].forEach(r => {
+                    const list = getList(r.id);
+                    // 只有当列表中没有时才添加（去重）
+                    if (!list.includes(paperId)) {
+                        const updated = [...list, paperId];
+                        setList(r.id, updated);
+                    }
+                });
 
-                const list2 = [...(assignments[rev2.id] || [])];
-                if (!list2.includes(paperId)) list2.push(paperId);
-                updates['assignments/' + rev2.id] = list2;
+                // 3. 构建Firebase更新对象
+                const updates = {};
+                Object.entries(tempState).forEach(([rid, list]) => {
+                    updates['assignments/' + rid] = list.length > 0 ? list : null;
+                });
 
                 db.ref().update(updates);
                 showToast(`Assigned ${name1} + ${name2}`);
