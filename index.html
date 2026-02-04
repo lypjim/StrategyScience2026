@@ -2350,7 +2350,9 @@
                                 <strong>
                                     <button class="info-btn" onclick="showPaperDetails('${paper.id}')">ℹ️</button>
                                     ${paper.id}
-                                </strong>: ${(paper.title || 'TBD').substring(0, 45)}
+                                </strong>: ${(paper.title || 'TBD').substring(0, 60)}
+                                ${paper.authors ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">👤 ${paper.authors}</div>` : ''}
+                                ${paper.affiliations ? `<div style="font-size:0.75rem;color:#888;margin-top:2px">🏛️ ${paper.affiliations}</div>` : ''}
                                 <div style="margin-top:8px">
                                     ${assigned.map(rid => {
                         const rev = reviewers.find(r => r.id === rid);
