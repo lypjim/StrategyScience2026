@@ -2362,9 +2362,10 @@
                                     ${!isComplete ? `<span style="color:var(--warning);font-size:0.8rem">Need ${2 - assigned.length} more</span>` : ''}
                                 </div>
                             </div>
-                            <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
-                                <option value="">+ Add reviewer</option>
-                                ${reviewers.map(r => {
+                            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+                                <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
+                                    <option value="">+ Add reviewer</option>
+                                    ${reviewers.map(r => {
                         const displayName = getDisplayName(r.name);
                         const alreadyAssigned = assigned.includes(r.id);
                         const atCapacity = r.maxPapers && getReviewerPaperCount(r.id) >= r.maxPapers;
@@ -2372,7 +2373,12 @@
                         const status = alreadyAssigned ? ' [assigned]' : atCapacity ? ' [full]' : '';
                         return `<option value="${r.id}" ${disabled ? 'disabled' : ''}>${displayName} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${status}</option>`;
                     }).join('')}
-                            </select>
+                                </select>
+                                <div style="display:flex;gap:4px">
+                                    <button class="btn-secondary btn-sm" onclick="assignCombo('${paper.id}','Zhang','Tong')" style="font-size:0.75rem;padding:4px 8px">Zhang/Tong</button>
+                                    <button class="btn-secondary btn-sm" onclick="assignCombo('${paper.id}','Liu','Tong')" style="font-size:0.75rem;padding:4px 8px">Liu/Tong</button>
+                                </div>
+                            </div>
                         </div>
                     </div>`;
                 }).join('');
@@ -2400,6 +2406,43 @@
                     db.ref('assignments/' + revId).set(current);
                     showToast('Assigned');
                 }
+            }
+
+            // 快速分配组合：先清除现有分配，再分配两个指定的reviewer
+            function assignCombo(paperId, name1, name2) {
+                // 通过名字部分匹配找reviewer
+                const findReviewer = (namePart) => {
+                    return reviewers.find(r => r.name.toLowerCase().includes(namePart.toLowerCase()));
+                };
+
+                const rev1 = findReviewer(name1);
+                const rev2 = findReviewer(name2);
+
+                if (!rev1 || !rev2) {
+                    return showToast(`Cannot find reviewers: ${name1} or ${name2}`);
+                }
+
+                // 先清除该paper的现有分配
+                const currentReviewers = getReviewersForPaper(paperId);
+                const updates = {};
+
+                currentReviewers.forEach(rid => {
+                    const list = assignments[rid] || [];
+                    const updated = list.filter(pid => pid !== paperId);
+                    updates['assignments/' + rid] = updated.length > 0 ? updated : null;
+                });
+
+                // 添加新的分配
+                const list1 = [...(assignments[rev1.id] || [])];
+                if (!list1.includes(paperId)) list1.push(paperId);
+                updates['assignments/' + rev1.id] = list1;
+
+                const list2 = [...(assignments[rev2.id] || [])];
+                if (!list2.includes(paperId)) list2.push(paperId);
+                updates['assignments/' + rev2.id] = list2;
+
+                db.ref().update(updates);
+                showToast(`Assigned ${name1} + ${name2}`);
             }
 
             function generateRandomAssignments() {
