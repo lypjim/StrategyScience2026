@@ -1322,6 +1322,9 @@
                             <button class="btn-secondary btn-sm"
                                 onclick="renderAssignments(); renderReviewerWorkload(); showToast('Refreshed')">🔄
                                 Refresh</button>
+                            <button class="btn-primary btn-sm" onclick="saveAssignmentsToFirebase()">💾 Save
+                                All</button>
+                            <button class="btn-secondary btn-sm" onclick="exportAssignmentsCSV()">📤 Export CSV</button>
                             <button class="btn-danger btn-sm" onclick="clearAssignments()">🗑️ Clear All</button>
                         </div>
 
@@ -2472,6 +2475,74 @@
                     })
                     .catch(err => showToast('Error: ' + err.message));
             }
+
+            // 手动保存所有assignments到Firebase
+            function saveAssignmentsToFirebase() {
+                if (Object.keys(assignments).length === 0) {
+                    return showToast('No assignments to save');
+                }
+
+                // 显示保存中状态
+                showToast('Saving...');
+
+                db.ref('assignments').set(assignments)
+                    .then(() => {
+                        const totalPapers = new Set();
+                        Object.values(assignments).forEach(papers => {
+                            papers.forEach(p => totalPapers.add(p));
+                        });
+                        const timestamp = new Date().toLocaleTimeString();
+                        showToast(`✅ Saved! ${Object.keys(assignments).length} reviewers, ${totalPapers.size} papers (${timestamp})`);
+                    })
+                    .catch(err => {
+                        showToast('❌ Save failed: ' + err.message);
+                        console.error('Save error:', err);
+                    });
+            }
+
+            // 导出当前assignments为CSV文件
+            function exportAssignmentsCSV() {
+                if (papers.length === 0) {
+                    return showToast('No papers to export');
+                }
+
+                // 构建paper到reviewers的映射
+                const paperReviewers = {};
+                papers.forEach(p => {
+                    paperReviewers[p.id] = { title: p.title, reviewers: [] };
+                });
+
+                Object.entries(assignments).forEach(([revId, paperIds]) => {
+                    const reviewer = reviewers.find(r => r.id === revId);
+                    const reviewerName = reviewer ? reviewer.name : revId;
+                    paperIds.forEach(pid => {
+                        if (paperReviewers[pid]) {
+                            paperReviewers[pid].reviewers.push(reviewerName);
+                        }
+                    });
+                });
+
+                // 生成CSV内容
+                let csv = 'paper_id,title,reviewer_1,reviewer_2\n';
+                papers.forEach(paper => {
+                    const info = paperReviewers[paper.id] || { title: '', reviewers: [] };
+                    const title = (info.title || '').replace(/"/g, '""');
+                    const rev1 = info.reviewers[0] || '';
+                    const rev2 = info.reviewers[1] || '';
+                    csv += `${paper.id},"${title}","${rev1}","${rev2}"\n`;
+                });
+
+                // 下载文件
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().slice(0, 10);
+                link.href = URL.createObjectURL(blob);
+                link.download = `assignments_backup_${timestamp}.csv`;
+                link.click();
+
+                showToast(`Exported ${papers.length} papers to CSV`);
+            }
+
 
 
             function checkAllLoaded() {
