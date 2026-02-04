@@ -2345,7 +2345,7 @@
 
                     return `
                     <div class="assignment-paper ${isComplete ? 'complete' : ''}">
-                        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px">
+                        <div style="display:flex;flex-direction:column;gap:8px">
                             <div>
                                 <strong>
                                     <button class="info-btn" onclick="showPaperDetails('${paper.id}')">ℹ️</button>
@@ -2353,16 +2353,18 @@
                                 </strong>: ${(paper.title || 'TBD').substring(0, 60)}
                                 ${paper.authors ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">👤 ${paper.authors}</div>` : ''}
                                 ${paper.affiliations ? `<div style="font-size:0.75rem;color:#888;margin-top:2px">🏛️ ${paper.affiliations}</div>` : ''}
-                                <div style="margin-top:8px">
-                                    ${assigned.map(rid => {
+                            </div>
+                            
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                                ${assigned.map(rid => {
                         const rev = reviewers.find(r => r.id === rid);
                         const displayName = rev ? getDisplayName(rev.name) : rid;
                         return `<span class="reviewer-tag">${displayName}<span class="remove" onclick="unassign('${paper.id}','${rid}')">×</span></span>`;
                     }).join('')}
-                                    ${!isComplete ? `<span style="color:var(--warning);font-size:0.8rem">Need ${2 - assigned.length} more</span>` : ''}
-                                </div>
+                                ${!isComplete ? `<span style="color:var(--warning);font-size:0.8rem">Need ${2 - assigned.length} more</span>` : ''}
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+
+                            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap">
                                 <select onchange="assign('${paper.id}',this.value);this.value=''" style="min-width:180px">
                                     <option value="">+ Add reviewer</option>
                                     ${reviewers.map(r => {
@@ -2374,10 +2376,8 @@
                         return `<option value="${r.id}" ${disabled ? 'disabled' : ''}>${displayName} (${getReviewerPaperCount(r.id)}${r.maxPapers ? '/' + r.maxPapers : ''})${status}</option>`;
                     }).join('')}
                                 </select>
-                                <div style="display:flex;gap:4px">
-                                    <button class="btn-secondary btn-sm" onclick="assignCombo('${paper.id}','Zhang','Tong')" style="font-size:0.75rem;padding:4px 8px">Zhang/Tong</button>
-                                    <button class="btn-secondary btn-sm" onclick="assignCombo('${paper.id}','Liu','Tong')" style="font-size:0.75rem;padding:4px 8px">Liu/Tong</button>
-                                </div>
+                                <button class="btn-secondary btn-sm" onclick="assignCombo('${paper.id}','Zhang','Tong')" style="font-size:0.75rem;padding:4px 8px">Zhang/Tong</button>
+                                <button class="btn-secondary btn-sm" onclick="assignCombo('${paper.id}','Liu','Tong')" style="font-size:0.75rem;padding:4px 8px">Liu/Tong</button>
                             </div>
                         </div>
                     </div>`;
@@ -2715,22 +2715,9 @@
                         return showToast('No valid assignments found in CSV');
                     }
 
-                    // Merge with existing or replace?
-                    const shouldMerge = confirm(`Found ${importedCount} papers with assignments.\n\nClick OK to MERGE with existing assignments.\nClick Cancel to REPLACE all assignments.`);
-
-                    if (shouldMerge) {
-                        // Merge: add new assignments to existing
-                        Object.entries(newAssignments).forEach(([revId, paperIds]) => {
-                            const existing = assignments[revId] || [];
-                            const merged = [...new Set([...existing, ...paperIds])];
-                            newAssignments[revId] = merged;
-                        });
-                        // Keep existing reviewer assignments not in import
-                        Object.entries(assignments).forEach(([revId, paperIds]) => {
-                            if (!newAssignments[revId]) {
-                                newAssignments[revId] = paperIds;
-                            }
-                        });
+                    // Strict Replace Logic - No Merging Allowed
+                    if (!confirm(`⚠️ WARNING: This will REPLACE ALL existing assignments with the ${importedCount} assignments from the CSV.\n\nCurrent assignments not in the CSV will be LOST.\n\nContinue?`)) {
+                        return;
                     }
 
                     db.ref('assignments').set(newAssignments)
