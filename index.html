@@ -3198,9 +3198,23 @@ On behalf of the 2026 SSC Organizing Committee`;
                 if (dataLoaded.papers) renderResults();
             });
 
+            // Get the two assigned reviewer IDs for a paper (stable order). Used so score/display use only assigned reviewers.
+            function getAssignedReviewerIdsForPaper(paperId) {
+                const ids = [];
+                for (const [revId, pids] of Object.entries(assignments)) {
+                    if (pids && Array.isArray(pids) && pids.includes(paperId)) ids.push(revId);
+                }
+                ids.sort(); // stable R1/R2 order
+                return ids.slice(0, 2);
+            }
+
             function calcScore(paperId) {
                 const pr = reviews[paperId] || {};
-                const entries = Object.entries(pr);
+                const assignedIds = getAssignedReviewerIdsForPaper(paperId);
+                // Use only the two assigned reviewers for score and display (ignore any extra/stale reviews)
+                const entries = assignedIds.length > 0
+                    ? assignedIds.map(revId => [revId, pr[revId]]).filter(([, r]) => r)
+                    : Object.entries(pr).slice(0, 2); // fallback if no assignments yet
                 if (entries.length === 0) return { score: null, count: 0, details: [], hasConflict: false, pairType: null, priority: 0 };
 
                 let total = 0;
@@ -3223,8 +3237,6 @@ On behalf of the 2026 SSC Organizing Committee`;
                     (decisions.includes('maybe-yes') && decisions.includes('maybe-no'));
 
                 // Determine pair type and priority for ordering
-                // Priority: Yes+No (conflict) > Yes+Yes > Yes+MaybeYes > etc.
-                // Higher priority = higher in list when same score
                 let pairType = null;
                 let priority = 0;
 
@@ -3232,23 +3244,22 @@ On behalf of the 2026 SSC Organizing Committee`;
                     const sorted = [...decisions].sort();
                     pairType = sorted.join(' + ');
 
-                    // Priority mapping: pairs with strong opinions rank higher
                     const pairPriority = {
-                        'no + yes': 100,           // Conflict - highest priority
-                        'yes + yes': 90,           // Strong accept
-                        'no + no': 85,             // Strong reject
-                        'maybe-yes + yes': 70,     // Leaning accept
-                        'no + maybe-no': 65,       // Leaning reject
+                        'no + yes': 100,
+                        'yes + yes': 90,
+                        'no + no': 85,
+                        'maybe-yes + yes': 70,
+                        'no + maybe-no': 65,
                         'maybe-no + yes': 60,
                         'no + maybe-yes': 55,
-                        'maybe-yes + maybe-yes': 50,  // Moderate accept
-                        'maybe-no + maybe-no': 45,    // Moderate reject
-                        'maybe-no + maybe-yes': 95    // Conflict (weak) - High priority
+                        'maybe-yes + maybe-yes': 50,
+                        'maybe-no + maybe-no': 45,
+                        'maybe-no + maybe-yes': 95
                     };
                     priority = pairPriority[pairType] || 30;
                 }
 
-                return { score: total, count: entries.length, details, hasConflict, pairType, priority };
+                return { score: total, count: details.length, details, hasConflict, pairType, priority };
             }
 
             function getPairLabel(pairType) {
