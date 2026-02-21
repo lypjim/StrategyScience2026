@@ -1676,49 +1676,9 @@
 
             let dataLoaded = { papers: false, reviewers: false, assignments: false, reviews: false, paperFiles: false, nominations: false };
 
-            // Legacy reviewer IDs (old links) -> current IDs. Enables old review links to keep working.
-            const LEGACY_REVIEWER_IDS = {
-                'REV-7BQGXLI5': 'REV-W0BZYQRD', 'REV-VZNPPZOH': 'REV-NB3EBDUF', 'REV-WEVAH1SO': 'REV-NB3EBDUF',
-                'REV-72R6VBVM': 'REV-HBNCUQZD', 'REV-B0WZLBTC': 'REV-HBNCUQZD', 'REV-IWYYXXB2': 'REV-HBNCUQZD', 'REV-NI54J2SU': 'REV-HBNCUQZD',
-                'REV-ZJUU401X': 'REV-MLH6I2K0', 'REV-COU95OB1': 'REV-NCQQRPI5', 'REV-FQ7N2Q1S': 'REV-99D8ZNRF', 'REV-R0P57INL': 'REV-99D8ZNRF',
-                'REV-C143S4LS': 'REV-BOD4NZYF', 'REV-CPE03Y7S': 'REV-BOD4NZYF', 'REV-D5I50GEW': 'REV-BOD4NZYF',
-                'REV-GVPO4IGW': 'REV-ZWEQOEH1', 'REV-53L08LHM': 'REV-15E6A9CT', 'REV-720T2RYK': 'REV-15E6A9CT', 'REV-ATG3285G': 'REV-15E6A9CT',
-                'REV-G6CMQ2U3': 'REV-MF1WN1PU', 'REV-JDO0CB3F': 'REV-NRT9PHOY', 'REV-NRT9PHOY': 'REV-MLH6I2K0'
-            };
-
             const urlParams = new URLSearchParams(window.location.search);
-            let reviewerId = urlParams.get('reviewer');
-            if (reviewerId && LEGACY_REVIEWER_IDS[reviewerId]) {
-                reviewerId = LEGACY_REVIEWER_IDS[reviewerId];
-                const url = new URL(window.location.href);
-                url.searchParams.set('reviewer', reviewerId);
-                history.replaceState({}, '', url);
-            }
+            const reviewerId = urlParams.get('reviewer');
             const DEMO_MODE = urlParams.get('demo') === 'true';
-
-            // Get assigned papers for reviewer (supports legacy IDs when assignments still use old ids)
-            function getAssignedPapers(rid) {
-                const direct = assignments[rid] || [];
-                if (direct.length > 0) return direct;
-                for (const [legacyId, newId] of Object.entries(LEGACY_REVIEWER_IDS)) {
-                    if (newId === rid && (assignments[legacyId] || []).length > 0) return assignments[legacyId];
-                }
-                return [];
-            }
-
-            // Get review for paper by reviewer (supports legacy IDs for existing reviews)
-            function getReviewForPaper(pid, rid) {
-                return reviews[pid]?.[rid] || Object.keys(LEGACY_REVIEWER_IDS)
-                    .filter(legacyId => LEGACY_REVIEWER_IDS[legacyId] === rid)
-                    .map(legacyId => reviews[pid]?.[legacyId]).find(Boolean);
-            }
-
-            // Get nomination for reviewer (supports legacy IDs for existing nominations)
-            function getNomination(rid) {
-                return nominations[rid] || Object.keys(LEGACY_REVIEWER_IDS)
-                    .filter(legacyId => LEGACY_REVIEWER_IDS[legacyId] === rid)
-                    .map(legacyId => nominations[legacyId]).find(Boolean);
-            }
 
             // =====================
             // ANONYMIZATION HELPERS (Demo Mode)
@@ -3653,16 +3613,16 @@ On behalf of the 2026 SSC Organizing Committee`;
 
                 document.getElementById('reviewer-name-display').textContent = reviewer.name;
 
-                const assigned = getAssignedPapers(rid);
+                const assigned = assignments[rid] || [];
                 document.getElementById('reviewer-paper-count').textContent = assigned.length;
                 document.getElementById('total-assigned').textContent = assigned.length;
 
-                const done = assigned.filter(pid => getReviewForPaper(pid, rid)).length;
+                const done = assigned.filter(pid => reviews[pid]?.[rid]).length;
                 document.getElementById('completed-count').textContent = done;
                 document.getElementById('review-progress').style.width = assigned.length > 0 ? `${(done / assigned.length) * 100}%` : '0%';
 
                 // Update nomination display
-                const nominatedPaperId = getNomination(rid);
+                const nominatedPaperId = nominations[rid];
                 const nominationDisplay = document.getElementById('nominated-paper-id');
                 if (nominationDisplay) {
                     if (nominatedPaperId && assigned.includes(nominatedPaperId)) {
@@ -3693,9 +3653,9 @@ On behalf of the 2026 SSC Organizing Committee`;
                     const paper = papers.find(p => p.id === pid);
                     if (!paper) return '';
 
-                    const existing = getReviewForPaper(pid, rid);
+                    const existing = reviews[pid]?.[rid];
                     const hasFile = paperFiles[pid]?.link;
-                    const isNominated = getNomination(rid) === pid;
+                    const isNominated = nominations[rid] === pid;
                     const nominationUi = `
                         <div class="nomination-question">
                             <div class="nomination-question-text">Do you nominate this paper for Best Paper?</div>
@@ -3757,7 +3717,7 @@ On behalf of the 2026 SSC Organizing Committee`;
                 if (isYes) {
                     // Single nomination per reviewer.
                     // If they already nominated a different paper, prompt before replacing.
-                    const existing = getNomination(rid);
+                    const existing = nominations[rid];
                     if (existing && existing !== pid) {
                         const ok = confirm(`You already nominated ${existing} for Best Paper.\n\nReplace it with ${pid}?`);
                         if (!ok) return;
@@ -3770,17 +3730,10 @@ On behalf of the 2026 SSC Organizing Committee`;
                     return;
                 }
                 // "No" clears nomination only if this paper is currently nominated.
-                if (getNomination(rid) === pid) {
-                    if (nominations[rid] === pid) {
-                        db.ref(`nominations/${rid}`).remove();
-                        delete nominations[rid];
-                    } else {
-                        const legacyId = Object.keys(LEGACY_REVIEWER_IDS).find(l => LEGACY_REVIEWER_IDS[l] === rid && nominations[l] === pid);
-                        if (legacyId) {
-                            db.ref(`nominations/${legacyId}`).remove();
-                            delete nominations[legacyId];
-                        }
-                    }
+                if (nominations[rid] === pid) {
+                    db.ref(`nominations/${rid}`).remove();
+                    // Immediately update local state and display
+                    delete nominations[rid];
                     updateNominationDisplay(rid);
                     showToast("Nomination cleared");
                 }
@@ -3791,8 +3744,8 @@ On behalf of the 2026 SSC Organizing Committee`;
                 const nominationDisplay = document.getElementById('nominated-paper-id');
                 if (!nominationDisplay) return;
 
-                const nominatedPaperId = getNomination(rid);
-                const assigned = getAssignedPapers(rid);
+                const nominatedPaperId = nominations[rid];
+                const assigned = assignments[rid] || [];
 
                 if (nominatedPaperId && assigned.includes(nominatedPaperId)) {
                     // Find paper title
